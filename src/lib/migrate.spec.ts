@@ -10,18 +10,33 @@ describe('migrate', () => {
 		expect(normalizeSlot(null)).toBeNull();
 	});
 
-	it('converts phases that still have times', () => {
+	it('converts phases that still have times and named steps', () => {
 		const legacy = {
 			startDate: '2026-01-01',
 			phases: [
 				{ id: 'a', label: 'A', fromDay: 1, toDay: 7, times: ['09:00'], steps: [] },
-				{ id: 'b', label: 'B', fromDay: 8, toDay: null, times: ['08:00', '20:00'], steps: [] }
+				{
+					id: 'b',
+					label: 'B',
+					fromDay: 8,
+					toDay: null,
+					times: ['08:00', '20:00'],
+					steps: [
+						{ label: 'Dilator 2', minutes: 10 },
+						{ label: 'My special one', minutes: 5 }
+					]
+				}
 			]
 		} as unknown as Settings;
 		const out = migrateSettings(legacy);
 		expect(out.phases.map((p) => p.slots)).toEqual([['daily'], ['morning', 'evening']]);
 		expect('times' in out.phases[0]).toBe(false);
 		expect(out.leewayMinutes).toBe(2);
+		const [known, custom] = out.phases[1].steps;
+		expect(known.dilatorId).toBe('d2');
+		const created = out.dilators.find((d) => d.id === custom.dilatorId);
+		expect(created?.name).toBe('My special one');
+		expect(out.dilators).toHaveLength(6);
 	});
 
 	it('converts old log slots', () => {

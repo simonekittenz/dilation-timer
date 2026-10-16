@@ -1,5 +1,6 @@
 import { chime, keepAwake, startAlarm, stopAlarm, unlock } from './alarm';
 import { toDateString, toTimeString } from './dates';
+import { FALLBACK_COLOR, resolveSteps } from './dilators';
 import { defaultSettings } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import { confirmSwitch, finish, isEscalated, leewayLeftMs, startSession, tick } from './session';
@@ -59,7 +60,11 @@ class Store {
 				this.settings = migrateSettings(saved.settings);
 				this.log = migrateLog(saved.log ?? []);
 				this.active = saved.active
-					? { ...saved.active, slot: normalizeSlot(saved.active.slot) }
+					? {
+							...saved.active,
+							slot: normalizeSlot(saved.active.slot),
+							steps: saved.active.steps.map((st) => ({ ...st, color: st.color ?? FALLBACK_COLOR }))
+						}
 					: null;
 			}
 		} catch {
@@ -110,7 +115,12 @@ class Store {
 		const phase = this.todayPhase;
 		if (this.active || !phase || phase.steps.length === 0) return;
 		unlock();
-		this.active = startSession(phase.steps, slot, this.today, Date.now());
+		this.active = startSession(
+			resolveSteps(this.settings.dilators, phase.steps),
+			slot,
+			this.today,
+			Date.now()
+		);
 		void keepAwake(true);
 		this.save();
 	}

@@ -10,8 +10,8 @@ import {
 } from './session';
 
 const steps = [
-	{ label: 'A', minutes: 1 },
-	{ label: 'B', minutes: 2 }
+	{ label: 'A', minutes: 1, color: '#fff' },
+	{ label: 'B', minutes: 2, color: '#000' }
 ];
 
 describe('session', () => {

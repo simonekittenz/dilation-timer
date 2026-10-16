@@ -1,9 +1,27 @@
 /** A part of the day rather than a clock time: 'daily' is a once-a-day session. */
 export type SlotId = 'morning' | 'evening' | 'daily';
 
+/** One dilator in your kit. Defined once in Settings, referenced by id from phases. */
+export interface Dilator {
+	id: string;
+	name: string;
+	/** CSS color, e.g. "#f2c94c". */
+	color: string;
+	diameterMm?: number;
+}
+
+/** A phase step: which dilator, for how long. */
 export interface Step {
+	dilatorId: string;
+	minutes: number;
+}
+
+/** A step resolved against the dilator list when a session starts. */
+export interface SessionStep {
 	label: string;
 	minutes: number;
+	color: string;
+	diameterMm?: number;
 }
 
 /** A block of days sharing one routine. `toDay: null` means "from fromDay onwards". */
@@ -22,6 +40,7 @@ export interface Settings {
 	startDate: string;
 	/** Calm grace period after a timer ends before the alarm escalates. */
 	leewayMinutes: number;
+	dilators: Dilator[];
 	phases: Phase[];
 }
 
@@ -29,6 +48,7 @@ export type SessionPhase = 'running' | 'switch' | 'finished';
 
 export interface StepRecord {
 	label: string;
+	color?: string;
 	plannedMinutes: number;
 	startedAt: number;
 	endedAt: number | null;
@@ -39,7 +59,7 @@ export interface ActiveSession {
 	date: string;
 	slot: SlotId | null;
 	startedAt: number;
-	steps: Step[];
+	steps: SessionStep[];
 	stepIndex: number;
 	stepStartedAt: number;
 	phase: SessionPhase;
@@ -55,7 +75,7 @@ export interface LogEntry {
 	finishedAt: number;
 	/** Set when the slot was skipped instead of done. */
 	skipped?: boolean;
-	steps: { label: string; plannedMinutes: number; actualSeconds: number }[];
+	steps: { label: string; color?: string; plannedMinutes: number; actualSeconds: number }[];
 }
 
 export type SlotStatus = 'done' | 'skipped' | 'overdue' | 'due' | 'upcoming';

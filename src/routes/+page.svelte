@@ -2,7 +2,9 @@
 	import { dayNumber } from '$lib/dates';
 	import Schedule from '$lib/Schedule.svelte';
 	import { store } from '$lib/store.svelte';
+	import Swatch from '$lib/Swatch.svelte';
 	import Timer from '$lib/Timer.svelte';
+	import { resolveSteps } from '$lib/dilators';
 
 	const phase = $derived(store.todayPhase);
 	const day = $derived(dayNumber(store.settings.startDate, store.today));
@@ -14,6 +16,7 @@
 		})
 	);
 	const nextSlot = $derived(store.nextSlot);
+	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
 </script>
 
 <header>
@@ -34,7 +37,11 @@
 {:else if phase}
 	<section class="routine card">
 		<h2>Today's routine 🎀</h2>
-		<p class="muted">{phase.steps.map((s) => `${s.label} · ${s.minutes} min`).join('  →  ')}</p>
+		<ol class="steps">
+			{#each steps as st, i (i)}
+				<li><Swatch color={st.color} size={20} /> {st.label} · {st.minutes} min</li>
+			{/each}
+		</ol>
 		<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
 			{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
 		</button>
@@ -64,6 +71,21 @@
 		gap: 0.7rem;
 		justify-items: start;
 		margin-bottom: 1.4rem;
+	}
+	.steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 1rem;
+		color: var(--muted);
+		font-weight: 600;
+	}
+	.steps li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
 	}
 	.sub {
 		font-size: 1rem;

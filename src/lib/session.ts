@@ -1,9 +1,9 @@
-import type { ActiveSession, LogEntry, SlotId, Step } from './types';
+import type { ActiveSession, LogEntry, SessionStep, SlotId } from './types';
 
 export const WARN_MS = 10_000;
 
 export function startSession(
-	steps: Step[],
+	steps: SessionStep[],
 	slot: SlotId | null,
 	date: string,
 	now: number,
@@ -20,7 +20,13 @@ export function startSession(
 		phase: 'running',
 		warned: false,
 		records: [
-			{ label: steps[0].label, plannedMinutes: steps[0].minutes, startedAt: now, endedAt: null }
+			{
+				label: steps[0].label,
+				color: steps[0].color,
+				plannedMinutes: steps[0].minutes,
+				startedAt: now,
+				endedAt: null
+			}
 		]
 	};
 }
@@ -72,7 +78,13 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 		stepStartedAt: now,
 		records: [
 			...closeCurrent(s, now),
-			{ label: next.label, plannedMinutes: next.minutes, startedAt: now, endedAt: null }
+			{
+				label: next.label,
+				color: next.color,
+				plannedMinutes: next.minutes,
+				startedAt: now,
+				endedAt: null
+			}
 		]
 	};
 }
@@ -87,6 +99,7 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 		finishedAt: now,
 		steps: records.map((r) => ({
 			label: r.label,
+			color: r.color,
 			plannedMinutes: r.plannedMinutes,
 			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000)
 		}))

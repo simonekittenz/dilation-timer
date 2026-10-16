@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Bunny from './Bunny.svelte';
+	import Swatch from './Swatch.svelte';
 	import { formatClock } from './dates';
 	import { isLastStep, remainingMs, stepDurationMs } from './session';
 	import { store } from './store.svelte';
@@ -9,7 +10,9 @@
 	const progress = $derived(
 		s.phase === 'running' ? Math.min(1, Math.max(0, 1 - left / stepDurationMs(s))) : 1
 	);
-	const nextLabel = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1].label);
+	const current = $derived(s.steps[s.stepIndex]);
+	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
+	const nextLabel = $derived(next?.label ?? null);
 	const overtime = $derived(Math.max(0, -left));
 	const escalated = $derived(store.escalated);
 
@@ -21,6 +24,7 @@
 	<ol class="steps">
 		{#each s.steps as step, i (i)}
 			<li class:done={i < s.stepIndex} class:current={i === s.stepIndex}>
+				<Swatch color={step.color} size={16} />
 				{i < s.stepIndex ? '✓ ' : ''}{step.label}
 			</li>
 		{/each}
@@ -42,11 +46,13 @@
 			<div class="inside">
 				<Bunny size={64} />
 				<p class="clock">{formatClock(left)}</p>
-				<p class="label">{s.steps[s.stepIndex].label}</p>
+				<p class="label">
+					{current.label}{current.diameterMm ? ` · ${current.diameterMm} mm` : ''}
+				</p>
 			</div>
 		</div>
 		<p class="muted hint">
-			{#if nextLabel}Next up: {nextLabel} ♡{:else}Last one this session ✿{/if}
+			{#if next}Next up: {next.label} ♡{:else}Last one this session ✿{/if}
 		</p>
 		<button
 			class="btn ghost small"
@@ -58,7 +64,11 @@
 		<Bunny mood={escalated ? 'alert' : s.phase === 'finished' ? 'done' : 'happy'} size={110} />
 		{#if s.phase === 'switch'}
 			<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
-			<p class="big">Swap to <strong>{nextLabel}</strong></p>
+			<p class="big swap">
+				Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
+				<strong>{nextLabel}</strong>
+			</p>
+			{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
 		{:else}
 			<p class="title">{escalated ? 'Psst! All done!' : 'All done, you did it!'}</p>
 			<p class="big">Take the last one out 🌸</p>
@@ -113,6 +123,9 @@
 		padding: 0;
 	}
 	.steps li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		padding: 0.2rem 0.8rem;
 		border-radius: 999px;
 		border: 2px solid var(--line);
@@ -177,6 +190,13 @@
 		font-size: 1.2rem;
 		font-weight: 800;
 		color: var(--accent-strong);
+	}
+	.swap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 	.big {
 		font-size: 1.5rem;

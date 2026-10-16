@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dayNumber } from './dates';
 import { WIH_PHASES, defaultSettings } from './defaults';
+import { resolveSteps } from './dilators';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
 import type { LogEntry } from './types';
 
@@ -37,6 +38,13 @@ describe('schedule', () => {
 		expect(total('wih-week-11-52')).toBe(75);
 		expect(total('wih-year-2')).toBe(60);
 		expect(total('wih-year-3-plus')).toBe(60);
+	});
+
+	it('resolves phase steps against the dilator list', () => {
+		const phase = WIH_PHASES.find((p) => p.id === 'wih-week-4')!;
+		const steps = resolveSteps(settings.dilators, phase.steps);
+		expect(steps.map((x) => x.label)).toEqual(['Dilator 0', 'Dilator 1', 'Dilator 2']);
+		expect(steps[2]).toMatchObject({ color: '#f2c94c', diameterMm: 26, minutes: 50 });
 	});
 
 	it('only calls the morning overdue once the morning is over', () => {

@@ -1,10 +1,11 @@
 import { toDateString } from './dates';
+import { wihDilators } from './dilators';
 import type { Phase, Settings, SlotId, Step } from './types';
 
 const TWICE_DAILY: SlotId[] = ['morning', 'evening'];
 const ONCE_DAILY: SlotId[] = ['daily'];
 
-const d = (size: number, minutes: number): Step => ({ label: `Dilator ${size}`, minutes });
+const d = (size: number, minutes: number): Step => ({ dilatorId: `d${size}`, minutes });
 
 function phase(
 	id: string,
@@ -56,6 +57,7 @@ export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
 		leewayMinutes: 2,
+		dilators: wihDilators(),
 		phases: wihPhases()
 	};
 }

@@ -1,10 +1,22 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { wihPhases } from '$lib/defaults';
-	import type { Phase, Settings } from '$lib/types';
+	import { PALETTE, stepsInUse, wihDilators } from '$lib/dilators';
+	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
+	import type { Phase, Settings } from '$lib/types';
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
+	const inUse = $derived(stepsInUse(draft));
+	const colorOf = (id: string) => draft.dilators.find((d) => d.id === id)?.color ?? '#ff9ccb';
+
+	function addDilator() {
+		draft.dilators.push({
+			id: `d-${crypto.randomUUID().slice(0, 8)}`,
+			name: `Dilator ${draft.dilators.length}`,
+			color: PALETTE[draft.dilators.length % PALETTE.length]
+		});
+	}
 
 	function addPhase() {
 		const last = draft.phases.at(-1);
@@ -16,23 +28,32 @@
 			fromDay: (last?.toDay ?? 0) + 1,
 			toDay: null,
 			slots: ['morning', 'evening'],
-			steps: [{ label: 'Dilator 1', minutes: 10 }]
+			steps: [{ dilatorId: draft.dilators[0]?.id ?? '', minutes: 10 }]
 		});
 	}
 
 	function resetToWih() {
-		if (!confirm('Replace all phases with the WIH standard program?')) return;
+		if (!confirm('Replace all dilators and phases with the WIH standard program?')) return;
+		draft.dilators = wihDilators();
 		draft.phases = wihPhases();
 	}
 
 	function save() {
 		const phases: Phase[] = draft.phases.map((p) => ({
 			...p,
-			steps: p.steps.filter((s) => s.minutes > 0)
+			steps: p.steps.filter(
+				(s) => s.minutes > 0 && draft.dilators.some((d) => d.id === s.dilatorId)
+			)
+		}));
+		const dilators = draft.dilators.map((d) => ({
+			...d,
+			name: d.name.trim() || 'Dilator',
+			diameterMm: d.diameterMm ? Number(d.diameterMm) : undefined
 		}));
 		store.updateSettings({
 			startDate: draft.startDate,
 			leewayMinutes: Math.max(0, Number(draft.leewayMinutes) || 0),
+			dilators,
 			phases
 		});
 		void goto('/');
@@ -54,6 +75,36 @@
 	<input type="number" min="0" step="0.5" class="num" bind:value={draft.leewayMinutes} />
 </label>
 
+<details class="card phase" open>
+	<summary
+		><strong>Your dilators</strong> <span class="muted">· {draft.dilators.length}</span></summary
+	>
+	<p class="muted note">Set these up once. Phases below just pick a dilator and a time.</p>
+	{#each draft.dilators as d, di (d.id)}
+		<div class="row dilator">
+			<input type="color" class="color" bind:value={d.color} aria-label="{d.name} color" />
+			<input class="grow" bind:value={d.name} aria-label="Dilator name" />
+			<input
+				type="number"
+				min="1"
+				class="num"
+				placeholder="mm"
+				bind:value={d.diameterMm}
+				aria-label="Diameter in mm"
+			/>
+			<span class="muted">mm</span>
+			<button
+				class="btn ghost small"
+				onclick={() => draft.dilators.splice(di, 1)}
+				disabled={inUse.has(d.id)}
+				title={inUse.has(d.id) ? 'Used in a phase' : 'Remove'}
+				aria-label="Remove {d.name}">✕</button
+			>
+		</div>
+	{/each}
+	<button class="btn ghost small" onclick={addDilator}>+ Add dilator</button>
+</details>
+
 <p class="muted note">
 	Each phase covers a range of days. Today's schedule is picked from the phase the date falls in.
 </p>
@@ -68,7 +119,7 @@
 					: phase.toDay === phase.fromDay
 						? ''
 						: `–${phase.toDay}`}
-				· {phase.steps.reduce((sum, st) => sum + st.minutes, 0)} min
+				· {Math.round(phase.steps.reduce((sum, st) => sum + st.minutes, 0) * 10) / 10} min
 			</span>
 		</summary>
 		<div class="row">
@@ -109,7 +160,12 @@
 			Dilators, in order
 			{#each phase.steps as step, si (si)}
 				<div class="row">
-					<input class="grow" bind:value={step.label} aria-label="Dilator name" />
+					<Swatch color={colorOf(step.dilatorId)} size={26} />
+					<select class="grow" bind:value={step.dilatorId} aria-label="Dilator">
+						{#each draft.dilators as d (d.id)}
+							<option value={d.id}>{d.name}</option>
+						{/each}
+					</select>
 					<input type="number" min="1" class="num" bind:value={step.minutes} aria-label="Minutes" />
 					<span class="muted">min</span>
 					<button
@@ -123,7 +179,10 @@
 			<button
 				class="btn ghost small"
 				onclick={() =>
-					phase.steps.push({ label: `Dilator ${phase.steps.length + 1}`, minutes: 10 })}
+					phase.steps.push({
+						dilatorId: draft.dilators[phase.steps.length % draft.dilators.length]?.id ?? '',
+						minutes: 10
+					})}
 			>
 				+ Add dilator
 			</button>
@@ -174,6 +233,16 @@
 		gap: 0.6rem;
 		align-items: center;
 		flex-wrap: wrap;
+	}
+	.color {
+		width: 2.4rem;
+		height: 2.4rem;
+		padding: 0.15rem;
+		border-radius: 50%;
+		cursor: pointer;
+	}
+	.dilator {
+		margin-bottom: 0.6rem;
 	}
 	.stack {
 		display: grid;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Swatch from '$lib/Swatch.svelte';
 	import { SLOT_LABELS } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 
@@ -34,8 +35,14 @@
 				{:else}
 					<strong>{time(e.startedAt)}</strong>
 					{#if e.slot}<span class="muted"> ({SLOT_LABELS[e.slot].toLowerCase()} session)</span>{/if}
-					<p class="muted">
-						{e.steps.map((s) => `${s.label} ${mins(s.actualSeconds)}`).join(' · ')}
+					<p class="muted chips">
+						{#each e.steps as st, i (i)}
+							<span
+								><Swatch color={st.color ?? '#ff9ccb'} size={14} />
+								{st.label}
+								{mins(st.actualSeconds)}</span
+							>
+						{/each}
 					</p>
 				{/if}
 			</div>
@@ -58,6 +65,11 @@
 	h2 {
 		font-size: 1rem;
 		margin: 1.2rem 0 0.5rem;
+	}
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.1rem 0.8rem;
 	}
 	.entry {
 		display: flex;

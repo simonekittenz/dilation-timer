@@ -1,5 +1,6 @@
 import { defaultSettings } from './defaults';
-import type { LogEntry, Settings, SlotId } from './types';
+import { PALETTE } from './dilators';
+import type { Dilator, LogEntry, Phase, Settings, SlotId } from './types';
 
 const TIME = /^(\d{1,2}):\d{2}$/;
 
@@ -14,24 +15,48 @@ export function normalizeSlot(raw: unknown): SlotId | null {
 }
 
 function slotsFromTimes(times: unknown): SlotId[] {
-	if (!Array.isArray(times) || times.length === 0) return ['daily'];
-	if (times.length === 1) return ['daily'];
+	if (!Array.isArray(times) || times.length <= 1) return ['daily'];
 	return ['morning', 'evening'];
+}
+
+interface LegacyStep {
+	label?: string;
+	dilatorId?: string;
+	minutes: number;
+}
+
+/** Old steps carried their own name; hook them up to (or create) a global dilator. */
+function migrateSteps(steps: LegacyStep[], dilators: Dilator[]) {
+	return steps.map((st) => {
+		if (st.dilatorId) return { dilatorId: st.dilatorId, minutes: st.minutes };
+		const name = st.label?.trim() || 'Dilator';
+		let d = dilators.find((x) => x.name.toLowerCase() === name.toLowerCase());
+		if (!d) {
+			d = {
+				id: `d-${crypto.randomUUID().slice(0, 8)}`,
+				name,
+				color: PALETTE[dilators.length % PALETTE.length]
+			};
+			dilators.push(d);
+		}
+		return { dilatorId: d.id, minutes: st.minutes };
+	});
 }
 
 export function migrateSettings(saved: Partial<Settings> | undefined): Settings {
 	const base = defaultSettings();
 	if (!saved) return base;
-	const merged: Settings = { ...base, ...saved };
-	merged.phases = (saved.phases ?? base.phases).map((p) => {
-		const legacy = p as unknown as { times?: unknown; slots?: SlotId[] };
+	const dilators = structuredClone(saved.dilators ?? base.dilators);
+	const phases = (saved.phases ?? base.phases).map((p) => {
+		const legacy = p as unknown as { times?: unknown; slots?: SlotId[]; steps: LegacyStep[] };
 		const { times, ...rest } = legacy;
 		return {
 			...(rest as object),
-			slots: legacy.slots ?? slotsFromTimes(times)
-		} as Settings['phases'][number];
+			slots: legacy.slots ?? slotsFromTimes(times),
+			steps: migrateSteps(legacy.steps ?? [], dilators)
+		} as Phase;
 	});
-	return merged;
+	return { ...base, ...saved, dilators, phases };
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {
