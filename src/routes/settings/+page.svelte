@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
+	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
 	import { defaultMessages, parseMessages } from '$lib/messages';
@@ -14,6 +16,27 @@
 		done: store.settings.messages.done.join('\n')
 	});
 	const inUse = $derived(stepsInUse(draft));
+	const day = $derived(dayNumber(draft.startDate, store.today));
+	const currentPhase = $derived(phaseForDay(draft.phases, day));
+	const todayLabel = $derived(
+		new Date(store.now).toLocaleDateString(undefined, {
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric'
+		})
+	);
+
+	function dateRange(from: number, to: number | null): string {
+		const start = formatShortDate(addDays(draft.startDate, from - 1));
+		if (to === null) return `${start} →`;
+		return to === from ? start : `${start} – ${formatShortDate(addDays(draft.startDate, to - 1))}`;
+	}
+
+	function jumpToCurrent() {
+		document
+			.getElementById('current-phase')
+			?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
 
 	function resetMessages() {
 		const m = defaultMessages();
@@ -85,6 +108,18 @@
 
 <h1>Settings 🎀</h1>
 
+<section class="card here">
+	<p class="muted">Today · {todayLabel}</p>
+	{#if day < 1}
+		<h2>Starts in {1 - day} day{1 - day === 1 ? '' : 's'}</h2>
+	{:else if currentPhase}
+		<h2>Day {day} · {currentPhase.label}</h2>
+		<button class="btn ghost small" onclick={jumpToCurrent}>Jump to this phase ↓</button>
+	{:else}
+		<h2>Day {day} · no phase covers today</h2>
+	{/if}
+</section>
+
 <label class="card field">
 	<span>
 		Day 1 (your surgery date)
@@ -107,7 +142,7 @@
 	<input type="number" min="0" step="0.5" class="num" bind:value={draft.leewayMinutes} />
 </label>
 
-<details class="card phase" open>
+<details class="card phase">
 	<summary
 		><strong>Your dilators</strong> <span class="muted">· {draft.dilators.length}</span></summary
 	>
@@ -164,16 +199,33 @@
 	<button class="btn ghost small" onclick={resetMessages}>Reset messages to defaults</button>
 </details>
 
+<h2 class="schedule-title">Your schedule</h2>
 <p class="muted note">
 	Each phase covers a range of days. Today's schedule is picked from the phase the date falls in.
 </p>
 
 {#each draft.phases as phase, pi (phase.id)}
-	<details class="card phase">
+	{@const progress = phaseProgress(draft.phases, phase, day)}
+	<details
+		class="card phase {progress}"
+		id={progress === 'current' ? 'current-phase' : undefined}
+		open={progress === 'current'}
+	>
 		<summary>
-			<strong>{phase.label}</strong>
-			<span class="muted">
-				· day {phase.fromDay}{phase.toDay === null
+			<span class="title">
+				<strong>{phase.label}</strong>
+				{#if progress === 'current'}
+					<span class="badge now">📍 You are here</span>
+				{:else if progress === 'past'}
+					<span class="badge done">Done ✓</span>
+				{:else if phase.fromDay > day}
+					<span class="badge soon">
+						in {phase.fromDay - day} day{phase.fromDay - day === 1 ? '' : 's'}
+					</span>
+				{/if}
+			</span>
+			<span class="muted meta">
+				{dateRange(phase.fromDay, phase.toDay)} · day {phase.fromDay}{phase.toDay === null
 					? '+'
 					: phase.toDay === phase.fromDay
 						? ''
@@ -291,6 +343,62 @@
 	summary {
 		cursor: pointer;
 		list-style-position: inside;
+	}
+	.title {
+		display: inline-flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.meta {
+		display: block;
+		font-size: 0.85rem;
+		margin-top: 0.15rem;
+	}
+	.badge {
+		font-size: 0.75rem;
+		font-weight: 800;
+		padding: 0.1rem 0.6rem;
+		border-radius: 999px;
+	}
+	.badge.now {
+		background: var(--accent-strong);
+		color: var(--accent-ink);
+	}
+	.badge.done {
+		background: var(--ok);
+		color: #fff;
+	}
+	.badge.soon {
+		background: var(--accent-soft);
+		color: var(--muted);
+	}
+	.phase.current {
+		border-color: var(--accent-strong);
+		background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+		box-shadow:
+			0 4px 0 var(--accent),
+			var(--shadow);
+	}
+	.phase.past {
+		opacity: 0.7;
+	}
+	.here {
+		display: grid;
+		justify-items: start;
+		gap: 0.4rem;
+		margin-bottom: 0.8rem;
+		border-color: var(--accent);
+	}
+	.here h2 {
+		font-size: 1.3rem;
+		font-weight: 900;
+		color: var(--accent-strong);
+	}
+	.schedule-title {
+		margin-top: 1.4rem;
+		font-size: 1.1rem;
+		font-weight: 900;
 	}
 	.phase {
 		margin-bottom: 0.8rem;

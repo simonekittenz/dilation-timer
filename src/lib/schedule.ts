@@ -31,6 +31,15 @@ export function phaseForDate(settings: Settings, date: string): Phase | undefine
 	return phaseForDay(settings.phases, dayNumber(settings.startDate, date));
 }
 
+export type PhaseProgress = 'past' | 'current' | 'upcoming';
+
+/** Where a phase sits relative to `day`. Only the phase that wins the lookup counts as current. */
+export function phaseProgress(phases: Phase[], phase: Phase, day: number): PhaseProgress {
+	if (phaseForDay(phases, day)?.id === phase.id) return 'current';
+	if (phase.toDay !== null && day > phase.toDay) return 'past';
+	return 'upcoming';
+}
+
 /** Whether a phase has anything to do (rest weeks have no sessions). */
 export function isRestPhase(p: Phase): boolean {
 	return p.slots.length === 0 || p.steps.length === 0;

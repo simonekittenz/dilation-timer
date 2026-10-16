@@ -7,6 +7,7 @@ import {
 	isRestPhase,
 	nextOpenSlot,
 	phaseForDate,
+	phaseProgress,
 	slotsForDate
 } from './schedule';
 import type { LogEntry } from './types';
@@ -39,6 +40,21 @@ describe('schedule', () => {
 		expect(isRestPhase(rest)).toBe(true);
 		expect(slotsForDate(settings, '2026-01-03', '10:00', [])).toEqual([]);
 		expect(WIH_PHASES.filter(isRestPhase).map((p) => p.id)).toEqual(['wih-week-0']);
+	});
+
+	it('labels phases as past, current or upcoming', () => {
+		const progress = (day: number) =>
+			Object.fromEntries(
+				settings.phases.map((p) => [p.id, phaseProgress(settings.phases, p, day)])
+			);
+		const onDay10 = progress(10);
+		expect(onDay10['wih-week-0']).toBe('past');
+		expect(onDay10['wih-week-1-day-1']).toBe('past');
+		expect(onDay10['wih-week-1-day-3']).toBe('current');
+		expect(onDay10['wih-week-2']).toBe('upcoming');
+		expect(Object.values(onDay10).filter((v) => v === 'current')).toHaveLength(1);
+		// before day 1 nothing has happened yet
+		expect(Object.values(progress(0)).every((v) => v === 'upcoming')).toBe(true);
 	});
 
 	it('counts the days until dilation starts', () => {
