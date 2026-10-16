@@ -6,6 +6,7 @@
 	import { wihPhases } from '$lib/defaults';
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
 	import { defaultMessages } from '$lib/messages';
+	import { chainPhases, findPhaseProblems, phaseLength, resizePhase } from '$lib/phases';
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
 	import Mascot from '$lib/Mascot.svelte';
 	import Swatch from '$lib/Swatch.svelte';
@@ -70,6 +71,28 @@
 		});
 	}
 
+	const problems = $derived(findPhaseProblems(draft.phases));
+	const labelOf = (id: string) => draft.phases.find((p) => p.id === id)?.label ?? '';
+
+	/** Changing where a phase ends moves every later phase with it. */
+	function setEnd(id: string, toDay: number) {
+		draft.phases = resizePhase($state.snapshot(draft.phases), id, toDay);
+	}
+
+	function commitEnd(id: string, input: HTMLInputElement) {
+		const raw = input.value.trim();
+		if (raw === '') {
+			// blank means "keeps going"; nothing after it to push
+			draft.phases = $state
+				.snapshot(draft.phases)
+				.map((p) => (p.id === id ? { ...p, toDay: null } : p));
+			return;
+		}
+		setEnd(id, Number(raw));
+		// show the real value if it was adjusted (e.g. a phase can't end before it starts)
+		input.value = String(draft.phases.find((p) => p.id === id)?.toDay ?? '');
+	}
+
 	function addPhase() {
 		const last = draft.phases.at(-1);
 		const id = crypto.randomUUID();
@@ -120,8 +143,8 @@
 	<span>
 		Day 1 (your surgery date)
 		<small class="muted">
-			The WIH program starts with 7 packing days, so dilation typically begins on day 8. 
-			The dilation free period can be found and configured in the schedule below.
+			The WIH program starts with 7 packing days, so dilation typically begins on day 8. The
+			dilation free period can be found and configured in the schedule below.
 		</small>
 	</span>
 	<input type="date" bind:value={draft.startDate} />
@@ -232,6 +255,29 @@
 </details>
 
 <h2 class="schedule-title">Your schedule</h2>
+{#if problems.length}
+	<div class="card warn" role="alert">
+		<strong>⚠️ These phases don't line up</strong>
+		<ul>
+			{#each problems as problem (problem.id)}
+				<li>
+					{#if problem.kind === 'overlap'}
+						<b>{labelOf(problem.id)}</b> overlaps <b>{labelOf(problem.after)}</b>, so some days are
+						counted twice.
+					{:else}
+						There's a gap of uncovered days before <b>{labelOf(problem.id)}</b>.
+					{/if}
+				</li>
+			{/each}
+		</ul>
+		<button
+			class="btn small"
+			onclick={() => (draft.phases = chainPhases($state.snapshot(draft.phases)))}
+		>
+			Tidy up, keeping each phase's length
+		</button>
+	</div>
+{/if}
 <p class="muted note">
 	Each phase covers a range of days. Today's schedule is picked from the phase the date falls in.
 </p>
@@ -262,6 +308,9 @@
 					: phase.toDay === phase.fromDay
 						? ''
 						: `–${phase.toDay}`}
+				{#if phaseLength(phase) !== null}· {phaseLength(phase)} day{phaseLength(phase) === 1
+						? ''
+						: 's'}{/if}
 				· {Math.round(phase.steps.reduce((sum, st) => sum + st.minutes, 0) * 10) / 10} min
 			</span>
 		</summary>
@@ -273,20 +322,44 @@
 				disabled={draft.phases.length === 1}>Remove</button
 			>
 		</div>
-		<div class="row">
-			<label>From day <input type="number" min="1" bind:value={phase.fromDay} class="num" /></label>
-			<label>
-				To day
-				<input
-					type="number"
-					min="1"
-					class="num"
-					placeholder="∞"
-					value={phase.toDay ?? ''}
-					oninput={(e) =>
-						(phase.toDay = e.currentTarget.value ? Number(e.currentTarget.value) : null)}
-				/>
-			</label>
+		<div class="stack">
+			<span>
+				Day {phase.fromDay}{phase.toDay === null ? ' onwards' : ` – ${phase.toDay}`}
+				{#if phaseLength(phase) !== null}· {phaseLength(phase)} day{phaseLength(phase) === 1
+						? ''
+						: 's'}{/if}
+				<span class="muted"
+					>· starts {formatShortDate(addDays(draft.startDate, phase.fromDay - 1))}</span
+				>
+			</span>
+			{#if phase.toDay !== null}
+				<div class="row">
+					<button
+						class="btn ghost small"
+						onclick={() => setEnd(phase.id, phase.toDay! - 1)}
+						disabled={phaseLength(phase) === 1}
+					>
+						− 1 day
+					</button>
+					<button class="btn ghost small" onclick={() => setEnd(phase.id, phase.toDay! + 1)}>
+						+ 1 day
+					</button>
+					<label class="inline">
+						Ends day
+						<input
+							type="number"
+							min={phase.fromDay}
+							class="num"
+							placeholder="∞"
+							value={phase.toDay}
+							onchange={(e) => commitEnd(phase.id, e.currentTarget)}
+						/>
+					</label>
+				</div>
+				<small class="muted">Adding or removing days moves every later phase too.</small>
+			{:else}
+				<small class="muted">This phase keeps going, so there's nothing after it to move.</small>
+			{/if}
 		</div>
 		<label class="stack">
 			Sessions per day
@@ -494,6 +567,25 @@
 		box-shadow:
 			0 4px 0 var(--accent),
 			var(--shadow);
+	}
+	.warn {
+		display: grid;
+		gap: 0.5rem;
+		justify-items: start;
+		margin-bottom: 0.8rem;
+		border-color: var(--warn);
+	}
+	.warn ul {
+		margin: 0;
+		padding-left: 1.1rem;
+		font-size: 0.9rem;
+	}
+	.inline {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--muted);
+		font-size: 0.9rem;
 	}
 	.phase.past {
 		opacity: 0.7;
