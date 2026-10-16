@@ -1,20 +1,47 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { onDestroy } from 'svelte';
 	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
-	import { defaultMessages, parseMessages } from '$lib/messages';
+	import { defaultMessages } from '$lib/messages';
+	import { buildSettings, messagesToText } from '$lib/settingsDraft';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
-	import type { Phase, Settings } from '$lib/types';
+	import type { Settings } from '$lib/types';
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
-	let messageText = $state({
-		running: store.settings.messages.running.join('\n'),
-		switch: store.settings.messages.switch.join('\n'),
-		done: store.settings.messages.done.join('\n')
+	let messageText = $state(messagesToText(store.settings.messages));
+	let status = $state<'saved' | 'pending' | 'waiting'>('saved');
+	let pending: Settings | null = null;
+	let firstRun = true;
+
+	function flush() {
+		if (!pending) return;
+		store.updateSettings(pending);
+		pending = null;
+		status = 'saved';
+	}
+
+	// Autosave: any edit is validated and written shortly after you stop typing.
+	$effect(() => {
+		const next = buildSettings($state.snapshot(draft), $state.snapshot(messageText));
+		if (firstRun) {
+			firstRun = false;
+			return;
+		}
+		if (!next) {
+			status = 'waiting';
+			return;
+		}
+		pending = next;
+		status = 'pending';
+		const timer = setTimeout(flush, 400);
+		return () => clearTimeout(timer);
 	});
+
+	// Don't lose an edit made right before leaving the page or closing the app.
+	onDestroy(flush);
 	const inUse = $derived(stepsInUse(draft));
 	const day = $derived(dayNumber(draft.startDate, store.today));
 	const currentPhase = $derived(phaseForDay(draft.phases, day));
@@ -40,11 +67,7 @@
 
 	function resetMessages() {
 		const m = defaultMessages();
-		messageText = {
-			running: m.running.join('\n'),
-			switch: m.switch.join('\n'),
-			done: m.done.join('\n')
-		};
+		messageText = messagesToText(m);
 	}
 	const colorOf = (id: string) => draft.dilators.find((d) => d.id === id)?.color ?? '#ff9ccb';
 
@@ -77,36 +100,22 @@
 		draft.phases = wihPhases();
 		resetMessages();
 	}
-
-	function save() {
-		const phases: Phase[] = draft.phases.map((p) => ({
-			...p,
-			steps: p.steps.filter(
-				(s) => s.minutes > 0 && draft.dilators.some((d) => d.id === s.dilatorId)
-			)
-		}));
-		const dilators = draft.dilators.map((d) => ({
-			...d,
-			name: d.name.trim() || 'Dilator',
-			nickname: d.nickname?.trim() || undefined,
-			diameterMm: d.diameterMm ? Number(d.diameterMm) : undefined
-		}));
-		store.updateSettings({
-			startDate: draft.startDate,
-			leewayMinutes: Math.max(0, Number(draft.leewayMinutes) || 0),
-			dilators,
-			messages: {
-				running: parseMessages(messageText.running),
-				switch: parseMessages(messageText.switch),
-				done: parseMessages(messageText.done)
-			},
-			phases
-		});
-		void goto('/');
-	}
 </script>
 
-<h1>Settings 🎀</h1>
+<svelte:window onpagehide={flush} />
+
+<div class="head">
+	<h1>Settings 🎀</h1>
+	<p class="status {status}" role="status" aria-live="polite">
+		{#if status === 'saved'}
+			Saved ✓
+		{:else if status === 'pending'}
+			Saving…
+		{:else}
+			Not saved yet, finish the empty date or day field
+		{/if}
+	</p>
+</div>
 
 <section class="card here">
 	<p class="muted">Today · {todayLabel}</p>
@@ -237,7 +246,7 @@
 			<input class="grow" bind:value={phase.label} aria-label="Phase name" />
 			<button
 				class="btn ghost small"
-				onclick={() => draft.phases.splice(pi, 1)}
+				onclick={() => confirm(`Remove "${phase.label}"?`) && draft.phases.splice(pi, 1)}
 				disabled={draft.phases.length === 1}>Remove</button
 			>
 		</div>
@@ -310,12 +319,30 @@
 <div class="row actions">
 	<button class="btn ghost" onclick={addPhase}>+ Add phase</button>
 	<button class="btn ghost" onclick={resetToWih}>Reset to WIH program</button>
-	<button class="btn" onclick={save}>Save</button>
 </div>
 
 <style>
-	h1 {
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
 		margin-bottom: 1rem;
+	}
+	.status {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: var(--ok);
+		text-align: right;
+	}
+	.status.pending {
+		color: var(--muted);
+	}
+	.status.waiting {
+		color: var(--warn);
+	}
+	h1 {
+		margin: 0;
 		font-weight: 900;
 		color: var(--accent-strong);
 	}
@@ -452,7 +479,7 @@
 		width: 4.5rem;
 	}
 	.actions {
-		justify-content: space-between;
+		justify-content: flex-start;
 		margin-top: 1rem;
 	}
 </style>
