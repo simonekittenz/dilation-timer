@@ -69,4 +69,12 @@ describe('buildSettings', () => {
 		draft.volume = 40;
 		expect(buildSettings(draft, text)!.volume).toBe(40);
 	});
+
+	it('only stores a known friend', () => {
+		const { draft, text } = fresh();
+		draft.mascot = 'kitty';
+		expect(buildSettings(draft, text)!.mascot).toBe('kitty');
+		(draft as { mascot: string }).mascot = 'dragon';
+		expect(buildSettings(draft, text)!.mascot).toBe('bunny');
+	});
 });

@@ -7,6 +7,7 @@
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
 	import { defaultMessages } from '$lib/messages';
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
+	import Mascot from '$lib/Mascot.svelte';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Settings } from '$lib/types';
@@ -125,6 +126,19 @@
 	</span>
 	<input type="date" bind:value={draft.startDate} />
 </label>
+
+<fieldset class="card companion">
+	<legend>Your little friend</legend>
+	<div class="tiles">
+		{#each [{ id: 'bunny', label: 'Bunny' }, { id: 'kitty', label: 'Kitty' }] as const as option (option.id)}
+			<label class="tile" class:chosen={draft.mascot === option.id}>
+				<input type="radio" name="mascot" value={option.id} bind:group={draft.mascot} />
+				<Mascot animal={option.id} size={72} />
+				<span>{option.label}</span>
+			</label>
+		{/each}
+	</div>
+</fieldset>
 
 <label class="card field switch-window">
 	<span>
@@ -351,6 +365,45 @@
 		margin: 0;
 		font-weight: 900;
 		color: var(--accent-strong);
+	}
+	.companion {
+		margin: 0.6rem 0 0;
+	}
+	.companion legend {
+		padding: 0 0.4rem;
+		font-weight: 800;
+	}
+	.tiles {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.6rem;
+	}
+	.tile {
+		position: relative;
+		display: grid;
+		justify-items: center;
+		gap: 0.3rem;
+		padding: 0.8rem 0.4rem 0.6rem;
+		border: 2px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--bg);
+		font-weight: 800;
+		cursor: pointer;
+	}
+	.tile.chosen {
+		border-color: var(--accent-strong);
+		background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+		box-shadow: 0 3px 0 var(--accent);
+	}
+	.tile input {
+		position: absolute;
+		opacity: 0;
+		inset: 0;
+		cursor: pointer;
+	}
+	.tile:has(input:focus-visible) {
+		outline: 3px solid var(--accent-strong);
+		outline-offset: 2px;
 	}
 	.sound-test {
 		display: grid;

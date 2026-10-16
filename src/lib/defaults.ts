@@ -78,6 +78,7 @@ export function defaultSettings(today = new Date()): Settings {
 		startDate: toDateString(today),
 		switchWindowMinutes: 1,
 		volume: 100,
+		mascot: 'bunny',
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

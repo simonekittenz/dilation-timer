@@ -48,6 +48,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		startDate: draft.startDate,
 		switchWindowMinutes: Math.max(0, Number(draft.switchWindowMinutes) || 0),
 		volume: clampVolume(draft.volume),
+		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
 		dilators,
 		messages: {
 			running: parseMessages(text.running),

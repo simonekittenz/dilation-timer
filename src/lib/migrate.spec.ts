@@ -54,6 +54,20 @@ describe('migrate', () => {
 		expect(migrateSettings({ volume: 60 }).volume).toBe(60);
 	});
 
+	it('defaults to the bunny, and keeps a chosen kitty', () => {
+		expect(migrateSettings({ startDate: '2026-01-01' }).mascot).toBe('bunny');
+		expect(migrateSettings({ mascot: 'kitty' }).mascot).toBe('kitty');
+		expect(migrateSettings({ mascot: 'dragon' } as never).mascot).toBe('bunny');
+	});
+
+	it('updates the old bunny-only finish message but leaves your own alone', () => {
+		const old = 'The bunny is doing a happy hop for you 🐰';
+		const out = migrateSettings({ messages: { running: [], done: [old, 'my own message'] } });
+		expect(out.messages.done).toContain('my own message');
+		expect(out.messages.done).not.toContain(old);
+		expect(out.messages.done.join(' ')).toContain('{pet}');
+	});
+
 	it('converts old log slots', () => {
 		const log = [{ id: '1', slot: '08:00' }] as unknown as LogEntry[];
 		expect(migrateLog(log)[0].slot).toBe('morning');

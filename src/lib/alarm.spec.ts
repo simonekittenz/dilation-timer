@@ -65,7 +65,7 @@ describe('switch ping', () => {
 		expect(highs).toHaveLength(3);
 		expect(lows[1] - lows[0]).toBeCloseTo(PING_GAP);
 		expect(lows[2] - lows[1]).toBeCloseTo(PING_GAP);
-		// the whole thing fits inside the 3.5s bunny-ears cue
+		// the whole thing fits inside the 3.5s ears cue
 		expect(highs[2] - lows[0] + 0.3).toBeLessThan(3.5);
 	});
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { dayNumber } from '$lib/dates';
-	import Bunny from '$lib/Bunny.svelte';
+	import Mascot from '$lib/Mascot.svelte';
 	import Schedule from '$lib/Schedule.svelte';
 	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
@@ -40,7 +40,7 @@
 	<Timer />
 {:else if phase && isRestPhase(phase)}
 	<section class="rest card">
-		<Bunny size={96} />
+		<Mascot size={96} />
 		<h2>Rest day 🌸</h2>
 		<p class="muted">
 			No dilation today.

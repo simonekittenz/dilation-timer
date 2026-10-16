@@ -108,7 +108,7 @@ export function chime() {
 	navigator.vibrate?.(80);
 }
 
-/** Seconds between repeats of the switch ping; three fit inside the bunny-ears cue. */
+/** Seconds between repeats of the switch ping; three fit inside the ears cue. */
 export const PING_GAP = 1.1;
 
 /** Short bright two-note ping, repeated: "your timer just ended, time to switch". */

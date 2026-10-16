@@ -33,7 +33,7 @@ import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
 import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
 
 const KEY = 'dilation-timer:v1';
-/** How long the "time to switch" bunny-ears cue stays up. */
+/** How long the "time to switch" ears cue stays up. */
 const CUE_MS = 3500;
 
 interface Persisted {
@@ -68,7 +68,7 @@ class Store {
 		return this.active ? switchWindowLeftMs(this.active, this.now, this.switchWindowMs) : 0;
 	}
 
-	/** True for a few seconds after a timer ends: ping + bunny ears, no tapping needed. */
+	/** True for a few seconds after a timer ends: ping + mascot ears, no tapping needed. */
 	get cueActive() {
 		return this.now < this.cueUntil;
 	}

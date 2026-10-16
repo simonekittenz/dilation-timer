@@ -43,6 +43,9 @@ export interface Messages {
 	done: string[];
 }
 
+/** Which little friend keeps you company. */
+export type MascotKind = 'bunny' | 'kitty';
+
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
@@ -50,6 +53,7 @@ export interface Settings {
 	switchWindowMinutes: number;
 	/** Alarm volume, 10 to 100. */
 	volume: number;
+	mascot: MascotKind;
 	dilators: Dilator[];
 	messages: Messages;
 	phases: Phase[];

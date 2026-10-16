@@ -16,7 +16,7 @@ export const DEFAULT_MESSAGES: Messages = {
 		'Another one done. Consistency is magic ✨',
 		'Go have some water and a snack, you earned it 🍓',
 		'Be gentle with yourself today 💖',
-		'The bunny is doing a happy hop for you 🐰'
+		'Your {pet} is doing a happy dance for you 🎉'
 	]
 };
 
@@ -31,10 +31,15 @@ function hash(seed: string): number {
 }
 
 /** Stable pick: the same seed always gives the same message, so it doesn't flicker on every tick. */
-export function pickMessage(list: string[], seed: string, name: string): string | null {
+export function pickMessage(
+	list: string[],
+	seed: string,
+	name: string,
+	pet = 'bunny'
+): string | null {
 	const options = list.map((m) => m.trim()).filter(Boolean);
 	if (options.length === 0) return null;
-	return options[hash(seed) % options.length].replaceAll('{name}', name);
+	return options[hash(seed) % options.length].replaceAll('{name}', name).replaceAll('{pet}', pet);
 }
 
 /** One message per line; blank lines are dropped. */

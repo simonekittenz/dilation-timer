@@ -41,4 +41,11 @@ describe('messages', () => {
 		const steps = resolveSteps(s.dilators, [{ dilatorId: 'd2', minutes: 5 }]);
 		expect(steps[0]).toMatchObject({ label: 'Dilator 2', nickname: 'Sunny' });
 	});
+
+	it('names whichever friend you picked', () => {
+		expect(pickMessage(['Your {pet} is proud'], 'z', 'Sunny', 'kitty')).toBe('Your kitty is proud');
+		expect(pickMessage(['Your {pet} is proud'], 'z', 'Sunny')).toBe('Your bunny is proud');
+		const doneMessages = DEFAULT_MESSAGES.done.join(' ');
+		expect(doneMessages).not.toMatch(/🐰|The bunny/);
+	});
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Bunny from './Bunny.svelte';
-	import BunnyEars from './BunnyEars.svelte';
+	import Mascot from './Mascot.svelte';
+	import MascotEars from './MascotEars.svelte';
 	import DilatorName from './DilatorName.svelte';
 	import Swatch from './Swatch.svelte';
 	import { formatClock } from './dates';
@@ -29,11 +29,12 @@
 	const bubble = $derived.by(() => {
 		const m = store.settings.messages;
 		const name = current.nickname || current.label;
+		const pet = store.settings.mascot;
 		if (s.phase === 'running') {
 			const minute = Math.floor((store.now - s.stepStartedAt) / 60_000);
-			return pickMessage(m.running, `${s.id}:${s.stepIndex}:${minute}`, name);
+			return pickMessage(m.running, `${s.id}:${s.stepIndex}:${minute}`, name, pet);
 		}
-		if (s.phase === 'finished') return pickMessage(m.done, `${s.id}:done`, name);
+		if (s.phase === 'finished') return pickMessage(m.done, `${s.id}:done`, name, pet);
 		return null;
 	});
 
@@ -42,7 +43,7 @@
 </script>
 
 {#if store.cueActive}
-	<BunnyEars />
+	<MascotEars />
 {/if}
 
 <section class="timer" class:alert={escalated}>
@@ -79,7 +80,7 @@
 				/>
 			</svg>
 			<div class="inside">
-				<Bunny size={64} />
+				<Mascot size={64} />
 				<p class="clock">{formatClock(left)}</p>
 				<p class="label">
 					{#if paused}Paused{:else}
@@ -126,7 +127,7 @@
 			</button>
 		</div>
 	{:else if s.phase === 'switch'}
-		<Bunny mood={escalated ? 'alert' : 'happy'} size={110} />
+		<Mascot mood={escalated ? 'alert' : 'happy'} size={110} />
 		<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
 		<p class="big swap">
 			Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
@@ -150,7 +151,7 @@
 		</button>
 		<p class="muted hint">The next timer starts when you press.</p>
 	{:else}
-		<Bunny mood="done" size={120} />
+		<Mascot mood="done" size={120} />
 		<p class="title">All done, you did it! 🎉</p>
 		<p class="big">Take the last one out 🌸</p>
 		{#if bubble}<p class="bubble">{bubble}</p>{/if}

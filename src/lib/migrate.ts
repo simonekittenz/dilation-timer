@@ -3,6 +3,7 @@ import { PALETTE } from './dilators';
 import type { Dilator, LogEntry, Phase, Settings, SlotId } from './types';
 
 const TIME = /^(\d{1,2}):\d{2}$/;
+const OLD_BUNNY_MESSAGE = 'The bunny is doing a happy hop for you 🐰';
 
 /** Older versions stored clock times ("08:00"); map them to parts of the day. */
 export function normalizeSlot(raw: unknown): SlotId | null {
@@ -58,13 +59,17 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 	});
 	const messages = {
 		running: saved.messages?.running ?? base.messages.running,
-		done: saved.messages?.done ?? base.messages.done
+		// the old default named the bunny; it now follows whichever friend you pick
+		done: (saved.messages?.done ?? base.messages.done).map((m) =>
+			m === OLD_BUNNY_MESSAGE ? base.messages.done.at(-1)! : m
+		)
 	};
+	const mascot = saved.mascot === 'kitty' ? 'kitty' : 'bunny';
 	const { leewayMinutes, ...rest } = saved as Partial<Settings> & { leewayMinutes?: number };
 	// "leeway" was the old name for the switch window; an untouched old default of 2 becomes 1.
 	const legacyWindow = leewayMinutes === 2 ? base.switchWindowMinutes : leewayMinutes;
 	const switchWindowMinutes = saved.switchWindowMinutes ?? legacyWindow ?? base.switchWindowMinutes;
-	return { ...base, ...rest, switchWindowMinutes, dilators, messages, phases };
+	return { ...base, ...rest, switchWindowMinutes, dilators, messages, mascot, phases };
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {
