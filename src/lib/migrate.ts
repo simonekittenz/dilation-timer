@@ -56,7 +56,8 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 			steps: migrateSteps(legacy.steps ?? [], dilators)
 		} as Phase;
 	});
-	return { ...base, ...saved, dilators, phases };
+	const messages = { ...base.messages, ...saved.messages };
+	return { ...base, ...saved, dilators, messages, phases };
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {

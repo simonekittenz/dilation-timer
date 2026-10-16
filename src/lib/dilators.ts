@@ -19,7 +19,7 @@ export const PALETTE = ['#ff9ccb', '#7fd6c2', '#8ec5ff', '#ffb870', '#c3e88d', '
 export const FALLBACK_COLOR = '#ff9ccb';
 
 export function dilatorLabel(d: Dilator): string {
-	return d.diameterMm ? `${d.name} · ${d.diameterMm} mm` : d.name;
+	return d.nickname ? `${d.name} (${d.nickname})` : d.name;
 }
 
 export function resolveSteps(dilators: Dilator[], steps: Step[]): SessionStep[] {
@@ -27,6 +27,7 @@ export function resolveSteps(dilators: Dilator[], steps: Step[]): SessionStep[] 
 		const d = dilators.find((x) => x.id === s.dilatorId);
 		return {
 			label: d?.name ?? 'Dilator',
+			nickname: d?.nickname || undefined,
 			minutes: s.minutes,
 			color: d?.color ?? FALLBACK_COLOR,
 			diameterMm: d?.diameterMm

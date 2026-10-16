@@ -1,5 +1,6 @@
 import { toDateString } from './dates';
 import { wihDilators } from './dilators';
+import { defaultMessages } from './messages';
 import type { Phase, Settings, SlotId, Step } from './types';
 
 const TWICE_DAILY: SlotId[] = ['morning', 'evening'];
@@ -58,6 +59,7 @@ export function defaultSettings(today = new Date()): Settings {
 		startDate: toDateString(today),
 		leewayMinutes: 2,
 		dilators: wihDilators(),
+		messages: defaultMessages(),
 		phases: wihPhases()
 	};
 }

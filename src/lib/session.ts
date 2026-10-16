@@ -22,6 +22,7 @@ export function startSession(
 		records: [
 			{
 				label: steps[0].label,
+				nickname: steps[0].nickname,
 				color: steps[0].color,
 				plannedMinutes: steps[0].minutes,
 				startedAt: now,
@@ -80,6 +81,7 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 			...closeCurrent(s, now),
 			{
 				label: next.label,
+				nickname: next.nickname,
 				color: next.color,
 				plannedMinutes: next.minutes,
 				startedAt: now,
@@ -99,6 +101,7 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 		finishedAt: now,
 		steps: records.map((r) => ({
 			label: r.label,
+			nickname: r.nickname,
 			color: r.color,
 			plannedMinutes: r.plannedMinutes,
 			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000)

@@ -5,6 +5,8 @@ export type SlotId = 'morning' | 'evening' | 'daily';
 export interface Dilator {
 	id: string;
 	name: string;
+	/** Optional pet name, shown next to the real one. */
+	nickname?: string;
 	/** CSS color, e.g. "#f2c94c". */
 	color: string;
 	diameterMm?: number;
@@ -19,6 +21,7 @@ export interface Step {
 /** A step resolved against the dilator list when a session starts. */
 export interface SessionStep {
 	label: string;
+	nickname?: string;
 	minutes: number;
 	color: string;
 	diameterMm?: number;
@@ -35,12 +38,19 @@ export interface Phase {
 	steps: Step[];
 }
 
+export interface Messages {
+	running: string[];
+	switch: string[];
+	done: string[];
+}
+
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
 	/** Calm grace period after a timer ends before the alarm escalates. */
 	leewayMinutes: number;
 	dilators: Dilator[];
+	messages: Messages;
 	phases: Phase[];
 }
 
@@ -48,6 +58,7 @@ export type SessionPhase = 'running' | 'switch' | 'finished';
 
 export interface StepRecord {
 	label: string;
+	nickname?: string;
 	color?: string;
 	plannedMinutes: number;
 	startedAt: number;
@@ -75,7 +86,13 @@ export interface LogEntry {
 	finishedAt: number;
 	/** Set when the slot was skipped instead of done. */
 	skipped?: boolean;
-	steps: { label: string; color?: string; plannedMinutes: number; actualSeconds: number }[];
+	steps: {
+		label: string;
+		nickname?: string;
+		color?: string;
+		plannedMinutes: number;
+		actualSeconds: number;
+	}[];
 }
 
 export type SlotStatus = 'done' | 'skipped' | 'overdue' | 'due' | 'upcoming';

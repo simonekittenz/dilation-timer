@@ -1,13 +1,28 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { wihPhases } from '$lib/defaults';
-	import { PALETTE, stepsInUse, wihDilators } from '$lib/dilators';
+	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
+	import { defaultMessages, parseMessages } from '$lib/messages';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Phase, Settings } from '$lib/types';
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
+	let messageText = $state({
+		running: store.settings.messages.running.join('\n'),
+		switch: store.settings.messages.switch.join('\n'),
+		done: store.settings.messages.done.join('\n')
+	});
 	const inUse = $derived(stepsInUse(draft));
+
+	function resetMessages() {
+		const m = defaultMessages();
+		messageText = {
+			running: m.running.join('\n'),
+			switch: m.switch.join('\n'),
+			done: m.done.join('\n')
+		};
+	}
 	const colorOf = (id: string) => draft.dilators.find((d) => d.id === id)?.color ?? '#ff9ccb';
 
 	function addDilator() {
@@ -33,9 +48,11 @@
 	}
 
 	function resetToWih() {
-		if (!confirm('Replace all dilators and phases with the WIH standard program?')) return;
+		if (!confirm('Replace all dilators, phases and messages with the WIH standard program?'))
+			return;
 		draft.dilators = wihDilators();
 		draft.phases = wihPhases();
+		resetMessages();
 	}
 
 	function save() {
@@ -48,12 +65,18 @@
 		const dilators = draft.dilators.map((d) => ({
 			...d,
 			name: d.name.trim() || 'Dilator',
+			nickname: d.nickname?.trim() || undefined,
 			diameterMm: d.diameterMm ? Number(d.diameterMm) : undefined
 		}));
 		store.updateSettings({
 			startDate: draft.startDate,
 			leewayMinutes: Math.max(0, Number(draft.leewayMinutes) || 0),
 			dilators,
+			messages: {
+				running: parseMessages(messageText.running),
+				switch: parseMessages(messageText.switch),
+				done: parseMessages(messageText.done)
+			},
 			phases
 		});
 		void goto('/');
@@ -100,9 +123,36 @@
 				title={inUse.has(d.id) ? 'Used in a phase' : 'Remove'}
 				aria-label="Remove {d.name}">✕</button
 			>
+			<input
+				class="nickname"
+				bind:value={d.nickname}
+				placeholder="Nickname (optional), e.g. Sunny"
+				aria-label="{d.name} nickname"
+			/>
 		</div>
 	{/each}
 	<button class="btn ghost small" onclick={addDilator}>+ Add dilator</button>
+</details>
+
+<details class="card phase">
+	<summary><strong>Encouragement 💌</strong></summary>
+	<p class="muted note">
+		One message per line. A random one pops up in a little bubble. Use <code>{'{name}'}</code>
+		to drop in the dilator's nickname (or name). Leave a box empty to turn those off.
+	</p>
+	<label class="stack">
+		While a timer runs (changes every minute)
+		<textarea rows="6" bind:value={messageText.running}></textarea>
+	</label>
+	<label class="stack">
+		When it's time to switch
+		<textarea rows="4" bind:value={messageText.switch}></textarea>
+	</label>
+	<label class="stack">
+		When a session is finished
+		<textarea rows="5" bind:value={messageText.done}></textarea>
+	</label>
+	<button class="btn ghost small" onclick={resetMessages}>Reset messages to defaults</button>
 </details>
 
 <p class="muted note">
@@ -163,7 +213,7 @@
 					<Swatch color={colorOf(step.dilatorId)} size={26} />
 					<select class="grow" bind:value={step.dilatorId} aria-label="Dilator">
 						{#each draft.dilators as d (d.id)}
-							<option value={d.id}>{d.name}</option>
+							<option value={d.id}>{dilatorLabel(d)}</option>
 						{/each}
 					</select>
 					<input type="number" min="1" class="num" bind:value={step.minutes} aria-label="Minutes" />
@@ -242,7 +292,23 @@
 		cursor: pointer;
 	}
 	.dilator {
-		margin-bottom: 0.6rem;
+		margin-bottom: 0.8rem;
+	}
+	.nickname {
+		flex-basis: 100%;
+	}
+	textarea {
+		font: inherit;
+		color: var(--ink);
+		background: var(--bg);
+		border: 2px solid var(--line);
+		border-radius: 14px;
+		padding: 0.6rem 0.8rem;
+		resize: vertical;
+		outline: none;
+	}
+	textarea:focus {
+		border-color: var(--accent);
 	}
 	.stack {
 		display: grid;

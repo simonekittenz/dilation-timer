@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Bunny from './Bunny.svelte';
+	import DilatorName from './DilatorName.svelte';
 	import Swatch from './Swatch.svelte';
+	import { pickMessage } from './messages';
 	import { formatClock } from './dates';
 	import { isLastStep, remainingMs, stepDurationMs } from './session';
 	import { store } from './store.svelte';
@@ -13,6 +15,21 @@
 	const current = $derived(s.steps[s.stepIndex]);
 	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
 	const nextLabel = $derived(next?.label ?? null);
+	const bubble = $derived.by(() => {
+		const m = store.settings.messages;
+		if (s.phase === 'running') {
+			const minute = Math.floor((store.now - s.stepStartedAt) / 60_000);
+			return pickMessage(
+				m.running,
+				`${s.id}:${s.stepIndex}:${minute}`,
+				current.nickname || current.label
+			);
+		}
+		if (s.phase === 'switch' && next) {
+			return pickMessage(m.switch, `${s.id}:${s.stepIndex}:switch`, next.nickname || next.label);
+		}
+		return pickMessage(m.done, `${s.id}:done`, current.nickname || current.label);
+	});
 	const overtime = $derived(Math.max(0, -left));
 	const escalated = $derived(store.escalated);
 
@@ -25,7 +42,7 @@
 		{#each s.steps as step, i (i)}
 			<li class:done={i < s.stepIndex} class:current={i === s.stepIndex}>
 				<Swatch color={step.color} size={16} />
-				{i < s.stepIndex ? '✓ ' : ''}{step.label}
+				{i < s.stepIndex ? '✓ ' : ''}<DilatorName label={step.label} nickname={step.nickname} />
 			</li>
 		{/each}
 	</ol>
@@ -47,12 +64,16 @@
 				<Bunny size={64} />
 				<p class="clock">{formatClock(left)}</p>
 				<p class="label">
-					{current.label}{current.diameterMm ? ` · ${current.diameterMm} mm` : ''}
+					<DilatorName label={current.label} nickname={current.nickname} />{current.diameterMm
+						? ` · ${current.diameterMm} mm`
+						: ''}
 				</p>
 			</div>
 		</div>
+		{#if bubble}<p class="bubble">{bubble}</p>{/if}
 		<p class="muted hint">
-			{#if next}Next up: {next.label} ♡{:else}Last one this session ✿{/if}
+			{#if next}Next up: <DilatorName label={next.label} nickname={next.nickname} /> ♡{:else}Last
+				one this session ✿{/if}
 		</p>
 		<button
 			class="btn ghost small"
@@ -66,13 +87,14 @@
 			<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
 			<p class="big swap">
 				Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
-				<strong>{nextLabel}</strong>
+				<strong><DilatorName label={nextLabel ?? ''} nickname={next?.nickname} /></strong>
 			</p>
 			{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
 		{:else}
 			<p class="title">{escalated ? 'Psst! All done!' : 'All done, you did it!'}</p>
 			<p class="big">Take the last one out 🌸</p>
 		{/if}
+		{#if bubble}<p class="bubble">{bubble}</p>{/if}
 		<p class="muted hint">
 			{#if escalated}
 				Overtime {formatClock(overtime)}
@@ -185,6 +207,16 @@
 	.label {
 		color: var(--muted);
 		font-weight: 700;
+	}
+	.bubble {
+		position: relative;
+		max-width: 90%;
+		padding: 0.6rem 1rem;
+		border-radius: 18px;
+		background: var(--accent-soft);
+		color: var(--ink);
+		font-weight: 700;
+		font-size: 0.95rem;
 	}
 	.title {
 		font-size: 1.2rem;

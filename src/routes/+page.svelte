@@ -2,6 +2,7 @@
 	import { dayNumber } from '$lib/dates';
 	import Schedule from '$lib/Schedule.svelte';
 	import { store } from '$lib/store.svelte';
+	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
 	import Timer from '$lib/Timer.svelte';
 	import { resolveSteps } from '$lib/dilators';
@@ -39,7 +40,10 @@
 		<h2>Today's routine 🎀</h2>
 		<ol class="steps">
 			{#each steps as st, i (i)}
-				<li><Swatch color={st.color} size={20} /> {st.label} · {st.minutes} min</li>
+				<li>
+					<Swatch color={st.color} size={20} />
+					<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
+				</li>
 			{/each}
 		</ol>
 		<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
 	import { SLOT_LABELS } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
@@ -39,7 +40,7 @@
 						{#each e.steps as st, i (i)}
 							<span
 								><Swatch color={st.color ?? '#ff9ccb'} size={14} />
-								{st.label}
+								<DilatorName label={st.label} nickname={st.nickname} />
 								{mins(st.actualSeconds)}</span
 							>
 						{/each}
