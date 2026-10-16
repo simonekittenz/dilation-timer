@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { wihPhases } from '$lib/defaults';
 	import type { Phase, Settings } from '$lib/types';
 	import { store } from '$lib/store.svelte';
 
@@ -21,6 +22,12 @@
 			steps: [{ label: 'Dilator 1', minutes: 10 }]
 		});
 		timesText[id] = '';
+	}
+
+	function resetToWih() {
+		if (!confirm('Replace all phases with the WIH standard program?')) return;
+		draft.phases = wihPhases();
+		timesText = Object.fromEntries(draft.phases.map((p) => [p.id, p.times.join(', ')]));
 	}
 
 	function parseTimes(text: string): string[] {
@@ -65,7 +72,18 @@
 </p>
 
 {#each draft.phases as phase, pi (phase.id)}
-	<section class="card phase">
+	<details class="card phase">
+		<summary>
+			<strong>{phase.label}</strong>
+			<span class="muted">
+				· day {phase.fromDay}{phase.toDay === null
+					? '+'
+					: phase.toDay === phase.fromDay
+						? ''
+						: `–${phase.toDay}`}
+				· {phase.steps.reduce((sum, st) => sum + st.minutes, 0)} min
+			</span>
+		</summary>
 		<div class="row">
 			<input class="grow" bind:value={phase.label} aria-label="Phase name" />
 			<button
@@ -116,11 +134,12 @@
 				+ Add dilator
 			</button>
 		</div>
-	</section>
+	</details>
 {/each}
 
 <div class="row actions">
 	<button class="btn ghost" onclick={addPhase}>+ Add phase</button>
+	<button class="btn ghost" onclick={resetToWih}>Reset to WIH program</button>
 	<button class="btn" onclick={save}>Save</button>
 </div>
 
@@ -146,10 +165,15 @@
 		margin: 0.8rem 0;
 		font-size: 0.9rem;
 	}
+	summary {
+		cursor: pointer;
+		list-style-position: inside;
+	}
 	.phase {
-		display: grid;
-		gap: 0.8rem;
 		margin-bottom: 0.8rem;
+	}
+	.phase > :not(summary) {
+		margin-top: 0.8rem;
 	}
 	.row {
 		display: flex;
