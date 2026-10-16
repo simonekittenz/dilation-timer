@@ -120,8 +120,8 @@
 	<span>
 		Day 1 (your surgery date)
 		<small class="muted">
-			The WIH program starts with 7 rest days, so dilation begins on day 8. Phases below count from
-			this date.
+			The WIH program starts with 7 packing days, so dilation typically begins on day 8. 
+			The dilation free period can be found and configured in the schedule below.
 		</small>
 	</span>
 	<input type="date" bind:value={draft.startDate} />
