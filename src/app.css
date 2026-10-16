@@ -1,0 +1,105 @@
+:root {
+	--bg: #f6efe9;
+	--surface: #fffaf6;
+	--ink: #2d2230;
+	--muted: #7d6c80;
+	--accent: #c76b8f;
+	--accent-ink: #fff;
+	--ok: #4f9a7a;
+	--warn: #d9822b;
+	--line: #e7d9d2;
+	--radius: 18px;
+	color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #1c1820;
+		--surface: #28222d;
+		--ink: #f3e9ee;
+		--muted: #a898ac;
+		--accent: #e08aab;
+		--accent-ink: #2a1520;
+		--ok: #6cc2a0;
+		--warn: #f0a04b;
+		--line: #3a3140;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family:
+		ui-rounded,
+		'SF Pro Rounded',
+		system-ui,
+		-apple-system,
+		sans-serif;
+	line-height: 1.4;
+	-webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+	margin: 0;
+}
+
+.btn {
+	appearance: none;
+	border: 0;
+	border-radius: 999px;
+	padding: 0.8rem 1.4rem;
+	background: var(--accent);
+	color: var(--accent-ink);
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.btn.ghost {
+	background: transparent;
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+
+.btn.small {
+	padding: 0.4rem 0.9rem;
+	font-size: 0.9rem;
+}
+
+.btn:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.card {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	padding: 1rem 1.1rem;
+}
+
+.muted {
+	color: var(--muted);
+}
+
+input,
+select {
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 0.45rem 0.6rem;
+}

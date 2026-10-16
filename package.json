@@ -1,0 +1,28 @@
+{
+	"name": "dilation-timer",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"description": "A small PWA that runs dilation session timers, knows the day's schedule, and nags you to press the button after you switch dilators.",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest run",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.57.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"prettier": "^3.9.10",
+		"prettier-plugin-svelte": "^4.1.1",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.4.6",
+		"typescript": "^6.0.2",
+		"vite": "^8.3.4",
+		"vitest": "^5.0.5"
+	}
+}
