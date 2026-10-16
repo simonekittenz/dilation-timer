@@ -5,6 +5,7 @@ import type { Settings } from './types';
 export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
+		leewayMinutes: 2,
 		phases: [
 			{
 				id: 'phase-1',

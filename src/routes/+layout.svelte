@@ -1,25 +1,27 @@
 <script lang="ts">
 	import '../app.css';
-	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { store } from '$lib/store.svelte';
 
 	let { children } = $props();
 
-	onMount(() => store.boot());
+	// Load saved data before any page script runs (pages copy settings into local drafts).
+	if (browser) store.boot();
 
 	const tabs = [
-		{ href: '/', label: 'Today' },
-		{ href: '/history', label: 'History' },
-		{ href: '/settings', label: 'Settings' }
+		{ href: '/', label: 'Today', icon: '🌸' },
+		{ href: '/history', label: 'History', icon: '📖' },
+		{ href: '/settings', label: 'Settings', icon: '🎀' }
 	];
 </script>
 
-<div class="shell" class:alerting={store.active && store.active.phase !== 'running'}>
+<div class="shell" class:alerting={store.escalated}>
 	<main>{@render children()}</main>
 	<nav>
 		{#each tabs as t (t.href)}
-			<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}>{t.label}</a
+			<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}
+				><span aria-hidden="true">{t.icon}</span> {t.label}</a
 			>
 		{/each}
 	</nav>
@@ -36,28 +38,34 @@
 		flex: 1;
 		width: min(560px, 100%);
 		margin: 0 auto;
-		padding: 1.2rem 1rem 6rem;
+		padding: 1.2rem 1rem 7rem;
 	}
 	nav {
 		position: fixed;
-		inset: auto 0 0 0;
+		left: 50%;
+		bottom: calc(0.8rem + env(safe-area-inset-bottom));
+		transform: translateX(-50%);
 		display: flex;
-		justify-content: center;
-		gap: 0.4rem;
-		padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom));
-		background: color-mix(in srgb, var(--bg) 85%, transparent);
-		backdrop-filter: blur(10px);
-		border-top: 1px solid var(--line);
+		gap: 0.2rem;
+		padding: 0.35rem;
+		background: var(--surface);
+		border: 2px solid var(--line);
+		border-radius: 999px;
+		box-shadow:
+			0 4px 0 var(--line),
+			var(--shadow);
 	}
 	nav a {
-		padding: 0.5rem 1.1rem;
+		padding: 0.5rem 0.9rem;
 		border-radius: 999px;
 		color: var(--muted);
 		text-decoration: none;
-		font-weight: 600;
+		font-weight: 800;
+		font-size: 0.95rem;
+		white-space: nowrap;
 	}
 	nav a[aria-current='page'] {
-		background: var(--accent);
+		background: linear-gradient(180deg, var(--accent), var(--accent-strong));
 		color: var(--accent-ink);
 	}
 	.alerting {
@@ -65,7 +73,13 @@
 	}
 	@keyframes flash {
 		50% {
-			background: color-mix(in srgb, var(--warn) 35%, var(--bg));
+			background: color-mix(in srgb, var(--warn) 22%, transparent);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.alerting {
+			animation: none;
+			background: color-mix(in srgb, var(--warn) 18%, transparent);
 		}
 	}
 </style>

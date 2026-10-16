@@ -1,7 +1,7 @@
 import { chime, keepAwake, startAlarm, stopAlarm, unlock } from './alarm';
 import { toDateString } from './dates';
 import { defaultSettings } from './defaults';
-import { confirmSwitch, finish, startSession, tick } from './session';
+import { confirmSwitch, finish, isEscalated, leewayLeftMs, startSession, tick } from './session';
 import { phaseForDate } from './schedule';
 import type { ActiveSession, LogEntry, Settings } from './types';
 
@@ -24,6 +24,19 @@ class Store {
 		return toDateString(new Date(this.now));
 	}
 
+	get leewayMs() {
+		return Math.max(0, this.settings.leewayMinutes) * 60_000;
+	}
+
+	/** True once the calm window after a finished timer has run out. */
+	get escalated() {
+		return !!this.active && isEscalated(this.active, this.now, this.leewayMs);
+	}
+
+	get leewayLeft() {
+		return this.active ? leewayLeftMs(this.active, this.now, this.leewayMs) : 0;
+	}
+
 	get todayPhase() {
 		return phaseForDate(this.settings, this.today);
 	}
@@ -34,7 +47,7 @@ class Store {
 			const raw = localStorage.getItem(KEY);
 			if (raw) {
 				const saved: Persisted = JSON.parse(raw);
-				this.settings = saved.settings;
+				this.settings = { ...defaultSettings(), ...saved.settings };
 				this.log = saved.log;
 				this.active = saved.active;
 			}
@@ -68,12 +81,12 @@ class Store {
 		}
 		const next = tick(s, this.now);
 		if (next !== s) {
-			if (next.warned && !s.warned) chime();
+			if ((next.warned && !s.warned) || next.phase !== s.phase) chime();
 			this.active = next;
 			this.save();
 		}
 		const cur = this.active!;
-		if (cur.phase === 'running') stopAlarm();
+		if (cur.phase === 'running' || !this.escalated) stopAlarm();
 		else
 			startAlarm(
 				cur.phase === 'finished'

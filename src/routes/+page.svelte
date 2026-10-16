@@ -22,7 +22,7 @@
 </script>
 
 <header>
-	<h1>{dateLabel}</h1>
+	<h1>{dateLabel} <span class="sparkle">✿</span></h1>
 	<p class="muted">
 		{#if day < 1}
 			Starts in {1 - day} day{1 - day === 1 ? '' : 's'}
@@ -38,13 +38,13 @@
 	<Timer />
 {:else if phase}
 	<section class="routine card">
-		<h2>Today's routine</h2>
+		<h2>Today's routine 🎀</h2>
 		<p class="muted">{phase.steps.map((s) => `${s.label} · ${s.minutes} min`).join('  →  ')}</p>
 		<button class="btn" onclick={() => store.start(nextSlot?.time ?? null)}>
 			{nextSlot ? `Start ${nextSlot.time} session` : 'Start an extra session'}
 		</button>
 	</section>
-	<h2 class="sub">Schedule</h2>
+	<h2 class="sub">Schedule ♡</h2>
 	<Schedule />
 {:else}
 	<p class="card muted">
@@ -57,7 +57,12 @@
 		margin-bottom: 1.2rem;
 	}
 	h1 {
-		font-size: 1.6rem;
+		font-size: 1.7rem;
+		font-weight: 900;
+		color: var(--accent-strong);
+	}
+	.sparkle {
+		font-size: 1.1rem;
 	}
 	.routine {
 		display: grid;
@@ -67,6 +72,7 @@
 	}
 	.sub {
 		font-size: 1rem;
+		font-weight: 800;
 		color: var(--muted);
 		margin-bottom: 0.6rem;
 	}

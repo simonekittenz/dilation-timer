@@ -17,7 +17,8 @@
 			<li class="card {slot.status}" class:next={slot === firstOpen}>
 				<span class="time">{slot.time}</span>
 				<span class="state">
-					{#if slot.status === 'done'}Done ✓{:else if slot.status === 'overdue'}Overdue{:else}Later{/if}
+					{#if slot.status === 'done'}Done ✓{:else if slot.status === 'overdue'}Overdue{:else}Later
+						♡{/if}
 				</span>
 				{#if slot.status !== 'done'}
 					<button

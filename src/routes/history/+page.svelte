@@ -14,10 +14,10 @@
 	const mins = (sec: number) => `${Math.round(sec / 60)} min`;
 </script>
 
-<h1>History</h1>
+<h1>History 📖</h1>
 
 {#if groups.length === 0}
-	<p class="card muted">No sessions logged yet.</p>
+	<p class="card muted">No sessions logged yet. Your first one will show up here ✿</p>
 {/if}
 
 {#each groups as [date, entries] (date)}
@@ -44,6 +44,8 @@
 <style>
 	h1 {
 		margin-bottom: 1rem;
+		font-weight: 900;
+		color: var(--accent-strong);
 	}
 	h2 {
 		font-size: 1rem;

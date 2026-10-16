@@ -34,6 +34,15 @@ export function remainingMs(s: ActiveSession, now: number): number {
 	return s.stepStartedAt + stepDurationMs(s) - now;
 }
 
+/** Time left in the calm window after the timer elapsed (<= 0 once the alarm should escalate). */
+export function leewayLeftMs(s: ActiveSession, now: number, leewayMs: number): number {
+	return leewayMs + remainingMs(s, now);
+}
+
+export function isEscalated(s: ActiveSession, now: number, leewayMs: number): boolean {
+	return s.phase !== 'running' && leewayLeftMs(s, now, leewayMs) <= 0;
+}
+
 export function isLastStep(s: ActiveSession): boolean {
 	return s.stepIndex === s.steps.length - 1;
 }

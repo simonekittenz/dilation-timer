@@ -36,16 +36,28 @@
 			times: parseTimes(timesText[p.id] ?? ''),
 			steps: p.steps.filter((s) => s.minutes > 0)
 		}));
-		store.updateSettings({ startDate: draft.startDate, phases });
+		store.updateSettings({
+			startDate: draft.startDate,
+			leewayMinutes: Math.max(0, Number(draft.leewayMinutes) || 0),
+			phases
+		});
 		void goto('/');
 	}
 </script>
 
-<h1>Settings</h1>
+<h1>Settings 🎀</h1>
 
 <label class="card field">
 	<span>Day 1 is</span>
 	<input type="date" bind:value={draft.startDate} />
+</label>
+
+<label class="card field leeway">
+	<span>
+		Gentle window
+		<small class="muted">Minutes of calm before the alarm gets loud</small>
+	</span>
+	<input type="number" min="0" step="0.5" class="num" bind:value={draft.leewayMinutes} />
 </label>
 
 <p class="muted note">
@@ -115,6 +127,14 @@
 <style>
 	h1 {
 		margin-bottom: 1rem;
+		font-weight: 900;
+		color: var(--accent-strong);
+	}
+	.leeway {
+		margin-top: 0.6rem;
+	}
+	.leeway small {
+		display: block;
 	}
 	.field {
 		display: flex;

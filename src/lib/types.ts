@@ -17,6 +17,8 @@ export interface Phase {
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
+	/** Calm grace period after a timer ends before the alarm escalates. */
+	leewayMinutes: number;
 	phases: Phase[];
 }
 
