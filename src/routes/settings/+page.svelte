@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { testSound } from '$lib/alarm';
+	import { previewSound, setVolume, testSound } from '$lib/alarm';
 	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
@@ -137,15 +137,31 @@
 	<input type="number" min="0" step="0.5" class="num" bind:value={draft.switchWindowMinutes} />
 </label>
 
-<section class="card field sound-test">
-	<span>
-		Alarm sound
-		<small class="muted">
-			Check it rings on this phone. If you hear nothing, turn the volume up. On iPhone it needs iOS
-			17 or newer to ring with the silent switch on.
-		</small>
-	</span>
-	<button class="btn small" onclick={testSound}>🔔 Test</button>
+<section class="card sound-test">
+	<div class="sound-head">
+		<span>Alarm sound</span>
+		<button class="btn small" onclick={testSound}>🔔 Test</button>
+	</div>
+	<label class="volume">
+		<span class="muted">Volume</span>
+		<input
+			type="range"
+			min="10"
+			max="100"
+			step="5"
+			bind:value={draft.volume}
+			onchange={() => {
+				setVolume(Number(draft.volume) / 100);
+				previewSound();
+			}}
+			aria-label="Alarm volume"
+		/>
+		<strong>{draft.volume}%</strong>
+	</label>
+	<small class="muted">
+		Still too quiet? On iPhone, tap Test and use the volume buttons while it plays, because the
+		alarm uses your media volume. It needs iOS 17 or newer to ring with the silent switch on.
+	</small>
 </section>
 
 <details class="card phase">
@@ -337,7 +353,33 @@
 		color: var(--accent-strong);
 	}
 	.sound-test {
+		display: grid;
+		gap: 0.6rem;
 		margin-top: 0.6rem;
+	}
+	.sound-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		font-weight: 800;
+	}
+	.volume {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+	}
+	.volume input[type='range'] {
+		flex: 1;
+		padding: 0;
+		accent-color: var(--accent-strong);
+	}
+	.volume strong {
+		min-width: 3.2rem;
+		text-align: right;
+	}
+	.sound-test small {
+		font-size: 0.8rem;
 	}
 	.switch-window {
 		margin-top: 0.6rem;

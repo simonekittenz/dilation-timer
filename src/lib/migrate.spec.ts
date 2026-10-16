@@ -49,6 +49,11 @@ describe('migrate', () => {
 		expect(already.switchWindowMinutes).toBe(3);
 	});
 
+	it('gives older saves full volume, and keeps a chosen one', () => {
+		expect(migrateSettings({ startDate: '2026-01-01' }).volume).toBe(100);
+		expect(migrateSettings({ volume: 60 }).volume).toBe(60);
+	});
+
 	it('converts old log slots', () => {
 		const log = [{ id: '1', slot: '08:00' }] as unknown as LogEntry[];
 		expect(migrateLog(log)[0].slot).toBe('morning');

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const starts: { freq: number; t: number }[] = [];
+const gains: { gain: { value: number } }[] = [];
 
 class FakeAudioContext {
 	state = 'running';
@@ -13,7 +14,23 @@ class FakeAudioContext {
 			linearRampToValueAtTime() {},
 			exponentialRampToValueAtTime() {}
 		};
-		return { gain: param, connect: (n: unknown) => n };
+		const node = { gain: { ...param, value: 1 }, connect: (n: unknown) => n };
+		gains.push(node);
+		return node;
+	}
+	createBiquadFilter() {
+		return { type: '', frequency: { value: 0 }, connect: (n: unknown) => n };
+	}
+	createDynamicsCompressor() {
+		const p = () => ({ value: 0 });
+		return {
+			threshold: p(),
+			knee: p(),
+			ratio: p(),
+			attack: p(),
+			release: p(),
+			connect: (n: unknown) => n
+		};
 	}
 	createOscillator() {
 		return {
@@ -31,6 +48,7 @@ class FakeAudioContext {
 describe('switch ping', () => {
 	beforeEach(() => {
 		starts.length = 0;
+		gains.length = 0;
 		vi.resetModules();
 		vi.stubGlobal('window', {});
 		vi.stubGlobal('AudioContext', FakeAudioContext);
@@ -62,6 +80,7 @@ describe('switch ping', () => {
 describe('finish celebration', () => {
 	beforeEach(() => {
 		starts.length = 0;
+		gains.length = 0;
 		vi.resetModules();
 		vi.stubGlobal('window', {});
 		vi.stubGlobal('AudioContext', FakeAudioContext);
@@ -72,11 +91,11 @@ describe('finish celebration', () => {
 		const { unlock, celebrate, FANFARE_GAP } = await import('./alarm');
 		unlock();
 		celebrate();
-		const firstNote = starts.filter((s) => s.freq === 523).map((s) => s.t);
+		const firstNote = starts.filter((s) => s.freq === 1047).map((s) => s.t);
 		expect(firstNote).toHaveLength(3);
 		expect(firstNote[1] - firstNote[0]).toBeCloseTo(FANFARE_GAP);
 		expect(firstNote[2] - firstNote[1]).toBeCloseTo(FANFARE_GAP);
-		expect(starts.filter((s) => s.freq === 1319)).toHaveLength(3);
+		expect(starts.filter((s) => s.freq === 2637)).toHaveLength(3);
 	});
 
 	it('keeps the "all done" screen up until the last fanfare has finished', async () => {
@@ -86,5 +105,36 @@ describe('finish celebration', () => {
 		const lastNoteStart = Math.max(...starts.map((s) => s.t)) - 10; // context time started at 10
 		// the final note lasts at most ~0.6s
 		expect(CELEBRATE_MS / 1000).toBeGreaterThan(lastNoteStart + 0.6);
+	});
+});
+
+describe('volume', () => {
+	beforeEach(() => {
+		starts.length = 0;
+		gains.length = 0;
+		vi.resetModules();
+		vi.stubGlobal('window', {});
+		vi.stubGlobal('AudioContext', FakeAudioContext);
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('scales everything through one master volume, kept between 0 and 1', async () => {
+		const { unlock, setVolume } = await import('./alarm');
+		unlock();
+		const master = gains[0]; // the first gain node is the master volume
+		expect(master.gain.value).toBe(1);
+		setVolume(0.4);
+		expect(master.gain.value).toBeCloseTo(0.4);
+		setVolume(5);
+		expect(master.gain.value).toBe(1);
+		setVolume(-1);
+		expect(master.gain.value).toBe(0);
+	});
+
+	it('remembers a volume chosen before the first tap unlocked sound', async () => {
+		const { unlock, setVolume } = await import('./alarm');
+		setVolume(0.5);
+		unlock();
+		expect(gains[0].gain.value).toBe(0.5);
 	});
 });

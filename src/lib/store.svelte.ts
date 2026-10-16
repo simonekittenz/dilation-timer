@@ -4,6 +4,7 @@ import {
 	chime,
 	keepAwake,
 	ping,
+	setVolume,
 	soundReady,
 	startAlarm,
 	stopAlarm,
@@ -91,6 +92,7 @@ class Store {
 			if (raw) {
 				const saved: Persisted = JSON.parse(raw);
 				this.settings = migrateSettings(saved.settings);
+				setVolume(this.settings.volume / 100);
 				this.log = migrateLog(saved.log ?? []);
 				this.active = saved.active
 					? {
@@ -232,6 +234,7 @@ class Store {
 
 	updateSettings(settings: Settings) {
 		this.settings = settings;
+		setVolume(settings.volume / 100);
 		this.save();
 	}
 

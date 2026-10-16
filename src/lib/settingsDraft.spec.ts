@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings } from './defaults';
-import { buildSettings, messagesToText } from './settingsDraft';
+import { buildSettings, clampVolume, messagesToText } from './settingsDraft';
 
 const fresh = () => {
 	const s = defaultSettings(new Date(2026, 0, 1));
@@ -55,5 +55,18 @@ describe('buildSettings', () => {
 		const { draft, text } = fresh();
 		(draft.phases[1] as { toDay: number | null | string }).toDay = '';
 		expect(buildSettings(draft, text)!.phases[1].toDay).toBeNull();
+	});
+
+	it('keeps the volume between 10 and 100, and full when blank', () => {
+		expect(clampVolume(70)).toBe(70);
+		expect(clampVolume(3)).toBe(10);
+		expect(clampVolume(250)).toBe(100);
+		expect(clampVolume('55')).toBe(55);
+		expect(clampVolume(null)).toBe(100);
+		expect(clampVolume('')).toBe(100);
+		expect(clampVolume(NaN)).toBe(100);
+		const { draft, text } = fresh();
+		draft.volume = 40;
+		expect(buildSettings(draft, text)!.volume).toBe(40);
 	});
 });

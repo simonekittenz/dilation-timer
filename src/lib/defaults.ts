@@ -77,6 +77,7 @@ export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
 		switchWindowMinutes: 1,
+		volume: 100,
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

@@ -48,6 +48,8 @@ export interface Settings {
 	startDate: string;
 	/** How long you get to switch dilators after a timer ends before the alarm escalates. */
 	switchWindowMinutes: number;
+	/** Alarm volume, 10 to 100. */
+	volume: number;
 	dilators: Dilator[];
 	messages: Messages;
 	phases: Phase[];
