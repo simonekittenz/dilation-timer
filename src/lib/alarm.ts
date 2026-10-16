@@ -1,6 +1,12 @@
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
 
 let ctx: AudioContext | null = null;
+/**
+ * Pitches in Hz. They sit in the middle of the range on purpose: a phone speaker still carries
+ * the square wave's overtones, so low notes stay audible without being shrill.
+ */
+export const NOTES = { C5: 523, E5: 659, G5: 784, C6: 1047 };
+
 /** Everything plays into `bus`: lowpass -> limiter -> master volume -> speakers. */
 let bus: AudioNode | null = null;
 let master: GainNode | null = null;
@@ -41,11 +47,12 @@ export function unlock() {
 }
 
 function buildGraph(c: AudioContext) {
-	// Phone speakers are weak, so notes are loud sustained squares; the lowpass keeps them
-	// from sounding harsh and the limiter stops overlapping notes from distorting.
+	// Notes are sustained square waves for the old-school feel. The lowpass rounds off their
+	// sharp top end, and the limiter stops overlapping notes from distorting.
 	const lowpass = c.createBiquadFilter();
 	lowpass.type = 'lowpass';
-	lowpass.frequency.value = 4000;
+	lowpass.frequency.value = 2200;
+	lowpass.Q.value = 0.5;
 	const limiter = c.createDynamicsCompressor();
 	limiter.threshold.value = -8;
 	limiter.knee.value = 0;
@@ -78,9 +85,9 @@ function beep(freq: number, start: number, length: number, gain: number) {
 	const amp = ctx.createGain();
 	osc.type = 'square';
 	osc.frequency.value = freq;
-	const release = Math.min(0.08, length / 2);
+	const release = Math.min(0.1, length / 2);
 	amp.gain.setValueAtTime(0, start);
-	amp.gain.linearRampToValueAtTime(gain, start + 0.008);
+	amp.gain.linearRampToValueAtTime(gain, start + 0.015);
 	amp.gain.setValueAtTime(gain, start + length - release);
 	amp.gain.linearRampToValueAtTime(0, start + length);
 	osc.connect(amp).connect(bus);
@@ -97,7 +104,7 @@ function ready(): boolean {
 /** Single clear note, e.g. "10 seconds left". */
 export function chime() {
 	if (!ready()) return;
-	beep(880, ctx!.currentTime, 0.4, 0.6);
+	beep(NOTES.E5, ctx!.currentTime, 0.4, 0.6);
 	navigator.vibrate?.(80);
 }
 
@@ -110,8 +117,8 @@ export function ping(times = 3) {
 	const t = ctx!.currentTime;
 	for (let i = 0; i < times; i++) {
 		const at = t + i * PING_GAP;
-		beep(988, at, 0.18, 0.9);
-		beep(1319, at + 0.16, 0.3, 0.9);
+		beep(NOTES.G5, at, 0.18, 0.9);
+		beep(NOTES.C6, at + 0.16, 0.3, 0.9);
 	}
 	// buzz-buzz, pause, buzz-buzz, ... in step with the sound
 	const buzz = Array.from({ length: times }, () => [120, 60, 120, PING_GAP * 1000 - 300]).flat();
@@ -121,9 +128,10 @@ export function ping(times = 3) {
 function arpeggio() {
 	if (!ready()) return;
 	const t = ctx!.currentTime;
-	beep(1047, t, 0.25, 0.9);
-	beep(1319, t + 0.28, 0.25, 0.9);
-	beep(1568, t + 0.56, 0.4, 0.9);
+	beep(NOTES.C5, t, 0.25, 0.9);
+	beep(NOTES.E5, t + 0.28, 0.25, 0.9);
+	beep(NOTES.G5, t + 0.56, 0.25, 0.9);
+	beep(NOTES.C6, t + 0.84, 0.5, 0.9);
 	navigator.vibrate?.([200, 100, 200, 100, 300]);
 }
 
@@ -143,8 +151,12 @@ export function celebrate(times = CELEBRATE_TIMES) {
 	const t0 = ctx!.currentTime;
 	for (let i = 0; i < times; i++) {
 		const t = t0 + i * FANFARE_GAP;
-		[1047, 1319, 1568, 2093].forEach((f, k) => beep(f, t + k * 0.18, k === 3 ? 0.5 : 0.25, 0.9));
-		[1568, 2093, 2637].forEach((f, k) => beep(f, t + 1.0 + k * 0.2, k === 2 ? 0.6 : 0.3, 0.9));
+		[NOTES.C5, NOTES.E5, NOTES.G5, NOTES.C6].forEach((f, k) =>
+			beep(f, t + k * 0.18, k === 3 ? 0.5 : 0.25, 0.9)
+		);
+		[NOTES.E5, NOTES.G5, NOTES.C6].forEach((f, k) =>
+			beep(f, t + 1.0 + k * 0.2, k === 2 ? 0.7 : 0.3, 0.9)
+		);
 	}
 	const unit = [150, 80, 150, 80, 400, FANFARE_GAP * 1000 - 860];
 	navigator.vibrate?.(

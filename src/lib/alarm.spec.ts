@@ -19,7 +19,7 @@ class FakeAudioContext {
 		return node;
 	}
 	createBiquadFilter() {
-		return { type: '', frequency: { value: 0 }, connect: (n: unknown) => n };
+		return { type: '', frequency: { value: 0 }, Q: { value: 0 }, connect: (n: unknown) => n };
 	}
 	createDynamicsCompressor() {
 		const p = () => ({ value: 0 });
@@ -56,11 +56,11 @@ describe('switch ping', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('plays the two-note ping three times, evenly spaced', async () => {
-		const { unlock, ping, PING_GAP } = await import('./alarm');
+		const { unlock, ping, PING_GAP, NOTES } = await import('./alarm');
 		unlock();
 		ping();
-		const lows = starts.filter((s) => s.freq === 988).map((s) => s.t);
-		const highs = starts.filter((s) => s.freq === 1319).map((s) => s.t);
+		const lows = starts.filter((s) => s.freq === NOTES.G5).map((s) => s.t);
+		const highs = starts.filter((s) => s.freq === NOTES.C6).map((s) => s.t);
 		expect(lows).toHaveLength(3);
 		expect(highs).toHaveLength(3);
 		expect(lows[1] - lows[0]).toBeCloseTo(PING_GAP);
@@ -88,14 +88,14 @@ describe('finish celebration', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('plays the fanfare three times, evenly spaced', async () => {
-		const { unlock, celebrate, FANFARE_GAP } = await import('./alarm');
+		const { unlock, celebrate, FANFARE_GAP, NOTES } = await import('./alarm');
 		unlock();
 		celebrate();
-		const firstNote = starts.filter((s) => s.freq === 1047).map((s) => s.t);
+		const firstNote = starts.filter((s) => s.freq === NOTES.C5).map((s) => s.t);
 		expect(firstNote).toHaveLength(3);
 		expect(firstNote[1] - firstNote[0]).toBeCloseTo(FANFARE_GAP);
 		expect(firstNote[2] - firstNote[1]).toBeCloseTo(FANFARE_GAP);
-		expect(starts.filter((s) => s.freq === 2637)).toHaveLength(3);
+		expect(starts).toHaveLength(3 * 7); // 7 notes per fanfare
 	});
 
 	it('keeps the "all done" screen up until the last fanfare has finished', async () => {
@@ -136,5 +136,13 @@ describe('volume', () => {
 		setVolume(0.5);
 		unlock();
 		expect(gains[0].gain.value).toBe(0.5);
+	});
+
+	it('stays out of the shrill range', async () => {
+		const { NOTES, unlock, celebrate, ping } = await import('./alarm');
+		unlock();
+		celebrate();
+		ping();
+		expect(Math.max(...starts.map((s) => s.freq))).toBeLessThanOrEqual(NOTES.C6);
 	});
 });
