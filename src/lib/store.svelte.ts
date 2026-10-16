@@ -1,4 +1,5 @@
 import {
+	CELEBRATE_MS,
 	celebrate,
 	chime,
 	keepAwake,
@@ -33,8 +34,6 @@ import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
 const KEY = 'dilation-timer:v1';
 /** How long the "time to switch" bunny-ears cue stays up. */
 const CUE_MS = 3500;
-/** How long the "all done" celebration stays up before the session logs itself. */
-const CELEBRATE_MS = 6000;
 
 interface Persisted {
 	settings: Settings;

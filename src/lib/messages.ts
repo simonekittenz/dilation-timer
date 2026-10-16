@@ -3,7 +3,7 @@ import type { Messages } from './types';
 export const DEFAULT_MESSAGES: Messages = {
 	running: [
 		"You're doing so well ♡",
-		'Soft shoulders, soft jaw, soft hips 🌸',
+		'As the nurses say ""',
 		'Every session is a little act of self-care.',
 		'Look at you, showing up for yourself!',
 		'Take it slow. There is no rush.',

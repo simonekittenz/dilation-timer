@@ -67,13 +67,21 @@ export function chime() {
 	navigator.vibrate?.(80);
 }
 
-/** Short bright two-note ping: "your timer just ended". */
-export function ping() {
+/** Seconds between repeats of the switch ping; three fit inside the bunny-ears cue. */
+export const PING_GAP = 1.1;
+
+/** Short bright two-note ping, repeated: "your timer just ended, time to switch". */
+export function ping(times = 3) {
 	if (!ready()) return;
 	const t = ctx!.currentTime;
-	beep(988, t, 0.18, 0.6);
-	beep(1319, t + 0.16, 0.3, 0.6);
-	navigator.vibrate?.([120, 60, 120]);
+	for (let i = 0; i < times; i++) {
+		const at = t + i * PING_GAP;
+		beep(988, at, 0.18, 0.6);
+		beep(1319, at + 0.16, 0.3, 0.6);
+	}
+	// buzz-buzz, pause, buzz-buzz, ... in step with the sound
+	const buzz = Array.from({ length: times }, () => [120, 60, 120, PING_GAP * 1000 - 300]).flat();
+	navigator.vibrate?.(buzz.slice(0, -1));
 }
 
 function arpeggio() {
@@ -85,20 +93,38 @@ function arpeggio() {
 	navigator.vibrate?.([200, 100, 200, 100, 300]);
 }
 
-/** A few seconds of happy fanfare for the end of a session. */
-export function celebrate() {
+/** One fanfare is about 2s long; the gap leaves a beat of silence before it repeats. */
+const FANFARE_LENGTH = 2.0;
+export const FANFARE_GAP = 2.3;
+export const CELEBRATE_TIMES = 3;
+
+/** How long the "all done" screen stays up: the whole fanfare plus a moment to enjoy it. */
+export const CELEBRATE_MS = Math.round(
+	((CELEBRATE_TIMES - 1) * FANFARE_GAP + FANFARE_LENGTH + 1) * 1000
+);
+
+/** Happy fanfare for the end of a session, played three times. */
+export function celebrate(times = CELEBRATE_TIMES) {
 	if (!ready()) return;
-	const t = ctx!.currentTime;
-	[523, 659, 784, 1047].forEach((f, i) => beep(f, t + i * 0.18, i === 3 ? 0.7 : 0.25, 0.7));
-	[784, 1047, 1319].forEach((f, i) => beep(f, t + 1.5 + i * 0.2, i === 2 ? 1.2 : 0.3, 0.7));
-	navigator.vibrate?.([150, 80, 150, 80, 400]);
+	const t0 = ctx!.currentTime;
+	for (let i = 0; i < times; i++) {
+		const t = t0 + i * FANFARE_GAP;
+		[523, 659, 784, 1047].forEach((f, k) => beep(f, t + k * 0.18, k === 3 ? 0.5 : 0.25, 0.7));
+		[784, 1047, 1319].forEach((f, k) => beep(f, t + 1.0 + k * 0.2, k === 2 ? 0.6 : 0.3, 0.7));
+	}
+	const unit = [150, 80, 150, 80, 400, FANFARE_GAP * 1000 - 860];
+	navigator.vibrate?.(
+		Array.from({ length: times }, () => unit)
+			.flat()
+			.slice(0, -1)
+	);
 }
 
 /** For the Settings "Test sound" button. */
 export function testSound() {
 	unlock();
 	ping();
-	setTimeout(arpeggio, 700);
+	setTimeout(arpeggio, 3 * PING_GAP * 1000 + 300);
 }
 
 /** Repeats until stopAlarm(). Idempotent. */
