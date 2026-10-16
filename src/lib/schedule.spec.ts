@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { dayNumber } from './dates';
 import { WIH_PHASES, defaultSettings } from './defaults';
 import { resolveSteps } from './dilators';
-import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
+import {
+	daysUntilDilation,
+	isRestPhase,
+	nextOpenSlot,
+	phaseForDate,
+	slotsForDate
+} from './schedule';
 import type { LogEntry } from './types';
 
 const settings = defaultSettings(new Date(2026, 0, 1));
@@ -16,12 +22,30 @@ describe('schedule', () => {
 	});
 
 	it('picks the phase for a date', () => {
-		expect(phaseForDate(settings, '2026-01-01')?.id).toBe('wih-week-1-day-1');
-		expect(phaseForDate(settings, '2026-01-07')?.id).toBe('wih-week-1-day-4-7');
-		expect(phaseForDate(settings, '2026-01-08')?.id).toBe('wih-week-2');
-		expect(phaseForDate(settings, '2026-03-11')?.id).toBe('wih-week-10');
-		expect(phaseForDate(settings, '2026-03-12')?.id).toBe('wih-week-11-52');
+		expect(phaseForDate(settings, '2026-01-01')?.id).toBe('wih-week-0');
+		expect(phaseForDate(settings, '2026-01-07')?.id).toBe('wih-week-0');
+		expect(phaseForDate(settings, '2026-01-08')?.id).toBe('wih-week-1-day-1');
+		expect(phaseForDate(settings, '2026-01-14')?.id).toBe('wih-week-1-day-4-7');
+		expect(phaseForDate(settings, '2026-01-15')?.id).toBe('wih-week-2');
+		expect(phaseForDate(settings, '2026-03-18')?.id).toBe('wih-week-10');
+		expect(phaseForDate(settings, '2026-03-19')?.id).toBe('wih-week-11-52');
 		expect(phaseForDate(settings, '2025-12-31')).toBeUndefined();
+	});
+
+	it('starts with a rest week where nothing is scheduled', () => {
+		const rest = WIH_PHASES[0];
+		expect(rest.fromDay).toBe(1);
+		expect(rest.toDay).toBe(7);
+		expect(isRestPhase(rest)).toBe(true);
+		expect(slotsForDate(settings, '2026-01-03', '10:00', [])).toEqual([]);
+		expect(WIH_PHASES.filter(isRestPhase).map((p) => p.id)).toEqual(['wih-week-0']);
+	});
+
+	it('counts the days until dilation starts', () => {
+		expect(daysUntilDilation(settings.phases, 1)).toBe(7);
+		expect(daysUntilDilation(settings.phases, 7)).toBe(1);
+		expect(daysUntilDilation(settings.phases, 8)).toBe(1);
+		expect(daysUntilDilation(settings.phases, 800)).toBeNull();
 	});
 
 	it('transcribes the WIH program without gaps or overlaps', () => {
@@ -55,7 +79,7 @@ describe('schedule', () => {
 	});
 
 	it('only calls the morning overdue once the morning is over', () => {
-		const at = (t: string) => slotsForDate(settings, '2026-01-09', t, []).map((x) => x.status);
+		const at = (t: string) => slotsForDate(settings, '2026-01-15', t, []).map((x) => x.status);
 		expect(at('09:00')).toEqual(['due', 'upcoming']);
 		expect(at('13:00')).toEqual(['overdue', 'upcoming']);
 		expect(at('18:00')).toEqual(['overdue', 'due']);
@@ -63,23 +87,23 @@ describe('schedule', () => {
 	});
 
 	it('never marks the evening or a daily session overdue', () => {
-		const daily = slotsForDate(settings, '2026-01-02', '23:00', []);
+		const daily = slotsForDate(settings, '2026-01-09', '23:00', []);
 		expect(daily.map((x) => x.status)).toEqual(['due']);
 	});
 
 	it('tracks done and skipped slots', () => {
 		const entry = (slot: 'morning' | 'evening', skipped = false): LogEntry => ({
 			id: slot,
-			date: '2026-01-09',
+			date: '2026-01-15',
 			slot,
 			startedAt: 0,
 			finishedAt: 1,
 			skipped,
 			steps: []
 		});
-		const slots = slotsForDate(settings, '2026-01-09', '13:00', [entry('morning', true)]);
+		const slots = slotsForDate(settings, '2026-01-15', '13:00', [entry('morning', true)]);
 		expect(slots.map((s) => s.status)).toEqual(['skipped', 'upcoming']);
-		const both = slotsForDate(settings, '2026-01-09', '21:00', [
+		const both = slotsForDate(settings, '2026-01-15', '21:00', [
 			entry('morning'),
 			entry('evening')
 		]);

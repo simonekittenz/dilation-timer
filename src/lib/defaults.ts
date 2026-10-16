@@ -19,17 +19,31 @@ function phase(
 	return { id, label, fromDay, toDay, slots, steps };
 }
 
-/** A regular week N covers days 7(N-1)+1 .. 7N. */
+/** Day 1 is the surgery date; dilation only starts after this many rest days. */
+const REST_DAYS = 7;
+
+/** A regular week N (N >= 2) starts 7 days after week N-1; week 1 starts on day REST_DAYS + 1. */
 function week(n: number, steps: Step[]): Phase {
-	return phase(`wih-week-${n}`, `Week ${n}`, 7 * (n - 1) + 1, 7 * n, TWICE_DAILY, steps);
+	const from = REST_DAYS + 7 * (n - 1) + 1;
+	return phase(`wih-week-${n}`, `Week ${n}`, from, from + 6, TWICE_DAILY, steps);
 }
 
 /** WIH International Hospital — vaginal dilation standard program (dilators 0–4). */
 export const WIH_PHASES: Phase[] = [
-	phase('wih-week-1-day-1', 'Week 1 · Day 1 (off packing)', 1, 1, ONCE_DAILY, [d(0, 30)]),
-	phase('wih-week-1-day-2', 'Week 1 · Day 2', 2, 2, ONCE_DAILY, [d(0, 60)]),
-	phase('wih-week-1-day-3', 'Week 1 · Day 3', 3, 3, ONCE_DAILY, [d(0, 90)]),
-	phase('wih-week-1-day-4-7', 'Week 1 · Day 4–7', 4, 7, ONCE_DAILY, [d(0, 120)]),
+	phase('wih-week-0', 'Week 0 · Rest (no dilation yet)', 1, REST_DAYS, [], []),
+	phase(
+		'wih-week-1-day-1',
+		'Week 1 · Day 1 (off packing)',
+		REST_DAYS + 1,
+		REST_DAYS + 1,
+		ONCE_DAILY,
+		[d(0, 30)]
+	),
+	phase('wih-week-1-day-2', 'Week 1 · Day 2', REST_DAYS + 2, REST_DAYS + 2, ONCE_DAILY, [d(0, 60)]),
+	phase('wih-week-1-day-3', 'Week 1 · Day 3', REST_DAYS + 3, REST_DAYS + 3, ONCE_DAILY, [d(0, 90)]),
+	phase('wih-week-1-day-4-7', 'Week 1 · Day 4–7', REST_DAYS + 4, REST_DAYS + 7, ONCE_DAILY, [
+		d(0, 120)
+	]),
 	week(2, [d(0, 25), d(1, 50)]),
 	week(3, [d(0, 25), d(1, 25), d(2, 25)]),
 	week(4, [d(0, 10), d(1, 15), d(2, 50)]),
@@ -39,21 +53,26 @@ export const WIH_PHASES: Phase[] = [
 	week(8, [d(1, 10), d(2, 10), d(3, 25), d(4, 30)]),
 	week(9, [d(1, 5), d(2, 5), d(3, 15), d(4, 50)]),
 	week(10, [d(1, 5), d(2, 5), d(3, 5), d(4, 60)]),
-	phase('wih-week-11-52', 'Week 11–52 (rest of year 1)', 71, 364, TWICE_DAILY, [
-		d(1, 5),
-		d(2, 5),
+	phase(
+		'wih-week-11-52',
+		'Week 11–52 (rest of year 1)',
+		REST_DAYS + 71,
+		REST_DAYS + 364,
+		TWICE_DAILY,
+		[d(1, 5), d(2, 5), d(3, 5), d(4, 60)]
+	),
+	phase('wih-year-2', 'Year 2', REST_DAYS + 365, REST_DAYS + 730, TWICE_DAILY, [d(3, 5), d(4, 55)]),
+	phase('wih-year-3-plus', 'Year 3 and beyond', REST_DAYS + 731, null, ONCE_DAILY, [
 		d(3, 5),
-		d(4, 60)
-	]),
-	phase('wih-year-2', 'Year 2', 365, 730, TWICE_DAILY, [d(3, 5), d(4, 55)]),
-	phase('wih-year-3-plus', 'Year 3 and beyond', 731, null, ONCE_DAILY, [d(3, 5), d(4, 55)])
+		d(4, 55)
+	])
 ];
 
 export function wihPhases(): Phase[] {
 	return structuredClone(WIH_PHASES);
 }
 
-/** Day 1 defaults to today; set the real date in Settings. */
+/** Day 1 is your surgery date. It defaults to today; set the real date in Settings. */
 export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),

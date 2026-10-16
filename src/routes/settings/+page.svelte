@@ -86,7 +86,13 @@
 <h1>Settings 🎀</h1>
 
 <label class="card field">
-	<span>Day 1 is</span>
+	<span>
+		Day 1 (your surgery date)
+		<small class="muted">
+			The WIH program starts with 7 rest days, so dilation begins on day 8. Phases below count from
+			this date.
+		</small>
+	</span>
 	<input type="date" bind:value={draft.startDate} />
 </label>
 
@@ -201,10 +207,16 @@
 		<label class="stack">
 			Sessions per day
 			<select
-				value={phase.slots.length > 1 ? 'two' : 'one'}
+				value={phase.slots.length > 1 ? 'two' : phase.slots.length === 1 ? 'one' : 'none'}
 				onchange={(e) =>
-					(phase.slots = e.currentTarget.value === 'two' ? ['morning', 'evening'] : ['daily'])}
+					(phase.slots =
+						e.currentTarget.value === 'two'
+							? ['morning', 'evening']
+							: e.currentTarget.value === 'one'
+								? ['daily']
+								: [])}
 			>
+				<option value="none">None (rest days)</option>
 				<option value="one">Once a day</option>
 				<option value="two">Morning &amp; evening</option>
 			</select>
@@ -224,7 +236,7 @@
 					<button
 						class="btn ghost small"
 						onclick={() => phase.steps.splice(si, 1)}
-						disabled={phase.steps.length === 1}
+						disabled={phase.slots.length > 0 && phase.steps.length === 1}
 						aria-label="Remove dilator">✕</button
 					>
 				</div>
@@ -257,6 +269,11 @@
 	}
 	.leeway {
 		margin-top: 0.6rem;
+	}
+	.field small {
+		display: block;
+		font-size: 0.8rem;
+		margin-top: 0.15rem;
 	}
 	.leeway small {
 		display: block;

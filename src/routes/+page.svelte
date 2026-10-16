@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { dayNumber } from '$lib/dates';
+	import Bunny from '$lib/Bunny.svelte';
 	import Schedule from '$lib/Schedule.svelte';
+	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
@@ -17,6 +19,7 @@
 		})
 	);
 	const nextSlot = $derived(store.nextSlot);
+	const untilDilation = $derived(daysUntilDilation(store.settings.phases, day));
 	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
 </script>
 
@@ -35,6 +38,17 @@
 
 {#if store.active}
 	<Timer />
+{:else if phase && isRestPhase(phase)}
+	<section class="rest card">
+		<Bunny size={96} />
+		<h2>Rest day 🌸</h2>
+		<p class="muted">
+			No dilation today.
+			{#if untilDilation !== null}
+				Dilation starts in {untilDilation} day{untilDilation === 1 ? '' : 's'}.
+			{/if}
+		</p>
+	</section>
 {:else if phase}
 	<section class="routine card">
 		<h2>Today's routine 🎀</h2>
@@ -69,6 +83,13 @@
 	}
 	.sparkle {
 		font-size: 1.1rem;
+	}
+	.rest {
+		display: grid;
+		justify-items: center;
+		gap: 0.5rem;
+		text-align: center;
+		padding: 1.5rem 1rem;
 	}
 	.routine {
 		display: grid;

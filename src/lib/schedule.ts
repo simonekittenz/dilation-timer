@@ -31,6 +31,19 @@ export function phaseForDate(settings: Settings, date: string): Phase | undefine
 	return phaseForDay(settings.phases, dayNumber(settings.startDate, date));
 }
 
+/** Whether a phase has anything to do (rest weeks have no sessions). */
+export function isRestPhase(p: Phase): boolean {
+	return p.slots.length === 0 || p.steps.length === 0;
+}
+
+/** Days until the next phase with sessions begins (the first dilation day, when called on a rest day), or null if none is left. */
+export function daysUntilDilation(phases: Phase[], day: number): number | null {
+	const upcoming = phases
+		.filter((p) => !isRestPhase(p) && p.fromDay > day)
+		.map((p) => p.fromDay - day);
+	return upcoming.length ? Math.min(...upcoming) : null;
+}
+
 function statusFor(slot: SlotId, nowTime: string): SlotStatus {
 	const w = WINDOWS[slot];
 	if (w.overdueAt && nowTime >= w.overdueAt) return 'overdue';
