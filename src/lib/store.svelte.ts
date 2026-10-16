@@ -1,9 +1,10 @@
 import { chime, keepAwake, startAlarm, stopAlarm, unlock } from './alarm';
-import { toDateString } from './dates';
+import { toDateString, toTimeString } from './dates';
 import { defaultSettings } from './defaults';
+import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import { confirmSwitch, finish, isEscalated, leewayLeftMs, startSession, tick } from './session';
-import { phaseForDate } from './schedule';
-import type { ActiveSession, LogEntry, Settings } from './types';
+import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
+import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
 
 const KEY = 'dilation-timer:v1';
 
@@ -37,6 +38,14 @@ class Store {
 		return this.active ? leewayLeftMs(this.active, this.now, this.leewayMs) : 0;
 	}
 
+	get todaySlots() {
+		return slotsForDate(this.settings, this.today, toTimeString(new Date(this.now)), this.log);
+	}
+
+	get nextSlot() {
+		return nextOpenSlot(this.todaySlots);
+	}
+
 	get todayPhase() {
 		return phaseForDate(this.settings, this.today);
 	}
@@ -47,9 +56,11 @@ class Store {
 			const raw = localStorage.getItem(KEY);
 			if (raw) {
 				const saved: Persisted = JSON.parse(raw);
-				this.settings = { ...defaultSettings(), ...saved.settings };
-				this.log = saved.log;
-				this.active = saved.active;
+				this.settings = migrateSettings(saved.settings);
+				this.log = migrateLog(saved.log ?? []);
+				this.active = saved.active
+					? { ...saved.active, slot: normalizeSlot(saved.active.slot) }
+					: null;
 			}
 		} catch {
 			// corrupt storage: fall back to defaults
@@ -95,7 +106,7 @@ class Store {
 			);
 	}
 
-	start(slot: string | null) {
+	start(slot: SlotId | null) {
 		const phase = this.todayPhase;
 		if (this.active || !phase || phase.steps.length === 0) return;
 		unlock();
@@ -128,6 +139,23 @@ class Store {
 
 	updateSettings(settings: Settings) {
 		this.settings = settings;
+		this.save();
+	}
+
+	skip(slot: SlotId) {
+		const now = Date.now();
+		this.log = [
+			{
+				id: crypto.randomUUID(),
+				date: this.today,
+				slot,
+				startedAt: now,
+				finishedAt: now,
+				skipped: true,
+				steps: []
+			},
+			...this.log
+		];
 		this.save();
 	}
 

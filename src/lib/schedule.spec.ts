@@ -39,14 +39,37 @@ describe('schedule', () => {
 		expect(total('wih-year-3-plus')).toBe(60);
 	});
 
-	it('marks slots done, overdue and upcoming', () => {
-		const log: LogEntry[] = [
-			{ id: 'a', date: '2026-01-09', slot: '08:00', startedAt: 0, finishedAt: 1, steps: [] }
-		];
-		const slots = slotsForDate(settings, '2026-01-09', '13:00', log);
-		expect(slots.map((s) => s.status)).toEqual(['done', 'upcoming']);
-		const late = slotsForDate(settings, '2026-01-09', '21:00', []);
-		expect(late.map((s) => s.status)).toEqual(['overdue', 'overdue']);
-		expect(nextOpenSlot(slots)?.time).toBe('20:00');
+	it('only calls the morning overdue once the morning is over', () => {
+		const at = (t: string) => slotsForDate(settings, '2026-01-09', t, []).map((x) => x.status);
+		expect(at('09:00')).toEqual(['due', 'upcoming']);
+		expect(at('13:00')).toEqual(['overdue', 'upcoming']);
+		expect(at('18:00')).toEqual(['overdue', 'due']);
+		expect(at('23:59')).toEqual(['overdue', 'due']);
+	});
+
+	it('never marks the evening or a daily session overdue', () => {
+		const daily = slotsForDate(settings, '2026-01-02', '23:00', []);
+		expect(daily.map((x) => x.status)).toEqual(['due']);
+	});
+
+	it('tracks done and skipped slots', () => {
+		const entry = (slot: 'morning' | 'evening', skipped = false): LogEntry => ({
+			id: slot,
+			date: '2026-01-09',
+			slot,
+			startedAt: 0,
+			finishedAt: 1,
+			skipped,
+			steps: []
+		});
+		const slots = slotsForDate(settings, '2026-01-09', '13:00', [entry('morning', true)]);
+		expect(slots.map((s) => s.status)).toEqual(['skipped', 'upcoming']);
+		const both = slotsForDate(settings, '2026-01-09', '21:00', [
+			entry('morning'),
+			entry('evening')
+		]);
+		expect(both.map((s) => s.status)).toEqual(['done', 'done']);
+		expect(nextOpenSlot(slots)?.slot).toBe('evening');
+		expect(nextOpenSlot(both)).toBeUndefined();
 	});
 });

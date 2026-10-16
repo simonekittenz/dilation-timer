@@ -5,9 +5,6 @@
 	import { store } from '$lib/store.svelte';
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
-	let timesText = $state<Record<string, string>>(
-		Object.fromEntries(store.settings.phases.map((p) => [p.id, p.times.join(', ')]))
-	);
 
 	function addPhase() {
 		const last = draft.phases.at(-1);
@@ -18,29 +15,19 @@
 			label: `Phase ${draft.phases.length + 1}`,
 			fromDay: (last?.toDay ?? 0) + 1,
 			toDay: null,
-			times: [],
+			slots: ['morning', 'evening'],
 			steps: [{ label: 'Dilator 1', minutes: 10 }]
 		});
-		timesText[id] = '';
 	}
 
 	function resetToWih() {
 		if (!confirm('Replace all phases with the WIH standard program?')) return;
 		draft.phases = wihPhases();
-		timesText = Object.fromEntries(draft.phases.map((p) => [p.id, p.times.join(', ')]));
-	}
-
-	function parseTimes(text: string): string[] {
-		return text
-			.split(/[,\s]+/)
-			.filter((t) => /^\d{1,2}:\d{2}$/.test(t))
-			.map((t) => t.padStart(5, '0'));
 	}
 
 	function save() {
 		const phases: Phase[] = draft.phases.map((p) => ({
 			...p,
-			times: parseTimes(timesText[p.id] ?? ''),
 			steps: p.steps.filter((s) => s.minutes > 0)
 		}));
 		store.updateSettings({
@@ -108,8 +95,15 @@
 			</label>
 		</div>
 		<label class="stack">
-			Session times (e.g. 08:00, 12:30, 18:00)
-			<input bind:value={timesText[phase.id]} />
+			Sessions per day
+			<select
+				value={phase.slots.length > 1 ? 'two' : 'one'}
+				onchange={(e) =>
+					(phase.slots = e.currentTarget.value === 'two' ? ['morning', 'evening'] : ['daily'])}
+			>
+				<option value="one">Once a day</option>
+				<option value="two">Morning &amp; evening</option>
+			</select>
 		</label>
 		<div class="stack">
 			Dilators, in order

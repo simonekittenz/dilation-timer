@@ -1,10 +1,10 @@
-import type { ActiveSession, LogEntry, Step } from './types';
+import type { ActiveSession, LogEntry, SlotId, Step } from './types';
 
 export const WARN_MS = 10_000;
 
 export function startSession(
 	steps: Step[],
-	slot: string | null,
+	slot: SlotId | null,
 	date: string,
 	now: number,
 	id: string = crypto.randomUUID()

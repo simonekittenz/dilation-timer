@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SLOT_LABELS } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 
 	const groups = $derived(
@@ -27,9 +28,16 @@
 	{#each entries as e (e.id)}
 		<div class="card entry">
 			<div>
-				<strong>{time(e.startedAt)}</strong>
-				{#if e.slot}<span class="muted"> (planned {e.slot})</span>{/if}
-				<p class="muted">{e.steps.map((s) => `${s.label} ${mins(s.actualSeconds)}`).join(' · ')}</p>
+				{#if e.skipped}
+					<strong>{e.slot ? SLOT_LABELS[e.slot] : 'Session'} skipped</strong>
+					<p class="muted">Marked as skipped at {time(e.startedAt)}</p>
+				{:else}
+					<strong>{time(e.startedAt)}</strong>
+					{#if e.slot}<span class="muted"> ({SLOT_LABELS[e.slot].toLowerCase()} session)</span>{/if}
+					<p class="muted">
+						{e.steps.map((s) => `${s.label} ${mins(s.actualSeconds)}`).join(' · ')}
+					</p>
+				{/if}
 			</div>
 			<button
 				class="btn ghost small"

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { dayNumber, toTimeString } from '$lib/dates';
-	import { slotsForDate } from '$lib/schedule';
+	import { dayNumber } from '$lib/dates';
 	import Schedule from '$lib/Schedule.svelte';
 	import { store } from '$lib/store.svelte';
 	import Timer from '$lib/Timer.svelte';
@@ -14,11 +13,7 @@
 			day: 'numeric'
 		})
 	);
-	const nextSlot = $derived(
-		slotsForDate(store.settings, store.today, toTimeString(new Date(store.now)), store.log).find(
-			(s) => s.status !== 'done'
-		)
-	);
+	const nextSlot = $derived(store.nextSlot);
 </script>
 
 <header>
@@ -40,8 +35,8 @@
 	<section class="routine card">
 		<h2>Today's routine 🎀</h2>
 		<p class="muted">{phase.steps.map((s) => `${s.label} · ${s.minutes} min`).join('  →  ')}</p>
-		<button class="btn" onclick={() => store.start(nextSlot?.time ?? null)}>
-			{nextSlot ? `Start ${nextSlot.time} session` : 'Start an extra session'}
+		<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
+			{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
 		</button>
 	</section>
 	<h2 class="sub">Schedule ♡</h2>

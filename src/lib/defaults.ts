@@ -1,8 +1,8 @@
 import { toDateString } from './dates';
-import type { Phase, Settings, Step } from './types';
+import type { Phase, Settings, SlotId, Step } from './types';
 
-const TWICE_DAILY = ['08:00', '20:00'];
-const ONCE_DAILY = ['09:00'];
+const TWICE_DAILY: SlotId[] = ['morning', 'evening'];
+const ONCE_DAILY: SlotId[] = ['daily'];
 
 const d = (size: number, minutes: number): Step => ({ label: `Dilator ${size}`, minutes });
 
@@ -11,10 +11,10 @@ function phase(
 	label: string,
 	fromDay: number,
 	toDay: number | null,
-	times: string[],
+	slots: SlotId[],
 	steps: Step[]
 ): Phase {
-	return { id, label, fromDay, toDay, times, steps };
+	return { id, label, fromDay, toDay, slots, steps };
 }
 
 /** A regular week N covers days 7(N-1)+1 .. 7N. */

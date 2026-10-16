@@ -1,32 +1,43 @@
 <script lang="ts">
-	import { toTimeString } from './dates';
-	import { slotsForDate } from './schedule';
+	import { SLOT_EMOJI, isOpen } from './schedule';
 	import { store } from './store.svelte';
 
-	const slots = $derived(
-		slotsForDate(store.settings, store.today, toTimeString(new Date(store.now)), store.log)
-	);
-	const firstOpen = $derived(slots.find((s) => s.status !== 'done'));
+	const slots = $derived(store.todaySlots);
+	const next = $derived(store.nextSlot);
+
+	const STATE_TEXT = {
+		done: 'Done ✓',
+		skipped: 'Skipped',
+		overdue: 'Overdue',
+		due: 'Ready when you are ♡',
+		upcoming: 'Later ♡'
+	} as const;
 </script>
 
 {#if slots.length === 0}
 	<p class="card muted">Nothing scheduled for today.</p>
 {:else}
 	<ul class="slots">
-		{#each slots as slot (slot.time)}
-			<li class="card {slot.status}" class:next={slot === firstOpen}>
-				<span class="time">{slot.time}</span>
-				<span class="state">
-					{#if slot.status === 'done'}Done ✓{:else if slot.status === 'overdue'}Overdue{:else}Later
-						♡{/if}
+		{#each slots as s (s.slot)}
+			<li class="card {s.status}" class:next={s.slot === next?.slot}>
+				<span class="emoji" aria-hidden="true">{SLOT_EMOJI[s.slot]}</span>
+				<span class="name">
+					<strong>{s.label}</strong>
+					<span class="state">{STATE_TEXT[s.status]}</span>
 				</span>
-				{#if slot.status !== 'done'}
+				{#if isOpen(s)}
+					<button class="btn ghost small" onclick={() => store.skip(s.slot)}>Skip</button>
 					<button
 						class="btn small"
-						class:ghost={slot !== firstOpen}
-						onclick={() => store.start(slot.time)}
+						class:ghost={s.slot !== next?.slot}
+						disabled={!!store.active}
+						onclick={() => store.start(s.slot)}
 					>
 						Start
+					</button>
+				{:else if s.status === 'skipped' && s.entry}
+					<button class="btn ghost small" onclick={() => s.entry && store.removeLog(s.entry.id)}>
+						Undo
 					</button>
 				{/if}
 			</li>
@@ -45,19 +56,29 @@
 	li {
 		display: flex;
 		align-items: center;
-		gap: 0.8rem;
+		gap: 0.6rem;
 	}
-	.time {
-		font-size: 1.3rem;
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
+	.emoji {
+		font-size: 1.6rem;
+	}
+	.name {
+		flex: 1;
+		display: grid;
+		line-height: 1.2;
+	}
+	.name strong {
+		font-size: 1.15rem;
 	}
 	.state {
-		flex: 1;
 		color: var(--muted);
+		font-size: 0.9rem;
 	}
 	.done .state {
 		color: var(--ok);
+		font-weight: 700;
+	}
+	.skipped {
+		opacity: 0.75;
 	}
 	.overdue .state {
 		color: var(--warn);

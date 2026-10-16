@@ -1,3 +1,6 @@
+/** A part of the day rather than a clock time: 'daily' is a once-a-day session. */
+export type SlotId = 'morning' | 'evening' | 'daily';
+
 export interface Step {
 	label: string;
 	minutes: number;
@@ -9,8 +12,8 @@ export interface Phase {
 	label: string;
 	fromDay: number;
 	toDay: number | null;
-	/** Suggested session times, "HH:MM" 24h. */
-	times: string[];
+	/** Parts of the day that get a session. */
+	slots: SlotId[];
 	steps: Step[];
 }
 
@@ -34,7 +37,7 @@ export interface StepRecord {
 export interface ActiveSession {
 	id: string;
 	date: string;
-	slot: string | null;
+	slot: SlotId | null;
 	startedAt: number;
 	steps: Step[];
 	stepIndex: number;
@@ -47,16 +50,19 @@ export interface ActiveSession {
 export interface LogEntry {
 	id: string;
 	date: string;
-	slot: string | null;
+	slot: SlotId | null;
 	startedAt: number;
 	finishedAt: number;
+	/** Set when the slot was skipped instead of done. */
+	skipped?: boolean;
 	steps: { label: string; plannedMinutes: number; actualSeconds: number }[];
 }
 
-export type SlotStatus = 'done' | 'overdue' | 'upcoming';
+export type SlotStatus = 'done' | 'skipped' | 'overdue' | 'due' | 'upcoming';
 
 export interface SlotView {
-	time: string;
+	slot: SlotId;
+	label: string;
 	status: SlotStatus;
 	entry?: LogEntry;
 }

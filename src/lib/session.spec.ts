@@ -16,7 +16,7 @@ const steps = [
 
 describe('session', () => {
 	it('waits for the user before starting the next step', () => {
-		let s = startSession(steps, '08:00', '2026-01-01', 0, 'x');
+		let s = startSession(steps, 'morning', '2026-01-01', 0, 'x');
 		s = tick(s, 59_000);
 		expect(s.phase).toBe('running');
 		expect(s.warned).toBe(true);
