@@ -7,7 +7,9 @@ const config = {
 	},
 	kit: {
 		adapter: adapter({ fallback: '200.html' }),
-		paths: { relative: false }
+		paths: { relative: false },
+		// Checked by the app so an open/installed copy notices new deployments.
+		version: { pollInterval: 60_000 }
 	}
 };
 

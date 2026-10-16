@@ -3,12 +3,11 @@ import type { Phase, Settings } from './types';
 
 export interface MessageText {
 	running: string;
-	switch: string;
 	done: string;
 }
 
 export function messagesToText(m: Settings['messages']): MessageText {
-	return { running: m.running.join('\n'), switch: m.switch.join('\n'), done: m.done.join('\n') };
+	return { running: m.running.join('\n'), done: m.done.join('\n') };
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -39,11 +38,10 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 
 	return {
 		startDate: draft.startDate,
-		leewayMinutes: Math.max(0, Number(draft.leewayMinutes) || 0),
+		switchWindowMinutes: Math.max(0, Number(draft.switchWindowMinutes) || 0),
 		dilators,
 		messages: {
 			running: parseMessages(text.running),
-			switch: parseMessages(text.switch),
 			done: parseMessages(text.done)
 		},
 		phases

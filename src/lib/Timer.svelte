@@ -1,43 +1,55 @@
 <script lang="ts">
 	import Bunny from './Bunny.svelte';
+	import BunnyEars from './BunnyEars.svelte';
 	import DilatorName from './DilatorName.svelte';
 	import Swatch from './Swatch.svelte';
-	import { pickMessage } from './messages';
 	import { formatClock } from './dates';
-	import { isLastStep, remainingMs, stepDurationMs } from './session';
+	import { pickMessage } from './messages';
+	import {
+		ADJUST_MS,
+		isLastStep,
+		isPaused,
+		overtimeMs,
+		remainingMs,
+		stepDurationMs
+	} from './session';
 	import { store } from './store.svelte';
 
 	const s = $derived(store.active!);
 	const left = $derived(remainingMs(s, store.now));
+	const paused = $derived(isPaused(s));
 	const progress = $derived(
 		s.phase === 'running' ? Math.min(1, Math.max(0, 1 - left / stepDurationMs(s))) : 1
 	);
 	const current = $derived(s.steps[s.stepIndex]);
 	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
-	const nextLabel = $derived(next?.label ?? null);
+	const overtime = $derived(overtimeMs(s, store.now));
+	const escalated = $derived(store.escalated);
+	const canShorten = $derived(left >= ADJUST_MS + 1000);
 	const bubble = $derived.by(() => {
 		const m = store.settings.messages;
+		const name = current.nickname || current.label;
 		if (s.phase === 'running') {
 			const minute = Math.floor((store.now - s.stepStartedAt) / 60_000);
-			return pickMessage(
-				m.running,
-				`${s.id}:${s.stepIndex}:${minute}`,
-				current.nickname || current.label
-			);
+			return pickMessage(m.running, `${s.id}:${s.stepIndex}:${minute}`, name);
 		}
-		if (s.phase === 'switch' && next) {
-			return pickMessage(m.switch, `${s.id}:${s.stepIndex}:switch`, next.nickname || next.label);
-		}
-		return pickMessage(m.done, `${s.id}:done`, current.nickname || current.label);
+		if (s.phase === 'finished') return pickMessage(m.done, `${s.id}:done`, name);
+		return null;
 	});
-	const overtime = $derived(Math.max(0, -left));
-	const escalated = $derived(store.escalated);
 
 	const R = 88;
 	const C = 2 * Math.PI * R;
 </script>
 
+{#if store.cueActive}
+	<BunnyEars />
+{/if}
+
 <section class="timer" class:alert={escalated}>
+	{#if !store.soundReady}
+		<p class="soundhint">🔇 Tap anywhere to turn the alarm sound on</p>
+	{/if}
+
 	<ol class="steps">
 		{#each s.steps as step, i (i)}
 			<li class:done={i < s.stepIndex} class:current={i === s.stepIndex}>
@@ -48,7 +60,7 @@
 	</ol>
 
 	{#if s.phase === 'running'}
-		<div class="ring">
+		<div class="ring" class:paused>
 			<svg viewBox="0 0 200 200" aria-hidden="true">
 				<circle class="track" cx="100" cy="100" r={R} />
 				<circle
@@ -64,30 +76,56 @@
 				<Bunny size={64} />
 				<p class="clock">{formatClock(left)}</p>
 				<p class="label">
-					<DilatorName label={current.label} nickname={current.nickname} />{current.diameterMm
-						? ` · ${current.diameterMm} mm`
-						: ''}
+					{#if paused}Paused{:else}
+						<DilatorName label={current.label} nickname={current.nickname} />{current.diameterMm
+							? ` · ${current.diameterMm} mm`
+							: ''}
+					{/if}
 				</p>
 			</div>
 		</div>
-		{#if bubble}<p class="bubble">{bubble}</p>{/if}
-		<p class="muted hint">
-			{#if next}Next up: <DilatorName label={next.label} nickname={next.nickname} /> ♡{:else}Last
-				one this session ✿{/if}
-		</p>
-		<button
-			class="btn ghost small"
-			onclick={() => confirm('Stop this session without logging it?') && store.cancel()}
-		>
-			Cancel session
-		</button>
+		{#if bubble && !paused}<p class="bubble">{bubble}</p>{/if}
+
+		<div class="controls">
+			<button
+				class="btn ghost small"
+				onclick={() => store.addMinutes(-1)}
+				disabled={!canShorten}
+				aria-label="Remove one minute"
+			>
+				− 1 min
+			</button>
+			{#if paused}
+				<button class="btn small main" onclick={() => store.resume()}>▶ Continue</button>
+			{:else}
+				<button class="btn small main" onclick={() => store.pause()}>⏸ Pause</button>
+			{/if}
+			<button
+				class="btn ghost small"
+				onclick={() => store.addMinutes(1)}
+				aria-label="Add one minute"
+			>
+				+ 1 min
+			</button>
+		</div>
+		<div class="controls">
+			<button class="btn ghost small" onclick={() => store.skipStep()}>
+				{next ? '⏭ Next dilator' : '⏭ Finish now'}
+			</button>
+			<button
+				class="btn ghost small"
+				onclick={() => confirm('Stop this session without logging it?') && store.cancel()}
+			>
+				Cancel session
+			</button>
+		</div>
 	{:else}
 		<Bunny mood={escalated ? 'alert' : s.phase === 'finished' ? 'done' : 'happy'} size={110} />
 		{#if s.phase === 'switch'}
 			<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
 			<p class="big swap">
 				Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
-				<strong><DilatorName label={nextLabel ?? ''} nickname={next?.nickname} /></strong>
+				<strong><DilatorName label={next?.label ?? ''} nickname={next?.nickname} /></strong>
 			</p>
 			{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
 		{:else}
@@ -100,7 +138,7 @@
 				Overtime {formatClock(overtime)}
 			{:else}
 				{s.phase === 'switch' ? 'No rush to swap' : 'No rush'}, I'll nudge you louder in {formatClock(
-					store.leewayLeft
+					store.switchWindowLeft
 				)}
 			{/if}
 		</p>
@@ -209,6 +247,35 @@
 	.label {
 		color: var(--muted);
 		font-weight: 700;
+	}
+	.soundhint {
+		width: 100%;
+		padding: 0.4rem 0.8rem;
+		border-radius: 999px;
+		background: var(--accent-soft);
+		color: var(--ink);
+		font-size: 0.85rem;
+		font-weight: 800;
+	}
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		justify-content: center;
+	}
+	.controls .main {
+		min-width: 8.5rem;
+	}
+	.ring.paused .prog {
+		opacity: 0.45;
+	}
+	.ring.paused .clock {
+		animation: pulse 1.6s ease-in-out infinite;
+	}
+	@keyframes pulse {
+		50% {
+			opacity: 0.45;
+		}
 	}
 	.bubble {
 		position: relative;

@@ -29,10 +29,10 @@ describe('messages', () => {
 	it('gives older saves the default messages, but keeps custom ones', () => {
 		expect(migrateSettings({ startDate: '2026-01-01' }).messages.done.length).toBeGreaterThan(0);
 		const custom = migrateSettings({
-			messages: { running: ['mine'], switch: [], done: [] }
+			messages: { running: ['mine'], done: [] }
 		});
 		expect(custom.messages.running).toEqual(['mine']);
-		expect(custom.messages.switch).toEqual([]);
+		expect(custom.messages.done).toEqual([]);
 	});
 
 	it('carries nicknames into session steps', () => {

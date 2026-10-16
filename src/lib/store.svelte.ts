@@ -1,13 +1,28 @@
-import { chime, keepAwake, startAlarm, stopAlarm, unlock } from './alarm';
+import { chime, keepAwake, ping, soundReady, startAlarm, stopAlarm, unlock } from './alarm';
 import { toDateString, toTimeString } from './dates';
 import { FALLBACK_COLOR, resolveSteps } from './dilators';
 import { defaultSettings } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
-import { confirmSwitch, finish, isEscalated, leewayLeftMs, startSession, tick } from './session';
+import {
+	ADJUST_MS,
+	adjust,
+	confirmSwitch,
+	finish,
+	isEscalated,
+	overtimeMs,
+	pause,
+	resume,
+	skipStep,
+	startSession,
+	switchWindowLeftMs,
+	tick
+} from './session';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
 import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
 
 const KEY = 'dilation-timer:v1';
+/** How long the "time to switch" bunny-ears cue stays up. */
+const CUE_MS = 3500;
 
 interface Persisted {
 	settings: Settings;
@@ -20,23 +35,30 @@ class Store {
 	log = $state<LogEntry[]>([]);
 	active = $state<ActiveSession | null>(null);
 	now = $state(Date.now());
+	cueUntil = $state(0);
+	soundReady = $state(false);
 	private timer: ReturnType<typeof setInterval> | null = null;
 
 	get today() {
 		return toDateString(new Date(this.now));
 	}
 
-	get leewayMs() {
-		return Math.max(0, this.settings.leewayMinutes) * 60_000;
+	get switchWindowMs() {
+		return Math.max(0, this.settings.switchWindowMinutes) * 60_000;
 	}
 
-	/** True once the calm window after a finished timer has run out. */
+	/** True once the switch window after a finished timer has run out. */
 	get escalated() {
-		return !!this.active && isEscalated(this.active, this.now, this.leewayMs);
+		return !!this.active && isEscalated(this.active, this.now, this.switchWindowMs);
 	}
 
-	get leewayLeft() {
-		return this.active ? leewayLeftMs(this.active, this.now, this.leewayMs) : 0;
+	get switchWindowLeft() {
+		return this.active ? switchWindowLeftMs(this.active, this.now, this.switchWindowMs) : 0;
+	}
+
+	/** True for a few seconds after a timer ends: ping + bunny ears, no tapping needed. */
+	get cueActive() {
+		return this.now < this.cueUntil;
 	}
 
 	get todaySlots() {
@@ -72,7 +94,11 @@ class Store {
 		}
 		this.timer = setInterval(() => this.step(), 250);
 		this.step();
-		addEventListener('pointerdown', unlock);
+		// iOS only counts real taps (not pointerdown) as permission to play sound.
+		for (const type of ['pointerup', 'touchend', 'click', 'keydown']) {
+			addEventListener(type, unlock, { passive: true });
+		}
+		if (this.active) void keepAwake(true);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
 			if (this.active && document.visibilityState === 'visible') void keepAwake(true);
@@ -90,6 +116,7 @@ class Store {
 
 	private step() {
 		this.now = Date.now();
+		this.soundReady = soundReady();
 		const s = this.active;
 		if (!s) {
 			stopAlarm();
@@ -97,7 +124,15 @@ class Store {
 		}
 		const next = tick(s, this.now);
 		if (next !== s) {
-			if ((next.warned && !s.warned) || next.phase !== s.phase) chime();
+			if (next.phase !== s.phase) {
+				// Only cue if it just happened, not when catching up after the app was asleep.
+				if (overtimeMs(next, this.now) < 10_000) {
+					this.cueUntil = this.now + CUE_MS;
+					ping();
+				}
+			} else if (next.warned && !s.warned) {
+				chime();
+			}
 			this.active = next;
 			this.save();
 		}
@@ -138,6 +173,32 @@ class Store {
 		}
 		this.save();
 		this.step();
+	}
+
+	private change(fn: (s: ActiveSession, now: number) => ActiveSession) {
+		if (!this.active) return;
+		unlock();
+		this.active = fn(this.active, Date.now());
+		this.save();
+		this.step();
+	}
+
+	pause() {
+		this.change(pause);
+	}
+
+	resume() {
+		this.change(resume);
+	}
+
+	/** Add (or, with a negative number, remove) minutes on the current dilator. */
+	addMinutes(minutes: number) {
+		this.change((s, now) => adjust(s, minutes * ADJUST_MS, now));
+	}
+
+	/** End this dilator's timer now and move on to the switch prompt. */
+	skipStep() {
+		this.change(skipStep);
 	}
 
 	cancel() {

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { untrack } from 'svelte';
+	import { testSound } from '$lib/alarm';
 	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
@@ -12,18 +13,10 @@
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
 	let messageText = $state(messagesToText(store.settings.messages));
-	let status = $state<'saved' | 'pending' | 'waiting'>('saved');
-	let pending: Settings | null = null;
+	let status = $state<'saved' | 'waiting'>('saved');
 	let firstRun = true;
 
-	function flush() {
-		if (!pending) return;
-		store.updateSettings(pending);
-		pending = null;
-		status = 'saved';
-	}
-
-	// Autosave: any edit is validated and written shortly after you stop typing.
+	// Autosave: every change is validated and stored straight away.
 	$effect(() => {
 		const next = buildSettings($state.snapshot(draft), $state.snapshot(messageText));
 		if (firstRun) {
@@ -34,14 +27,11 @@
 			status = 'waiting';
 			return;
 		}
-		pending = next;
-		status = 'pending';
-		const timer = setTimeout(flush, 400);
-		return () => clearTimeout(timer);
+		// untrack: saving reads the store's settings, which would make this effect re-trigger itself.
+		untrack(() => store.updateSettings(next));
+		status = 'saved';
 	});
 
-	// Don't lose an edit made right before leaving the page or closing the app.
-	onDestroy(flush);
 	const inUse = $derived(stepsInUse(draft));
 	const day = $derived(dayNumber(draft.startDate, store.today));
 	const currentPhase = $derived(phaseForDay(draft.phases, day));
@@ -102,15 +92,11 @@
 	}
 </script>
 
-<svelte:window onpagehide={flush} />
-
 <div class="head">
 	<h1>Settings 🎀</h1>
 	<p class="status {status}" role="status" aria-live="polite">
 		{#if status === 'saved'}
 			Saved ✓
-		{:else if status === 'pending'}
-			Saving…
 		{:else}
 			Not saved yet, finish the empty date or day field
 		{/if}
@@ -140,7 +126,7 @@
 	<input type="date" bind:value={draft.startDate} />
 </label>
 
-<label class="card field leeway">
+<label class="card field switch-window">
 	<span>
 		Gentle switch window
 		<small class="muted">
@@ -148,8 +134,19 @@
 			alarm starts blinking and beeping
 		</small>
 	</span>
-	<input type="number" min="0" step="0.5" class="num" bind:value={draft.leewayMinutes} />
+	<input type="number" min="0" step="0.5" class="num" bind:value={draft.switchWindowMinutes} />
 </label>
+
+<section class="card field sound-test">
+	<span>
+		Alarm sound
+		<small class="muted">
+			Check it rings on this phone. If you hear nothing, turn the volume up. On iPhone it needs iOS
+			17 or newer to ring with the silent switch on.
+		</small>
+	</span>
+	<button class="btn small" onclick={testSound}>🔔 Test</button>
+</section>
 
 <details class="card phase">
 	<summary
@@ -196,10 +193,6 @@
 	<label class="stack">
 		While a timer runs (changes every minute)
 		<textarea rows="6" bind:value={messageText.running}></textarea>
-	</label>
-	<label class="stack">
-		When it's time to switch
-		<textarea rows="4" bind:value={messageText.switch}></textarea>
 	</label>
 	<label class="stack">
 		When a session is finished
@@ -335,9 +328,6 @@
 		color: var(--ok);
 		text-align: right;
 	}
-	.status.pending {
-		color: var(--muted);
-	}
 	.status.waiting {
 		color: var(--warn);
 	}
@@ -346,7 +336,10 @@
 		font-weight: 900;
 		color: var(--accent-strong);
 	}
-	.leeway {
+	.sound-test {
+		margin-top: 0.6rem;
+	}
+	.switch-window {
 		margin-top: 0.6rem;
 	}
 	.field small {
@@ -354,7 +347,7 @@
 		font-size: 0.8rem;
 		margin-top: 0.15rem;
 	}
-	.leeway small {
+	.switch-window small {
 		display: block;
 	}
 	.field {

@@ -36,18 +36,18 @@ describe('buildSettings', () => {
 		);
 	});
 
-	it('cleans up names, nicknames, leeway and messages', () => {
+	it('cleans up names, nicknames, switch window and messages', () => {
 		const { draft, text } = fresh();
 		draft.dilators[0].name = '  ';
 		draft.dilators[1].nickname = '  Pip  ';
 		draft.dilators[2].nickname = '   ';
-		(draft as { leewayMinutes: number | null }).leewayMinutes = null;
+		(draft as { switchWindowMinutes: number | null }).switchWindowMinutes = null;
 		text.done = 'yay\n\n  woo  \n';
 		const out = buildSettings(draft, text)!;
 		expect(out.dilators[0].name).toBe('Dilator');
 		expect(out.dilators[1].nickname).toBe('Pip');
 		expect(out.dilators[2].nickname).toBeUndefined();
-		expect(out.leewayMinutes).toBe(0);
+		expect(out.switchWindowMinutes).toBe(0);
 		expect(out.messages.done).toEqual(['yay', 'woo']);
 	});
 

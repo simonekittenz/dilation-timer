@@ -11,12 +11,6 @@ export const DEFAULT_MESSAGES: Messages = {
 		'You and {name} make a great team.',
 		'Deep breath in… and out… 🫧'
 	],
-	switch: [
-		'Nice work! Swap to {name} whenever you are ready ♡',
-		'One down, you are amazing!',
-		'Quick swap, then back to relaxing 🌸',
-		'Look at you go! {name} is up next ✿'
-	],
 	done: [
 		'You did it! So proud of you 🎀',
 		'Another one done. Consistency is magic ✨',

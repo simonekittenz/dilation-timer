@@ -76,7 +76,7 @@ export function wihPhases(): Phase[] {
 export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
-		leewayMinutes: 2,
+		switchWindowMinutes: 1,
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

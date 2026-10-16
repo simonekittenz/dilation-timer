@@ -1,13 +1,25 @@
 <script lang="ts">
 	import '../app.css';
 	import { browser } from '$app/environment';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
 	import { store } from '$lib/store.svelte';
 
 	let { children } = $props();
 
 	// Load saved data before any page script runs (pages copy settings into local drafts).
 	if (browser) store.boot();
+
+	// An installed app can sit open in the background for days. When a new version has been
+	// deployed, reload into it, but never in the middle of a session.
+	$effect(() => {
+		if (updated.current && !store.active) location.reload();
+	});
+
+	$effect(() => {
+		const check = () => document.visibilityState === 'visible' && void updated.check();
+		document.addEventListener('visibilitychange', check);
+		return () => document.removeEventListener('visibilitychange', check);
+	});
 
 	const tabs = [
 		{ href: '/', label: 'Today', icon: '🌸' },

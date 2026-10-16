@@ -31,12 +31,22 @@ describe('migrate', () => {
 		const out = migrateSettings(legacy);
 		expect(out.phases.map((p) => p.slots)).toEqual([['daily'], ['morning', 'evening']]);
 		expect('times' in out.phases[0]).toBe(false);
-		expect(out.leewayMinutes).toBe(2);
+		expect(out.switchWindowMinutes).toBe(1);
 		const [known, custom] = out.phases[1].steps;
 		expect(known.dilatorId).toBe('d2');
 		const created = out.dilators.find((d) => d.id === custom.dilatorId);
 		expect(created?.name).toBe('My special one');
 		expect(out.dilators).toHaveLength(7);
+	});
+
+	it('renames leeway to switch window, keeping a custom value', () => {
+		const custom = migrateSettings({ leewayMinutes: 4 } as unknown as Settings);
+		expect(custom.switchWindowMinutes).toBe(4);
+		expect('leewayMinutes' in custom).toBe(false);
+		const untouchedOldDefault = migrateSettings({ leewayMinutes: 2 } as unknown as Settings);
+		expect(untouchedOldDefault.switchWindowMinutes).toBe(1);
+		const already = migrateSettings({ switchWindowMinutes: 3 });
+		expect(already.switchWindowMinutes).toBe(3);
 	});
 
 	it('converts old log slots', () => {

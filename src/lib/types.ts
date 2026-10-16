@@ -40,15 +40,14 @@ export interface Phase {
 
 export interface Messages {
 	running: string[];
-	switch: string[];
 	done: string[];
 }
 
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
-	/** Calm grace period after a timer ends before the alarm escalates. */
-	leewayMinutes: number;
+	/** How long you get to switch dilators after a timer ends before the alarm escalates. */
+	switchWindowMinutes: number;
 	dilators: Dilator[];
 	messages: Messages;
 	phases: Phase[];
@@ -75,6 +74,12 @@ export interface ActiveSession {
 	stepStartedAt: number;
 	phase: SessionPhase;
 	warned: boolean;
+	/** When the timer was paused (null while running). Older saved sessions won't have this. */
+	pausedAt?: number | null;
+	/** Minutes added or removed from the current step with the +/- buttons. */
+	adjustMs?: number;
+	/** When the current step's timer ended (or was skipped), used for the switch window and overtime. */
+	alertSince?: number | null;
 	records: StepRecord[];
 }
 

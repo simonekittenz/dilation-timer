@@ -56,8 +56,15 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 			steps: migrateSteps(legacy.steps ?? [], dilators)
 		} as Phase;
 	});
-	const messages = { ...base.messages, ...saved.messages };
-	return { ...base, ...saved, dilators, messages, phases };
+	const messages = {
+		running: saved.messages?.running ?? base.messages.running,
+		done: saved.messages?.done ?? base.messages.done
+	};
+	const { leewayMinutes, ...rest } = saved as Partial<Settings> & { leewayMinutes?: number };
+	// "leeway" was the old name for the switch window; an untouched old default of 2 becomes 1.
+	const legacyWindow = leewayMinutes === 2 ? base.switchWindowMinutes : leewayMinutes;
+	const switchWindowMinutes = saved.switchWindowMinutes ?? legacyWindow ?? base.switchWindowMinutes;
+	return { ...base, ...rest, switchWindowMinutes, dilators, messages, phases };
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {

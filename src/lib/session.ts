@@ -1,6 +1,7 @@
 import type { ActiveSession, LogEntry, SessionStep, SlotId } from './types';
 
 export const WARN_MS = 10_000;
+export const ADJUST_MS = 60_000;
 
 export function startSession(
 	steps: SessionStep[],
@@ -19,6 +20,9 @@ export function startSession(
 		stepStartedAt: now,
 		phase: 'running',
 		warned: false,
+		pausedAt: null,
+		adjustMs: 0,
+		alertSince: null,
 		records: [
 			{
 				label: steps[0].label,
@@ -32,22 +36,40 @@ export function startSession(
 	};
 }
 
+/** Length of the current step, including any +/- minute adjustments. */
 export function stepDurationMs(s: ActiveSession): number {
-	return s.steps[s.stepIndex].minutes * 60_000;
+	return s.steps[s.stepIndex].minutes * 60_000 + (s.adjustMs ?? 0);
 }
 
-/** Positive while counting down, negative once overtime. */
+export function plannedEnd(s: ActiveSession): number {
+	return s.stepStartedAt + stepDurationMs(s);
+}
+
+export function isPaused(s: ActiveSession): boolean {
+	return s.phase === 'running' && s.pausedAt != null;
+}
+
+/** Positive while counting down. A paused timer is frozen at the moment it was paused. */
 export function remainingMs(s: ActiveSession, now: number): number {
-	return s.stepStartedAt + stepDurationMs(s) - now;
+	return plannedEnd(s) - (s.pausedAt ?? now);
 }
 
-/** Time left in the calm window after the timer elapsed (<= 0 once the alarm should escalate). */
-export function leewayLeftMs(s: ActiveSession, now: number, leewayMs: number): number {
-	return leewayMs + remainingMs(s, now);
+/** When the "time to switch" state began: the planned end, or the moment you skipped ahead. */
+export function alertStart(s: ActiveSession): number {
+	return s.alertSince ?? plannedEnd(s);
 }
 
-export function isEscalated(s: ActiveSession, now: number, leewayMs: number): boolean {
-	return s.phase !== 'running' && leewayLeftMs(s, now, leewayMs) <= 0;
+export function overtimeMs(s: ActiveSession, now: number): number {
+	return Math.max(0, now - alertStart(s));
+}
+
+/** Time left in the switch window after the timer ended (<= 0 once the alarm should escalate). */
+export function switchWindowLeftMs(s: ActiveSession, now: number, switchWindowMs: number): number {
+	return switchWindowMs - (now - alertStart(s));
+}
+
+export function isEscalated(s: ActiveSession, now: number, switchWindowMs: number): boolean {
+	return s.phase !== 'running' && switchWindowLeftMs(s, now, switchWindowMs) <= 0;
 }
 
 export function isLastStep(s: ActiveSession): boolean {
@@ -56,11 +78,51 @@ export function isLastStep(s: ActiveSession): boolean {
 
 /** Advances a running session to `switch` / `finished` once its timer elapses. */
 export function tick(s: ActiveSession, now: number): ActiveSession {
-	if (s.phase !== 'running') return s;
+	if (s.phase !== 'running' || s.pausedAt != null) return s;
 	const left = remainingMs(s, now);
-	if (left <= 0) return { ...s, phase: isLastStep(s) ? 'finished' : 'switch' };
+	if (left <= 0) {
+		return { ...s, phase: isLastStep(s) ? 'finished' : 'switch', alertSince: plannedEnd(s) };
+	}
 	if (left <= WARN_MS && !s.warned) return { ...s, warned: true };
 	return s;
+}
+
+export function pause(s: ActiveSession, now: number): ActiveSession {
+	if (s.phase !== 'running' || s.pausedAt != null) return s;
+	return { ...s, pausedAt: now };
+}
+
+/** Continues a paused timer; the time spent paused doesn't count towards the step. */
+export function resume(s: ActiveSession, now: number): ActiveSession {
+	if (s.phase !== 'running' || s.pausedAt == null) return s;
+	const gap = now - s.pausedAt;
+	return {
+		...s,
+		pausedAt: null,
+		stepStartedAt: s.stepStartedAt + gap,
+		records: s.records.map((r, i) =>
+			i === s.stepIndex ? { ...r, startedAt: r.startedAt + gap } : r
+		)
+	};
+}
+
+/** Adds or removes time on the current step. Refuses to cut it down to nothing. */
+export function adjust(s: ActiveSession, deltaMs: number, now: number): ActiveSession {
+	if (s.phase !== 'running') return s;
+	if (remainingMs(s, now) + deltaMs < 1000) return s;
+	const next = { ...s, adjustMs: (s.adjustMs ?? 0) + deltaMs };
+	return { ...next, warned: remainingMs(next, now) <= WARN_MS ? s.warned : false };
+}
+
+/** Ends the current timer right now (e.g. "next dilator" or "I'm done early"). */
+export function skipStep(s: ActiveSession, now: number): ActiveSession {
+	if (s.phase !== 'running') return s;
+	return {
+		...s,
+		pausedAt: null,
+		phase: isLastStep(s) ? 'finished' : 'switch',
+		alertSince: now
+	};
 }
 
 function closeCurrent(s: ActiveSession, now: number) {
@@ -75,6 +137,9 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 		...s,
 		phase: 'running',
 		warned: false,
+		pausedAt: null,
+		adjustMs: 0,
+		alertSince: null,
 		stepIndex: s.stepIndex + 1,
 		stepStartedAt: now,
 		records: [

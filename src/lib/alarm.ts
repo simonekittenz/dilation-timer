@@ -1,21 +1,50 @@
+type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
+
 let ctx: AudioContext | null = null;
 let loop: ReturnType<typeof setInterval> | null = null;
 let wakeLock: WakeLockSentinel | null = null;
 const baseTitle = 'Dilation timer';
 let titleFlash: ReturnType<typeof setInterval> | null = null;
 
-/** Must be called from a user gesture at least once so the browser allows sound. */
+/**
+ * Must run inside a real tap/click so the browser allows sound.
+ * On iPhone, Web Audio is muted by the silent switch unless the page declares a "playback"
+ * audio session (iOS 17+), so we set that here too.
+ */
 export function unlock() {
 	if (typeof window === 'undefined') return;
-	ctx ??= new AudioContext();
-	if (ctx.state === 'suspended') void ctx.resume();
+	try {
+		const session = (navigator as AudioSessionNavigator).audioSession;
+		if (session && session.type !== 'playback') session.type = 'playback';
+	} catch {
+		// older browsers don't have it
+	}
+	if (!ctx) {
+		try {
+			ctx = new AudioContext();
+		} catch {
+			return;
+		}
+	}
+	if (ctx.state === 'running') return;
+	void ctx.resume();
+	// A silent one-sample blip inside the gesture is what finally unlocks iOS.
+	const blip = ctx.createBufferSource();
+	blip.buffer = ctx.createBuffer(1, 1, 22050);
+	blip.connect(ctx.destination);
+	blip.start(0);
+}
+
+/** True once sound is allowed to play (false before the first tap, or if the phone interrupted it). */
+export function soundReady(): boolean {
+	return !!ctx && ctx.state === 'running';
 }
 
 function beep(freq: number, start: number, length: number, gain: number) {
 	if (!ctx) return;
 	const osc = ctx.createOscillator();
 	const amp = ctx.createGain();
-	osc.type = 'sine';
+	osc.type = 'triangle';
 	osc.frequency.value = freq;
 	amp.gain.setValueAtTime(0, start);
 	amp.gain.linearRampToValueAtTime(gain, start + 0.02);
@@ -25,22 +54,42 @@ function beep(freq: number, start: number, length: number, gain: number) {
 	osc.stop(start + length + 0.05);
 }
 
+function ready(): boolean {
+	if (!ctx) return false;
+	if (ctx.state !== 'running') void ctx.resume();
+	return true;
+}
+
 /** Soft single chime, e.g. "10 seconds left". */
 export function chime() {
-	if (!ctx) return;
-	if (ctx.state === 'suspended') void ctx.resume();
-	beep(660, ctx.currentTime, 0.5, 0.15);
+	if (!ready()) return;
+	beep(660, ctx!.currentTime, 0.5, 0.35);
 	navigator.vibrate?.(80);
 }
 
+/** Short bright two-note ping: "your timer just ended". */
+export function ping() {
+	if (!ready()) return;
+	const t = ctx!.currentTime;
+	beep(988, t, 0.18, 0.6);
+	beep(1319, t + 0.16, 0.3, 0.6);
+	navigator.vibrate?.([120, 60, 120]);
+}
+
 function arpeggio() {
-	if (!ctx) return;
-	if (ctx.state === 'suspended') void ctx.resume();
-	const t = ctx.currentTime;
-	beep(523, t, 0.25, 0.3);
-	beep(659, t + 0.28, 0.25, 0.3);
-	beep(784, t + 0.56, 0.4, 0.3);
+	if (!ready()) return;
+	const t = ctx!.currentTime;
+	beep(523, t, 0.25, 0.8);
+	beep(659, t + 0.28, 0.25, 0.8);
+	beep(784, t + 0.56, 0.4, 0.8);
 	navigator.vibrate?.([200, 100, 200, 100, 300]);
+}
+
+/** For the Settings "Test sound" button. */
+export function testSound() {
+	unlock();
+	ping();
+	setTimeout(arpeggio, 700);
 }
 
 /** Repeats until stopAlarm(). Idempotent. */
