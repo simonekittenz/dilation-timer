@@ -3,9 +3,9 @@ import type { Messages } from './types';
 export const DEFAULT_MESSAGES: Messages = {
 	running: [
 		"You're doing so well ♡",
-		'As the nurses say ""',
+		'As the nurses say "time for dilation 🎶"',
 		'Every session is a little act of self-care.',
-		'Look at you, showing up for yourself!',
+		'You got this! 💖',
 		'Take it slow. There is no rush.',
 		'Future you says thank you ✿',
 		'You and {name} make a great team.',
@@ -15,7 +15,7 @@ export const DEFAULT_MESSAGES: Messages = {
 		'You did it! So proud of you 🎀',
 		'Another one done. Consistency is magic ✨',
 		'Go have some water and a snack, you earned it 🍓',
-		'Be gentle with yourself today ♡',
+		'Be gentle with yourself today 💖',
 		'The bunny is doing a happy hop for you 🐰'
 	]
 };
