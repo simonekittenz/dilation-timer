@@ -40,6 +40,13 @@ describe('schedule', () => {
 		expect(total('wih-year-3-plus')).toBe(60);
 	});
 
+	it('ships Dilator 5 in the kit but not in the standard schedule', () => {
+		expect(settings.dilators.map((d) => d.id)).toContain('d5');
+		const used = new Set(WIH_PHASES.flatMap((p) => p.steps.map((st) => st.dilatorId)));
+		expect(used.has('d5')).toBe(false);
+		expect([...used].sort()).toEqual(['d0', 'd1', 'd2', 'd3', 'd4']);
+	});
+
 	it('resolves phase steps against the dilator list', () => {
 		const phase = WIH_PHASES.find((p) => p.id === 'wih-week-4')!;
 		const steps = resolveSteps(settings.dilators, phase.steps);

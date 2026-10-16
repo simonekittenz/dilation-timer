@@ -6,7 +6,9 @@ export const WIH_DILATORS: Dilator[] = [
 	{ id: 'd1', name: 'Dilator 1', color: '#5a4b9c', diameterMm: 23 },
 	{ id: 'd2', name: 'Dilator 2', color: '#f2c94c', diameterMm: 26 },
 	{ id: 'd3', name: 'Dilator 3', color: '#ef7f8a', diameterMm: 29 },
-	{ id: 'd4', name: 'Dilator 4', color: '#b9a6ec', diameterMm: 32 }
+	{ id: 'd4', name: 'Dilator 4', color: '#b9a6ec', diameterMm: 32 },
+	// Real, but not part of the standard schedule, so no phase uses it. Diameter left for you to fill in.
+	{ id: 'd5', name: 'Dilator 5', color: '#6cc3b5' }
 ];
 
 export function wihDilators(): Dilator[] {

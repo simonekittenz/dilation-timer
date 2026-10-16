@@ -36,7 +36,7 @@ describe('migrate', () => {
 		expect(known.dilatorId).toBe('d2');
 		const created = out.dilators.find((d) => d.id === custom.dilatorId);
 		expect(created?.name).toBe('My special one');
-		expect(out.dilators).toHaveLength(6);
+		expect(out.dilators).toHaveLength(7);
 	});
 
 	it('converts old log slots', () => {
