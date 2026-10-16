@@ -99,7 +99,9 @@
 			{#if escalated}
 				Overtime {formatClock(overtime)}
 			{:else}
-				No rush, I'll nudge you louder in {formatClock(store.leewayLeft)}
+				{s.phase === 'switch' ? 'No rush to swap' : 'No rush'}, I'll nudge you louder in {formatClock(
+					store.leewayLeft
+				)}
 			{/if}
 		</p>
 		<button

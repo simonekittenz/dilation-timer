@@ -92,8 +92,11 @@
 
 <label class="card field leeway">
 	<span>
-		Gentle window
-		<small class="muted">Minutes of calm before the alarm gets loud</small>
+		Gentle switch window
+		<small class="muted">
+			Minutes of quiet, no-pressure time to swap to the next dilator after a timer ends, before the
+			alarm starts blinking and beeping
+		</small>
 	</span>
 	<input type="number" min="0" step="0.5" class="num" bind:value={draft.leewayMinutes} />
 </label>
