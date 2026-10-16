@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	ADJUST_MS,
 	adjust,
+	alertStart,
 	confirmSwitch,
 	finish,
 	isEscalated,
@@ -139,5 +140,15 @@ describe('session', () => {
 		expect(remainingMs(s, 10_000)).toBe(50_000);
 		expect(tick(s, 61_000).phase).toBe('switch');
 		expect(overtimeMs(tick(s, 61_000), 70_000)).toBe(10_000);
+	});
+
+	it('finishing the last dilator never escalates into a nagging alarm', () => {
+		let s = startSession(steps, null, '2026-01-01', 0, 'x');
+		s = confirmSwitch(tick(s, 60_000), 60_000);
+		s = tick(s, 60_000 + 120_000);
+		expect(s.phase).toBe('finished');
+		expect(isEscalated(s, 60_000 + 120_000 + 3_600_000, 60_000)).toBe(false);
+		// ...and it is logged as ending when the timer ended, however late the app noticed
+		expect(finish(s, alertStart(s)).steps[1].actualSeconds).toBe(120);
 	});
 });

@@ -1,4 +1,13 @@
-import { chime, keepAwake, ping, soundReady, startAlarm, stopAlarm, unlock } from './alarm';
+import {
+	celebrate,
+	chime,
+	keepAwake,
+	ping,
+	soundReady,
+	startAlarm,
+	stopAlarm,
+	unlock
+} from './alarm';
 import { toDateString, toTimeString } from './dates';
 import { FALLBACK_COLOR, resolveSteps } from './dilators';
 import { defaultSettings } from './defaults';
@@ -6,6 +15,7 @@ import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import {
 	ADJUST_MS,
 	adjust,
+	alertStart,
 	confirmSwitch,
 	finish,
 	isEscalated,
@@ -23,6 +33,8 @@ import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
 const KEY = 'dilation-timer:v1';
 /** How long the "time to switch" bunny-ears cue stays up. */
 const CUE_MS = 3500;
+/** How long the "all done" celebration stays up before the session logs itself. */
+const CELEBRATE_MS = 6000;
 
 interface Persisted {
 	settings: Settings;
@@ -127,8 +139,12 @@ class Store {
 			if (next.phase !== s.phase) {
 				// Only cue if it just happened, not when catching up after the app was asleep.
 				if (overtimeMs(next, this.now) < 10_000) {
-					this.cueUntil = this.now + CUE_MS;
-					ping();
+					if (next.phase === 'finished') {
+						celebrate();
+					} else {
+						this.cueUntil = this.now + CUE_MS;
+						ping();
+					}
 				}
 			} else if (next.warned && !s.warned) {
 				chime();
@@ -137,13 +153,23 @@ class Store {
 			this.save();
 		}
 		const cur = this.active!;
-		if (cur.phase === 'running' || !this.escalated) stopAlarm();
-		else
-			startAlarm(
-				cur.phase === 'finished'
-					? 'Session done — press the button'
-					: `Switch to ${cur.steps[cur.stepIndex + 1].label}`
-			);
+		if (cur.phase === 'finished' && this.now - alertStart(cur) >= CELEBRATE_MS) {
+			this.complete();
+			return;
+		}
+		if (cur.phase !== 'switch' || !this.escalated) stopAlarm();
+		else startAlarm(`Switch to ${cur.steps[cur.stepIndex + 1].label}`);
+	}
+
+	/** The last dilator is done: log the session (ending when the timer ended) and clear it. */
+	private complete() {
+		const s = this.active;
+		if (!s) return;
+		this.log = [finish(s, alertStart(s)), ...this.log];
+		this.active = null;
+		stopAlarm();
+		void keepAwake(false);
+		this.save();
 	}
 
 	start(slot: SlotId | null) {
@@ -166,10 +192,6 @@ class Store {
 		const now = Date.now();
 		if (this.active.phase === 'switch') {
 			this.active = confirmSwitch(this.active, now);
-		} else if (this.active.phase === 'finished') {
-			this.log = [finish(this.active, now), ...this.log];
-			this.active = null;
-			void keepAwake(false);
 		}
 		this.save();
 		this.step();
@@ -199,6 +221,7 @@ class Store {
 	/** End this dilator's timer now and move on to the switch prompt. */
 	skipStep() {
 		this.change(skipStep);
+		if (this.active?.phase === 'finished') celebrate();
 	}
 
 	cancel() {

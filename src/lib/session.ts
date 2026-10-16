@@ -68,8 +68,9 @@ export function switchWindowLeftMs(s: ActiveSession, now: number, switchWindowMs
 	return switchWindowMs - (now - alertStart(s));
 }
 
+/** Only the "swap to the next dilator" prompt escalates; finishing the last dilator never nags. */
 export function isEscalated(s: ActiveSession, now: number, switchWindowMs: number): boolean {
-	return s.phase !== 'running' && switchWindowLeftMs(s, now, switchWindowMs) <= 0;
+	return s.phase === 'switch' && switchWindowLeftMs(s, now, switchWindowMs) <= 0;
 }
 
 export function isLastStep(s: ActiveSession): boolean {

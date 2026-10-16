@@ -85,6 +85,15 @@ function arpeggio() {
 	navigator.vibrate?.([200, 100, 200, 100, 300]);
 }
 
+/** A few seconds of happy fanfare for the end of a session. */
+export function celebrate() {
+	if (!ready()) return;
+	const t = ctx!.currentTime;
+	[523, 659, 784, 1047].forEach((f, i) => beep(f, t + i * 0.18, i === 3 ? 0.7 : 0.25, 0.7));
+	[784, 1047, 1319].forEach((f, i) => beep(f, t + 1.5 + i * 0.2, i === 2 ? 1.2 : 0.3, 0.7));
+	navigator.vibrate?.([150, 80, 150, 80, 400]);
+}
+
 /** For the Settings "Test sound" button. */
 export function testSound() {
 	unlock();

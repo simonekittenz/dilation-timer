@@ -52,9 +52,15 @@
 
 	<ol class="steps">
 		{#each s.steps as step, i (i)}
-			<li class:done={i < s.stepIndex} class:current={i === s.stepIndex}>
+			<li
+				class:done={i < s.stepIndex || s.phase === 'finished'}
+				class:current={i === s.stepIndex && s.phase !== 'finished'}
+			>
 				<Swatch color={step.color} size={16} />
-				{i < s.stepIndex ? '✓ ' : ''}<DilatorName label={step.label} nickname={step.nickname} />
+				{i < s.stepIndex || s.phase === 'finished' ? '✓ ' : ''}<DilatorName
+					label={step.label}
+					nickname={step.nickname}
+				/>
 			</li>
 		{/each}
 	</ol>
@@ -119,27 +125,19 @@
 				Cancel session
 			</button>
 		</div>
-	{:else}
-		<Bunny mood={escalated ? 'alert' : s.phase === 'finished' ? 'done' : 'happy'} size={110} />
-		{#if s.phase === 'switch'}
-			<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
-			<p class="big swap">
-				Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
-				<strong><DilatorName label={next?.label ?? ''} nickname={next?.nickname} /></strong>
-			</p>
-			{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
-		{:else}
-			<p class="title">{escalated ? 'Psst! All done!' : 'All done, you did it!'}</p>
-			<p class="big">Take the last one out 🌸</p>
-		{/if}
-		{#if bubble}<p class="bubble">{bubble}</p>{/if}
+	{:else if s.phase === 'switch'}
+		<Bunny mood={escalated ? 'alert' : 'happy'} size={110} />
+		<p class="title">{escalated ? 'Psst! Time to switch!' : 'Time to switch ♡'}</p>
+		<p class="big swap">
+			Swap to {#if next}<Swatch color={next.color} size={34} />{/if}
+			<strong><DilatorName label={next?.label ?? ''} nickname={next?.nickname} /></strong>
+		</p>
+		{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
 		<p class="muted hint">
 			{#if escalated}
 				Overtime {formatClock(overtime)}
 			{:else}
-				{s.phase === 'switch' ? 'No rush to swap' : 'No rush'}, I'll nudge you louder in {formatClock(
-					store.switchWindowLeft
-				)}
+				No rush to swap, I'll nudge you louder in {formatClock(store.switchWindowLeft)}
 			{/if}
 		</p>
 		<button
@@ -148,11 +146,14 @@
 			class:breathe={!escalated}
 			onclick={() => store.confirm()}
 		>
-			{s.phase === 'switch' ? 'I switched ✓' : 'Finished ✓'}
+			I switched ✓
 		</button>
-		{#if s.phase === 'switch'}
-			<p class="muted hint">The next timer starts when you press.</p>
-		{/if}
+		<p class="muted hint">The next timer starts when you press.</p>
+	{:else}
+		<Bunny mood="done" size={120} />
+		<p class="title">All done, you did it! 🎉</p>
+		<p class="big">Take the last one out 🌸</p>
+		{#if bubble}<p class="bubble">{bubble}</p>{/if}
 	{/if}
 </section>
 
