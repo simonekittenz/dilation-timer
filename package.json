@@ -12,18 +12,30 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"format": "prettier --write .",
-		"format:check": "prettier --check ."
+		"format:check": "prettier --check .",
+		"sounds:render": "node scripts/render-sounds.mjs",
+		"cap:sync": "npm run build:native && cap sync",
+		"ios": "npm run cap:sync && cap open ios",
+		"android": "npm run cap:sync && cap open android",
+		"icons": "node scripts/render-icons.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#ff7eb6' --iconBackgroundColorDark '#c0558a' --splashBackgroundColor '#fff0f6' --splashBackgroundColorDark '#2b1626'"
 	},
 	"devDependencies": {
+		"@capacitor/cli": "^8.5.3",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"prettier": "^3.9.10",
 		"prettier-plugin-svelte": "^4.1.1",
+		"puppeteer-core": "^25.14.0",
 		"svelte": "^5.57.2",
 		"svelte-check": "^4.4.6",
 		"typescript": "^6.0.2",
 		"vite": "^8.3.4",
 		"vitest": "^5.0.5"
+	},
+	"dependencies": {
+		"@capacitor/android": "^8.5.3",
+		"@capacitor/core": "^8.5.3",
+		"@capacitor/ios": "^8.5.3"
 	}
 }

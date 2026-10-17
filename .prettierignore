@@ -1,0 +1,7 @@
+# generated or third-party, not ours to format
+ios/
+android/
+build/
+.svelte-kit/
+assets/
+static/sounds/

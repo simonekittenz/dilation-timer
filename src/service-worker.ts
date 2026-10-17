@@ -6,7 +6,8 @@ import { build, files, version } from '$service-worker';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `cache-${version}`;
-const ASSETS = [...build, ...files, '/200.html'];
+// The WAV alarm sounds are only used by the iOS/Android app, so the web app doesn't download them.
+const ASSETS = [...build, ...files.filter((f) => !f.startsWith('/sounds/')), '/200.html'];
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(

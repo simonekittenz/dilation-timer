@@ -1,17 +1,34 @@
+import { loopNative, nativeAudioAvailable, playNative, stopNative } from './nativeAudio';
+import {
+	ALARM_INTERVAL_MS,
+	CELEBRATE_TIMES,
+	FANFARE_GAP,
+	FANFARE_LENGTH,
+	NOTES,
+	PING_GAP,
+	arpeggioScore,
+	buildChain,
+	chimeScore,
+	fanfareScore,
+	pingScore,
+	playScore,
+	type Note,
+	type SoundName
+} from './sounds';
+
+// these used to live here; other code and tests still import them from this module
+export { CELEBRATE_TIMES, FANFARE_GAP, NOTES, PING_GAP };
+
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
 
 let ctx: AudioContext | null = null;
-/**
- * Pitches in Hz. They sit in the middle of the range on purpose: a phone speaker still carries
- * the square wave's overtones, so low notes stay audible without being shrill.
- */
-export const NOTES = { C5: 523, E5: 659, G5: 784, C6: 1047 };
-
 /** Everything plays into `bus`: lowpass -> limiter -> master volume -> speakers. */
 let bus: AudioNode | null = null;
 let master: GainNode | null = null;
 let volume = 1;
 let loop: ReturnType<typeof setInterval> | null = null;
+/** True while the app wrapper's native alarm loop is running. */
+let nativeLooping = false;
 let wakeLock: WakeLockSentinel | null = null;
 const baseTitle = 'Dilation timer';
 let titleFlash: ReturnType<typeof setInterval> | null = null;
@@ -23,6 +40,9 @@ let titleFlash: ReturnType<typeof setInterval> | null = null;
  */
 export function unlock() {
 	if (typeof window === 'undefined') return;
+	// In the app, sound comes from the native plugin. Touching Web Audio here could make the web
+	// view claim the audio session and pause the user's music for nothing.
+	if (nativeAudioAvailable()) return;
 	try {
 		const session = (navigator as AudioSessionNavigator).audioSession;
 		if (session && session.type !== 'playback') session.type = 'playback';
@@ -47,24 +67,9 @@ export function unlock() {
 }
 
 function buildGraph(c: AudioContext) {
-	// Notes are sustained square waves for the old-school feel. The lowpass rounds off their
-	// sharp top end, and the limiter stops overlapping notes from distorting.
-	const lowpass = c.createBiquadFilter();
-	lowpass.type = 'lowpass';
-	lowpass.frequency.value = 2200;
-	lowpass.Q.value = 0.5;
-	const limiter = c.createDynamicsCompressor();
-	limiter.threshold.value = -8;
-	limiter.knee.value = 0;
-	limiter.ratio.value = 20;
-	limiter.attack.value = 0.002;
-	limiter.release.value = 0.1;
-	master = c.createGain();
-	master.gain.value = volume;
-	lowpass.connect(limiter);
-	limiter.connect(master);
-	master.connect(c.destination);
-	bus = lowpass;
+	const chain = buildChain(c, volume);
+	bus = chain.bus;
+	master = chain.master;
 }
 
 /** 0 (silent) to 1 (full), from the Settings volume slider. */
@@ -75,24 +80,11 @@ export function setVolume(v: number) {
 
 /** True once sound is allowed to play (false before the first tap, or if the phone interrupted it). */
 export function soundReady(): boolean {
-	return !!ctx && ctx.state === 'running';
+	return nativeAudioAvailable() || (!!ctx && ctx.state === 'running');
 }
 
-/** A note that holds its level and then drops away, so it stays loud for its whole length. */
-function beep(freq: number, start: number, length: number, gain: number) {
-	if (!ctx || !bus) return;
-	const osc = ctx.createOscillator();
-	const amp = ctx.createGain();
-	osc.type = 'square';
-	osc.frequency.value = freq;
-	const release = Math.min(0.1, length / 2);
-	amp.gain.setValueAtTime(0, start);
-	amp.gain.linearRampToValueAtTime(gain, start + 0.015);
-	amp.gain.setValueAtTime(gain, start + length - release);
-	amp.gain.linearRampToValueAtTime(0, start + length);
-	osc.connect(amp).connect(bus);
-	osc.start(start);
-	osc.stop(start + length + 0.02);
+function schedule(notes: Note[], startAt: number) {
+	if (ctx && bus) playScore(ctx, bus, notes, startAt);
 }
 
 function ready(): boolean {
@@ -101,44 +93,43 @@ function ready(): boolean {
 	return true;
 }
 
-/** Single clear note, e.g. "10 seconds left". */
-export function chime() {
-	if (!ready()) return;
-	beep(NOTES.E5, ctx!.currentTime, 0.4, 0.6);
-	navigator.vibrate?.(80);
+/**
+ * Plays a named sound: through the native plugin when running inside the app, otherwise (or if
+ * the plugin isn't there) with Web Audio via `web`.
+ */
+function sound(name: SoundName, web: () => void) {
+	if (nativeAudioAvailable()) {
+		void playNative(name, volume).then((played) => {
+			if (!played) web();
+		});
+		return;
+	}
+	web();
 }
 
-/** Seconds between repeats of the switch ping; three fit inside the ears cue. */
-export const PING_GAP = 1.1;
+function webPlay(notes: Note[]) {
+	if (ready()) schedule(notes, ctx!.currentTime);
+}
+
+/** Single clear note, e.g. "10 seconds left". */
+export function chime() {
+	navigator.vibrate?.(80);
+	sound('chime', () => webPlay(chimeScore()));
+}
 
 /** Short bright two-note ping, repeated: "your timer just ended, time to switch". */
 export function ping(times = 3) {
-	if (!ready()) return;
-	const t = ctx!.currentTime;
-	for (let i = 0; i < times; i++) {
-		const at = t + i * PING_GAP;
-		beep(NOTES.G5, at, 0.18, 0.9);
-		beep(NOTES.C6, at + 0.16, 0.3, 0.9);
-	}
 	// buzz-buzz, pause, buzz-buzz, ... in step with the sound
 	const buzz = Array.from({ length: times }, () => [120, 60, 120, PING_GAP * 1000 - 300]).flat();
 	navigator.vibrate?.(buzz.slice(0, -1));
+	sound(times === 1 ? 'ping-single' : 'ping', () => webPlay(pingScore(times)));
 }
 
-function arpeggio() {
+function webArpeggio() {
 	if (!ready()) return;
-	const t = ctx!.currentTime;
-	beep(NOTES.C5, t, 0.25, 0.9);
-	beep(NOTES.E5, t + 0.28, 0.25, 0.9);
-	beep(NOTES.G5, t + 0.56, 0.25, 0.9);
-	beep(NOTES.C6, t + 0.84, 0.5, 0.9);
 	navigator.vibrate?.([200, 100, 200, 100, 300]);
+	webPlay(arpeggioScore());
 }
-
-/** One fanfare is about 2s long; the gap leaves a beat of silence before it repeats. */
-const FANFARE_LENGTH = 2.0;
-export const FANFARE_GAP = 2.3;
-export const CELEBRATE_TIMES = 3;
 
 /** How long the "all done" screen stays up: the whole fanfare plus a moment to enjoy it. */
 export const CELEBRATE_MS = Math.round(
@@ -147,23 +138,16 @@ export const CELEBRATE_MS = Math.round(
 
 /** Happy fanfare for the end of a session, played three times. */
 export function celebrate(times = CELEBRATE_TIMES) {
-	if (!ready()) return;
-	const t0 = ctx!.currentTime;
-	for (let i = 0; i < times; i++) {
-		const t = t0 + i * FANFARE_GAP;
-		[NOTES.C5, NOTES.E5, NOTES.G5, NOTES.C6].forEach((f, k) =>
-			beep(f, t + k * 0.18, k === 3 ? 0.5 : 0.25, 0.9)
-		);
-		[NOTES.E5, NOTES.G5, NOTES.C6].forEach((f, k) =>
-			beep(f, t + 1.0 + k * 0.2, k === 2 ? 0.7 : 0.3, 0.9)
-		);
-	}
 	const unit = [150, 80, 150, 80, 400, FANFARE_GAP * 1000 - 860];
 	navigator.vibrate?.(
 		Array.from({ length: times }, () => unit)
 			.flat()
 			.slice(0, -1)
 	);
+	const web = () => webPlay(fanfareScore(times));
+	// the bundled fanfare file is the standard three plays
+	if (times === CELEBRATE_TIMES) sound('fanfare', web);
+	else web();
 }
 
 /** One ping, so moving the volume slider lets you hear the new level. */
@@ -176,14 +160,22 @@ export function previewSound() {
 export function testSound() {
 	unlock();
 	ping();
-	setTimeout(arpeggio, 3 * PING_GAP * 1000 + 300);
+	setTimeout(() => sound('arpeggio', webArpeggio), 3 * PING_GAP * 1000 + 300);
 }
 
 /** Repeats until stopAlarm(). Idempotent. */
 export function startAlarm(message: string) {
-	if (!loop) {
-		arpeggio();
-		loop = setInterval(arpeggio, 2500);
+	if (!loop && !nativeLooping) {
+		if (nativeAudioAvailable()) {
+			nativeLooping = true;
+			void loopNative('arpeggio', volume, ALARM_INTERVAL_MS).then((started) => {
+				if (started || !nativeLooping) return;
+				nativeLooping = false; // the plugin wasn't usable after all: use Web Audio
+				startWebLoop();
+			});
+		} else {
+			startWebLoop();
+		}
 	}
 	if (!titleFlash) {
 		let on = false;
@@ -194,7 +186,16 @@ export function startAlarm(message: string) {
 	}
 }
 
+function startWebLoop() {
+	webArpeggio();
+	loop = setInterval(webArpeggio, ALARM_INTERVAL_MS);
+}
+
 export function stopAlarm() {
+	if (nativeLooping) {
+		nativeLooping = false;
+		void stopNative();
+	}
 	if (loop) clearInterval(loop);
 	if (titleFlash) clearInterval(titleFlash);
 	loop = titleFlash = null;
