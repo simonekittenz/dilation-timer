@@ -255,6 +255,21 @@ class Store {
 		this.save();
 	}
 
+	/** Replaces everything on this device with a (already validated) backup. */
+	restoreBackup(backup: {
+		settings: Settings;
+		log: LogEntry[];
+	}): { ok: true } | { ok: false; error: string } {
+		if (this.active) {
+			return { ok: false, error: 'Finish or cancel the session that is running first.' };
+		}
+		this.settings = backup.settings;
+		this.log = backup.log;
+		setVolume(backup.settings.volume / 100);
+		this.save();
+		return { ok: true };
+	}
+
 	removeLog(id: string) {
 		this.log = this.log.filter((e) => e.id !== id);
 		this.save();

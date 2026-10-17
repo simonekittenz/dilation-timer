@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { previewSound, setVolume, testSound } from '$lib/alarm';
+	import { backupFileName, createBackup, describeBackup, parseBackup } from '$lib/backup';
+	import { saveTextFile } from '$lib/files';
 	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
@@ -55,6 +57,44 @@
 		document
 			.getElementById('current-phase')
 			?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+
+	let backupNote = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
+
+	async function saveBackup() {
+		const backup = createBackup($state.snapshot(store.settings), $state.snapshot(store.log));
+		const result = await saveTextFile(backupFileName(), JSON.stringify(backup, null, 2));
+		backupNote =
+			result === 'cancelled'
+				? null
+				: { kind: 'ok', text: 'Backup saved. Keep the file somewhere safe ♡' };
+	}
+
+	async function restoreBackup(event: Event & { currentTarget: HTMLInputElement }) {
+		const input = event.currentTarget;
+		const file = input.files?.[0];
+		input.value = ''; // so choosing the same file again still works
+		if (!file) return;
+		const parsed = parseBackup(await file.text());
+		if (!parsed.ok) {
+			backupNote = { kind: 'error', text: parsed.error };
+			return;
+		}
+		if (
+			!confirm(
+				`Replace everything on this device with this backup?\n\n${describeBackup(parsed)}\n\nThis can't be undone.`
+			)
+		) {
+			return;
+		}
+		const result = store.restoreBackup(parsed);
+		if (!result.ok) {
+			backupNote = { kind: 'error', text: result.error };
+			return;
+		}
+		draft = $state.snapshot(store.settings);
+		messageText = messagesToText(store.settings.messages);
+		backupNote = { kind: 'ok', text: 'Restored ✓ Your history and settings are back.' };
 	}
 
 	function resetMessages() {
@@ -236,6 +276,24 @@
 	{/each}
 	<button class="btn ghost small" onclick={addDilator}>+ Add dilator</button>
 </details>
+
+<section class="card backup">
+	<strong>Back up your data 💾</strong>
+	<p class="muted">
+		Your history and settings live only on this device. Save a copy before switching phones, or
+		before moving to the app version.
+	</p>
+	<div class="row">
+		<button class="btn small" onclick={saveBackup}>💾 Save backup</button>
+		<label class="btn ghost small file">
+			📂 Restore backup
+			<input type="file" accept="application/json,.json" onchange={restoreBackup} />
+		</label>
+	</div>
+	{#if backupNote}
+		<p class="note-{backupNote.kind}" role="status">{backupNote.text}</p>
+	{/if}
+</section>
 
 <details class="card phase">
 	<summary><strong>Encouragement 💌</strong></summary>
@@ -477,6 +535,32 @@
 	.tile:has(input:focus-visible) {
 		outline: 3px solid var(--accent-strong);
 		outline-offset: 2px;
+	}
+	.backup {
+		display: grid;
+		gap: 0.6rem;
+		margin: 0.6rem 0;
+	}
+	.backup p {
+		font-size: 0.9rem;
+	}
+	.file {
+		position: relative;
+		cursor: pointer;
+	}
+	.file input {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+	.note-ok {
+		color: var(--ok);
+		font-weight: 800;
+	}
+	.note-error {
+		color: var(--warn);
+		font-weight: 800;
 	}
 	.sound-test {
 		display: grid;

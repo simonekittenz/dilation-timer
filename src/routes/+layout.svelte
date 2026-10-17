@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { browser } from '$app/environment';
 	import { page, updated } from '$app/state';
+	import { isNative } from '$lib/platform';
 	import { store } from '$lib/store.svelte';
 
 	let { children } = $props();
@@ -12,10 +13,11 @@
 	// An installed app can sit open in the background for days. When a new version has been
 	// deployed, reload into it, but never in the middle of a session.
 	$effect(() => {
-		if (updated.current && !store.active) location.reload();
+		if (updated.current && !store.active && !isNative()) location.reload();
 	});
 
 	$effect(() => {
+		if (isNative()) return;
 		const check = () => document.visibilityState === 'visible' && void updated.check();
 		document.addEventListener('visibilitychange', check);
 		return () => document.removeEventListener('visibilitychange', check);
