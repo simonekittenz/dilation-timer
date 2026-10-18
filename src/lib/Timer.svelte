@@ -160,7 +160,7 @@
 				+ 1 min
 			</button>
 		{/if}
-		<p class="muted hint">The next timer starts when you press.</p>
+		<p class="muted hint">The next timer starts when you press "I switched".</p>
 	{:else}
 		<Mascot mood="done" size={120} />
 		<p class="title">All done, you did it! 🎉</p>
