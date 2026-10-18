@@ -30,9 +30,34 @@ export function addDays(date: string, n: number): string {
 }
 
 /** "Oct 9" style label for a YYYY-MM-DD string, in the user's locale. */
-export function formatShortDate(date: string): string {
+export function formatShortDate(date: string, withYear = false): string {
 	const [y, m, d] = date.split('-').map(Number);
-	return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+	return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+		month: 'short',
+		day: 'numeric',
+		...(withYear ? { year: 'numeric' } : {})
+	});
+}
+
+const yearOf = (date: string) => Number(date.slice(0, 4));
+
+/**
+ * A date for the schedule: "Oct 24", or "Oct 24, 2027" when it isn't in `refYear` (the surgery
+ * year), so a date far ahead can't be mistaken for one this year.
+ */
+export function formatScheduleDate(date: string, refYear: number): string {
+	return formatShortDate(date, yearOf(date) !== refYear);
+}
+
+/**
+ * "Oct 24 – Oct 30", with the year on both ends when the range runs into another calendar year or
+ * outside `refYear` (the surgery year); "Oct 24 →" when it has no end. `end` null means open-ended.
+ */
+export function formatDateRange(start: string, end: string | null, refYear: number): string {
+	if (end === null) return `${formatScheduleDate(start, refYear)} →`;
+	if (end === start) return formatScheduleDate(start, refYear);
+	const years = yearOf(start) !== yearOf(end) || yearOf(start) !== refYear;
+	return `${formatShortDate(start, years)} – ${formatShortDate(end, years)}`;
 }
 
 /** "Monday, 12 October 2026" for a YYYY-MM-DD string, in the user's locale. */

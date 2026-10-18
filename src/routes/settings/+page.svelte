@@ -3,7 +3,7 @@
 	import { previewSound, setVolume, testSound } from '$lib/alarm';
 	import { backupFileName, createBackup, describeBackup, parseBackup } from '$lib/backup';
 	import { saveTextFile } from '$lib/files';
-	import { addDays, dayNumber, formatShortDate } from '$lib/dates';
+	import { addDays, dayNumber, formatDateRange, formatScheduleDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { wihPhases } from '$lib/defaults';
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
@@ -62,9 +62,11 @@
 	);
 
 	function dateRange(from: number, to: number | null): string {
-		const start = formatShortDate(addDays(draft.startDate, from - 1));
-		if (to === null) return `${start} →`;
-		return to === from ? start : `${start} – ${formatShortDate(addDays(draft.startDate, to - 1))}`;
+		return formatDateRange(
+			addDays(draft.startDate, from - 1),
+			to === null ? null : addDays(draft.startDate, to - 1),
+			Number(draft.startDate.slice(0, 4))
+		);
 	}
 
 	function jumpToCurrent() {
@@ -473,7 +475,10 @@
 						: 's'}{/if}
 				{#if hasDate}
 					<span class="muted"
-						>· starts {formatShortDate(addDays(draft.startDate, phase.fromDay - 1))}</span
+						>· starts {formatScheduleDate(
+							addDays(draft.startDate, phase.fromDay - 1),
+							Number(draft.startDate.slice(0, 4))
+						)}</span
 					>
 				{/if}
 			</span>

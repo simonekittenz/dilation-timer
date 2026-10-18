@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { addDays, formatLongDate, formatShortDate } from './dates';
+	import {
+		addDays,
+		formatDateRange,
+		formatLongDate,
+		formatScheduleDate,
+		formatShortDate
+	} from './dates';
 	import Mascot from './Mascot.svelte';
 	import { summarizeWeek } from './setup';
 	import { store } from './store.svelte';
@@ -10,15 +16,13 @@
 
 	const stage = $derived(store.settings.setup);
 	const week = $derived(summarizeWeek(store.settings, store.today));
-	const range = $derived(
-		week.phaseStart
-			? week.phaseEnd
-				? week.phaseEnd === week.phaseStart
-					? formatShortDate(week.phaseStart)
-					: `${formatShortDate(week.phaseStart)} – ${formatShortDate(week.phaseEnd)}`
-				: `${formatShortDate(week.phaseStart)} onwards`
-			: ''
-	);
+	const range = $derived.by(() => {
+		if (!week.phaseStart) return '';
+		const ref = Number(week.surgeryDate.slice(0, 4));
+		return week.phaseEnd == null
+			? `${formatScheduleDate(week.phaseStart, ref)} onwards`
+			: formatDateRange(week.phaseStart, week.phaseEnd, ref);
+	});
 	const inDays = (n: number) => (n === 1 ? 'tomorrow' : `in ${n} days`);
 
 	function yes() {
