@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ALERT_ID, MAX_NUDGES, NUDGE_EVERY_MS, planBackgroundAlerts } from './backgroundAlerts';
-import { adjust, confirmSwitch, pause, skipStep, startSession, tick } from './session';
+import {
+	adjust,
+	chillOut,
+	confirmSwitch,
+	extendSwitchWindow,
+	pause,
+	skipStep,
+	startSession,
+	tick
+} from './session';
 
 const steps = [
 	{ label: 'Dilator 1', minutes: 5, color: '#fff' },
@@ -82,5 +91,21 @@ describe('planBackgroundAlerts', () => {
 		const s = tick(startSession(steps, null, '2026-01-01', 0, 'x'), 5 * MIN);
 		const now = 5 * MIN + 3 * NUDGE_EVERY_MS;
 		for (const a of planBackgroundAlerts(s, now, 0)) expect(a.at).toBeGreaterThan(now);
+	});
+
+	it('follows "+1 min" on the switch screen: reminders start one minute later', () => {
+		let s = tick(startSession(steps, null, '2026-01-01', 0, 'x'), 5 * MIN + 1000);
+		s = extendSwitchWindow(s, 5 * MIN + 2000, W);
+		const plan = planBackgroundAlerts(s, 5 * MIN + 3000, W);
+		expect(plan[0].at).toBe(5 * MIN + W + MIN);
+	});
+
+	it('follows "Chill out": the next reminder is a whole new window away', () => {
+		let s = tick(startSession(steps, null, '2026-01-01', 0, 'x'), 5 * MIN + 1000);
+		const now = 20 * MIN;
+		s = chillOut(s, now, W);
+		const plan = planBackgroundAlerts(s, now + 1000, W);
+		expect(plan[0].at).toBe(now + W);
+		expect(plan).toHaveLength(MAX_NUDGES);
 	});
 });

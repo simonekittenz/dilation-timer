@@ -31,7 +31,9 @@ import {
 	ADJUST_MS,
 	adjust,
 	alertStart,
+	chillOut,
 	confirmSwitch,
+	extendSwitchWindow,
 	finish,
 	isEscalated,
 	overtimeMs,
@@ -279,6 +281,16 @@ class Store {
 
 	resume() {
 		this.change(resume);
+	}
+
+	/** Switch screen: one more gentle minute before the louder nudging, for this switch only. */
+	addSwitchMinute() {
+		this.change((s, now) => extendSwitchWindow(s, now, this.switchWindowMs));
+	}
+
+	/** Switch screen, once the alarm is going: stop it and wait a fresh switch window. */
+	chill() {
+		this.change((s, now) => chillOut(s, now, this.switchWindowMs));
 	}
 
 	/** Add (or, with a negative number, remove) minutes on the current dilator. */

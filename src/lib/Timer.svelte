@@ -149,6 +149,17 @@
 		>
 			I switched ✓
 		</button>
+		{#if escalated}
+			<button class="btn ghost" onclick={() => store.chill()}>Chill out, I'm on it!</button>
+		{:else}
+			<button
+				class="btn ghost small"
+				onclick={() => store.addSwitchMinute()}
+				aria-label="Add one minute before the louder nudge"
+			>
+				+ 1 min
+			</button>
+		{/if}
 		<p class="muted hint">The next timer starts when you press.</p>
 	{:else}
 		<Mascot mood="done" size={120} />

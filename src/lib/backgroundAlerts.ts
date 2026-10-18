@@ -1,4 +1,4 @@
-import { alertStart, plannedEnd } from './session';
+import { escalateAt, plannedEnd } from './session';
 import type { ActiveSession, SessionStep } from './types';
 
 /** Alerts get ids in this range, so they can all be found and cancelled again. */
@@ -80,5 +80,5 @@ export function planBackgroundAlerts(
 
 	// 'switch': the timer is over and we're waiting for "I switched"
 	if (!next) return [];
-	return nudges(next, Math.max(alertStart(s) + switchWindowMs, now + 2_000), now);
+	return nudges(next, Math.max(escalateAt(s, switchWindowMs), now + 2_000), now);
 }

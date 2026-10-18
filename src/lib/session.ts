@@ -63,14 +63,45 @@ export function overtimeMs(s: ActiveSession, now: number): number {
 	return Math.max(0, now - alertStart(s));
 }
 
+/**
+ * When the gentle switch window ends and the alarm escalates: the switch window after the timer
+ * ended, pushed back by any "+1 min" presses, or by "Chill out, I'm on it" (whichever is later).
+ */
+export function escalateAt(s: ActiveSession, switchWindowMs: number): number {
+	return Math.max(alertStart(s) + switchWindowMs + (s.windowExtraMs ?? 0), s.quietUntil ?? 0);
+}
+
 /** Time left in the switch window after the timer ended (<= 0 once the alarm should escalate). */
 export function switchWindowLeftMs(s: ActiveSession, now: number, switchWindowMs: number): number {
-	return switchWindowMs - (now - alertStart(s));
+	return escalateAt(s, switchWindowMs) - now;
 }
 
 /** Only the "swap to the next dilator" prompt escalates; finishing the last dilator never nags. */
 export function isEscalated(s: ActiveSession, now: number, switchWindowMs: number): boolean {
 	return s.phase === 'switch' && switchWindowLeftMs(s, now, switchWindowMs) <= 0;
+}
+
+export const ADD_WINDOW_MS = 60_000;
+/** If the switch window is set to 0, "Chill out" still buys this long. */
+export const MIN_CHILL_MS = 60_000;
+
+/** "+1 min" on the switch screen: more gentle time for this one switch, not the setting itself. */
+export function extendSwitchWindow(
+	s: ActiveSession,
+	now: number,
+	switchWindowMs: number
+): ActiveSession {
+	if (s.phase !== 'switch' || isEscalated(s, now, switchWindowMs)) return s;
+	return { ...s, windowExtraMs: (s.windowExtraMs ?? 0) + ADD_WINDOW_MS };
+}
+
+/**
+ * "Chill out, I'm on it!": ends the nagging and waits a fresh switch window before nudging again.
+ * Only meaningful once the alarm has escalated.
+ */
+export function chillOut(s: ActiveSession, now: number, switchWindowMs: number): ActiveSession {
+	if (!isEscalated(s, now, switchWindowMs)) return s;
+	return { ...s, quietUntil: now + (switchWindowMs > 0 ? switchWindowMs : MIN_CHILL_MS) };
 }
 
 export function isLastStep(s: ActiveSession): boolean {
@@ -141,6 +172,8 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 		pausedAt: null,
 		adjustMs: 0,
 		alertSince: null,
+		windowExtraMs: 0,
+		quietUntil: null,
 		stepIndex: s.stepIndex + 1,
 		stepStartedAt: now,
 		records: [

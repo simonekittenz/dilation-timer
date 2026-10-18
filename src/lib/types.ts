@@ -95,6 +95,10 @@ export interface ActiveSession {
 	adjustMs?: number;
 	/** When the current step's timer ended (or was skipped), used for the switch window and overtime. */
 	alertSince?: number | null;
+	/** Extra gentle time added with "+1 min" on the switch screen. Applies to this switch only. */
+	windowExtraMs?: number;
+	/** "Chill out, I'm on it": no nudging before this moment. Applies to this switch only. */
+	quietUntil?: number | null;
 	records: StepRecord[];
 }
 
