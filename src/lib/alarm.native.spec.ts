@@ -217,4 +217,28 @@ describe('alarm inside the iOS/Android app (native plugin)', () => {
 		await settle();
 		expect(plugin.stop).not.toHaveBeenCalled();
 	});
+
+	it('while the app is in the background the in-app sounds stay quiet (the phone alerts instead)', async () => {
+		const plugin = fakePlugin();
+		const { alarm } = await load(plugin);
+		alarm.startAlarm('x');
+		await settle();
+		expect(plugin.loop).toHaveBeenCalledTimes(1);
+		alarm.setAppActive(false);
+		await settle();
+		expect(plugin.stop).toHaveBeenCalled(); // a loop already running is stopped
+		plugin.play.mockClear();
+		plugin.loop.mockClear();
+		alarm.ping();
+		alarm.chime();
+		alarm.celebrate();
+		alarm.startAlarm('x');
+		await settle();
+		expect(plugin.play).not.toHaveBeenCalled();
+		expect(plugin.loop).not.toHaveBeenCalled();
+		alarm.setAppActive(true);
+		alarm.ping();
+		await settle();
+		expect(plugin.play).toHaveBeenCalled();
+	});
 });

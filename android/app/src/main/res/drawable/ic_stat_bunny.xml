@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A small white bunny head for the status bar (Android only uses its outline, so it is one colour). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8.2,2C7,2 6,3.9 6,7.1v3.2C4.8,11.3 4,12.8 4,14.5C4,17.9 7.6,20.5 12,20.5s8,-2.6 8,-6c0,-1.7 -0.8,-3.2 -2,-4.2V7.1C18,3.9 17,2 15.8,2c-1.2,0 -2.2,1.9 -2.2,5.1v1.6C13.1,8.6 12.6,8.5 12,8.5s-1.1,0.1 -1.6,0.2V7.1C10.4,3.9 9.4,2 8.2,2z" />
+</vector>

@@ -11,7 +11,7 @@
 	import { chainPhases, findPhaseProblems, phaseLength, resizePhase } from '$lib/phases';
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
 	import Mascot from '$lib/Mascot.svelte';
-	import { isNative } from '$lib/platform';
+	import { isNative, nativePlatform } from '$lib/platform';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Settings } from '$lib/types';
@@ -69,6 +69,15 @@
 		document
 			.getElementById('current-phase')
 			?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+
+	const settingsVolumeOff = $derived(Number(draft.volume) === 0);
+	let alertNote = $state('');
+	async function testAlert() {
+		const sent = await store.testLockedScreenAlert();
+		alertNote = sent
+			? 'Test alert on its way. Lock your phone now ♡'
+			: "Couldn't schedule it. Check that notifications are allowed for this app.";
 	}
 
 	let backupNote = $state<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -268,6 +277,42 @@
 		</small>
 	{/if}
 </section>
+
+{#if isNative()}
+	<section class="card alerts">
+		<div class="sound-head">
+			<span>Locked-screen alerts 🔔</span>
+			{#if store.alertsPermission === 'granted'}
+				<button class="btn small" onclick={testAlert}>Send a test</button>
+			{:else if store.alertsPermission === 'prompt'}
+				<button class="btn small" onclick={() => store.enableLockedScreenAlerts()}>Turn on</button>
+			{/if}
+		</div>
+		<p class="muted">
+			When your phone is locked or the app is in the background, it still alerts you the moment a
+			timer ends, then gently reminds you if you haven't switched yet.
+		</p>
+		{#if store.alertsPermission === 'granted'}
+			<small class="ok"
+				>On ✓ Press "Send a test", then lock your phone: it arrives in 10 seconds.</small
+			>
+		{:else if store.alertsPermission === 'denied'}
+			<small class="warn-text">
+				Off. Allow notifications for Dilation timer in your phone's settings to get these.
+			</small>
+		{:else if store.alertsPermission === 'prompt'}
+			<small class="muted">Not allowed yet. Press "Turn on" and say yes when your phone asks.</small
+			>
+		{/if}
+		{#if alertNote}<small role="status">{alertNote}</small>{/if}
+		<small class="muted">
+			{#if settingsVolumeOff}Alerts are silent while the alarm volume is off.{/if}
+			{#if nativePlatform() === 'ios'}
+				On iPhone, alerts use your normal notification sound and follow the silent switch.
+			{/if}
+		</small>
+	</section>
+{/if}
 
 <details class="card phase">
 	<summary
@@ -609,6 +654,23 @@
 		font-weight: 800;
 	}
 	.note-error {
+		color: var(--warn);
+		font-weight: 800;
+	}
+	.alerts {
+		display: grid;
+		gap: 0.6rem;
+		margin: 0.6rem 0;
+	}
+	.alerts p,
+	.alerts small {
+		font-size: 0.9rem;
+	}
+	.alerts .ok {
+		color: var(--ok);
+		font-weight: 800;
+	}
+	.alerts .warn-text {
 		color: var(--warn);
 		font-weight: 800;
 	}

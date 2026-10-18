@@ -29,6 +29,12 @@ let volume = 1;
 let loop: ReturnType<typeof setInterval> | null = null;
 /** True while the app wrapper's native alarm loop is running. */
 let nativeLooping = false;
+/**
+ * False while the app is in the background or the screen is locked. Then the phone's notification
+ * alerts do the alerting (see notifications.ts), so the in-app sounds stay quiet instead of ringing
+ * at the same time.
+ */
+let appActive = true;
 let wakeLock: WakeLockSentinel | null = null;
 const baseTitle = 'Dilation timer';
 let titleFlash: ReturnType<typeof setInterval> | null = null;
@@ -99,7 +105,7 @@ function ready(): boolean {
  */
 function sound(name: SoundName, web: () => void) {
 	// Volume 0 means no sound at all: don't even play silence, which would still lower other apps' music.
-	if (volume <= 0) return;
+	if (volume <= 0 || !appActive) return;
 	if (nativeAudioAvailable()) {
 		void playNative(name, volume).then((played) => {
 			if (!played) web();
@@ -167,7 +173,7 @@ export function testSound() {
 
 /** Repeats until stopAlarm(). Idempotent. */
 export function startAlarm(message: string) {
-	if (volume > 0 && !loop && !nativeLooping) {
+	if (volume > 0 && appActive && !loop && !nativeLooping) {
 		if (nativeAudioAvailable()) {
 			nativeLooping = true;
 			void loopNative('nudge', volume, ALARM_INTERVAL_MS).then((started) => {
@@ -191,6 +197,18 @@ export function startAlarm(message: string) {
 function startWebLoop() {
 	webNudge();
 	loop = setInterval(webNudge, ALARM_INTERVAL_MS);
+}
+
+/** Tells the alarm whether the app is in front. Going to the background silences any alarm loop. */
+export function setAppActive(active: boolean) {
+	appActive = active;
+	if (active) return;
+	if (nativeLooping) {
+		nativeLooping = false;
+		void stopNative();
+	}
+	if (loop) clearInterval(loop);
+	loop = null;
 }
 
 export function stopAlarm() {

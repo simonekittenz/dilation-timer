@@ -140,9 +140,10 @@
 		</li>
 	</ul>
 	<p class="note">
-		<strong>Neither version can be relied on to ring while the phone is locked yet,</strong> because phones
-		pause apps when the screen goes off to save battery. Keep the screen on during a session. A proper
-		fix is on the wish list.
+		<strong>The web version can't ring while the phone is locked,</strong> because phones pause web pages
+		when the screen goes off to save battery. Keep the screen on during a session. The Android app does
+		better: it asks your phone's own alarm clock to show an alert when a timer ends, even with the screen
+		off. That alert is a normal notification (it won't lower your music).
 	</p>
 </section>
 

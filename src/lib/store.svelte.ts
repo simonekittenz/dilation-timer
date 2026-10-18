@@ -4,6 +4,7 @@ import {
 	chime,
 	keepAwake,
 	ping,
+	setAppActive,
 	setVolume,
 	soundReady,
 	startAlarm,
@@ -12,7 +13,18 @@ import {
 } from './alarm';
 import { toDateString, toTimeString } from './dates';
 import { FALLBACK_COLOR, resolveSteps } from './dilators';
+import { planBackgroundAlerts } from './backgroundAlerts';
 import { nativeAudioAvailable, stopNative } from './nativeAudio';
+import {
+	armAlerts,
+	disarmAlerts,
+	getAlertsPermission,
+	notificationsAvailable,
+	requestAlertsPermission,
+	sendTestAlert,
+	watchAppState,
+	type AlertsPermission
+} from './notifications';
 import { defaultSettings } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import {
@@ -51,6 +63,8 @@ class Store {
 	cueUntil = $state(0);
 	/** True once anything has been saved on this device (the start page is for brand-new visitors). */
 	hasSavedData = $state(false);
+	/** Whether the phone lets us show alerts while it's locked (the iOS/Android app only). */
+	alertsPermission = $state<AlertsPermission>('unavailable');
 	soundReady = $state(false);
 	private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -117,11 +131,56 @@ class Store {
 		}
 		// In the app, an alarm started by an earlier page load would otherwise keep ringing forever.
 		if (nativeAudioAvailable()) void stopNative();
+		void this.startLockedScreenAlerts();
 		if (this.active) void keepAwake(true);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
 			if (this.active && document.visibilityState === 'visible') void keepAwake(true);
 		});
+	}
+
+	/**
+	 * In the app: while it's in the background or the screen is locked, the phone's alarm clock shows
+	 * the alerts (a timer ending, then gentle reminders). When the app is back in front they are
+	 * cancelled and the app itself takes over again.
+	 */
+	private async startLockedScreenAlerts() {
+		if (!notificationsAvailable()) return;
+		void disarmAlerts(); // anything left over from before the app was last closed
+		this.alertsPermission = await getAlertsPermission();
+		await watchAppState((isActive) => {
+			setAppActive(isActive);
+			if (isActive) {
+				void disarmAlerts();
+				this.step();
+			} else {
+				this.step();
+				void armAlerts(
+					planBackgroundAlerts(
+						this.active ? $state.snapshot(this.active) : null,
+						Date.now(),
+						this.switchWindowMs
+					),
+					this.settings.volume === 0
+				);
+			}
+		});
+	}
+
+	/** Asks the phone for permission to show alerts, once: the first time a session is started. */
+	private async askForAlertPermission() {
+		if (!notificationsAvailable() || this.alertsPermission === 'granted') return;
+		this.alertsPermission = await requestAlertsPermission();
+	}
+
+	/** Settings' "Turn on" button. */
+	async enableLockedScreenAlerts() {
+		this.alertsPermission = await requestAlertsPermission();
+	}
+
+	/** Settings' "send a test alert": lets the user lock their phone and see it work. */
+	testLockedScreenAlert() {
+		return sendTestAlert(this.settings.volume === 0);
 	}
 
 	private save() {
@@ -184,6 +243,7 @@ class Store {
 		const phase = this.todayPhase;
 		if (this.active || !phase || phase.steps.length === 0) return;
 		unlock();
+		void this.askForAlertPermission();
 		this.active = startSession(
 			resolveSteps(this.settings.dilators, phase.steps),
 			slot,

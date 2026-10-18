@@ -32,4 +32,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- A timer app: lets alerts fire at the exact second without sending the user to a settings screen -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 </manifest>

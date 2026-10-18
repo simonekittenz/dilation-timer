@@ -3,13 +3,17 @@
 // It runs the very same notes through the very same Web Audio chain the web app uses, in your
 // installed Chrome (set CHROME_PATH if it lives somewhere else). The WAVs are committed, so you
 // only need to run this after changing a sound.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'vite';
 import puppeteer from 'puppeteer-core';
 
 const CHROME =
 	process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT = new URL('../static/sounds/', import.meta.url).pathname;
+// Android plays notification sounds from res/raw, whose file names may only use a-z, 0-9 and _.
+// These are the sounds the locked-screen alerts use (see src/lib/notifications.ts).
+const ANDROID_RAW = new URL('../android/app/src/main/res/raw/', import.meta.url).pathname;
+const ANDROID_ALERT_SOUNDS = { ping: 'bg_ping', nudge: 'bg_nudge', fanfare: 'bg_done' };
 const SAMPLE_RATE = 22050; // the notes only go up to ~2.6 kHz, so this is plenty and keeps files small
 const TAIL_SECONDS = 0.25;
 
@@ -96,6 +100,14 @@ try {
 			`${name.padEnd(12)} ${(pcm.length / SAMPLE_RATE).toFixed(2)}s  peak ${db(peak)} dBFS  rms ${db(Math.sqrt(sum / pcm.length))} dBFS`
 		);
 	}
+	mkdirSync(ANDROID_RAW, { recursive: true });
+	for (const [sound, resource] of Object.entries(ANDROID_ALERT_SOUNDS)) {
+		copyFileSync(`${OUT}${sound}.wav`, `${ANDROID_RAW}${resource}.wav`);
+	}
+	console.log(
+		'copied the alert sounds into the Android app:',
+		Object.values(ANDROID_ALERT_SOUNDS).join(', ')
+	);
 } finally {
 	await browser.close();
 	await server.close();

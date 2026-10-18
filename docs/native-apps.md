@@ -104,12 +104,31 @@ shows whether the app holds audio focus ("may duck") while a sound plays.
 
 ## The alarm with the screen off
 
-Measured on an Android 15 virtual phone: with the screen off the app's timer still fired on time and
-the sound played, **but Android refused the audio-focus request**, so other apps are not ducked in that
-state. A real phone also puts its processor to sleep within seconds of the screen going off, which the
-virtual phone never does, so a locked-screen alarm cannot be relied on. The fix is to have Android's
-alarm clock service wake the app at the exact moment (an exact alarm plus a foreground service on
-Android, local notifications on iOS). That needs extra permissions and is not built yet.
+An app's own timers and sounds cannot be trusted once the screen is off: a real phone puts the web
+page to sleep within seconds, and Android refuses the audio-focus request, so music is not ducked. So
+the apps hand the job to the phone's alarm clock instead (`@capacitor/local-notifications`,
+`src/lib/notifications.ts`, `src/lib/backgroundAlerts.ts`).
+
+- When the app goes to the background, `planBackgroundAlerts` works out from the saved session what
+  should happen (an alert at the exact end of the timer, then a reminder a minute apart, up to 8, once
+  the switch window has passed; the last dilator gets a single "All done" alert). They are scheduled
+  with `allowWhileIdle`, so they fire even in deep sleep.
+- When the app comes back to the front they are all cancelled, and the app takes over again. While
+  it is in the background its own sounds are silenced, so nothing rings twice.
+- Android uses one notification channel per sound (`bg_ping`, `bg_nudge`, `bg_done`, copied into
+  `res/raw` by `npm run sounds:render`), plus a silent channel for volume 0. Android fixes a channel's
+  sound once it exists, so bump the `-v1` suffix in `notifications.ts` whenever a sound changes.
+- Permissions: `POST_NOTIFICATIONS` is asked for the first time a session starts (or with "Turn on" in
+  Settings, which also has "Send a test", fired 10 seconds later so the phone can be locked).
+  `USE_EXACT_ALARM` is declared so timing is exact without a settings detour.
+- A notification sound does not duck other audio the way the in-app alarm does; that is Android's
+  normal behaviour for notifications.
+
+Verified on an Android 15 virtual phone with the screen off and Doze forced on: the alert arrived within
+2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
+the app cleared them. **Not yet tried on a real phone or on iPhone.** Some makers (Samsung, Xiaomi,
+Oppo) kill background apps harder than stock Android; if alerts are late there, turn off battery
+optimisation for the app. iPhone uses the same code with its normal notification sound.
 
 ## Offering the Android app on the website
 

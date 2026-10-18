@@ -9,3 +9,16 @@ export function isNative(): boolean {
 		return false;
 	}
 }
+
+/** "android", "ios" or "web", as reported by Capacitor's own bridge. */
+export function nativePlatform(): 'android' | 'ios' | 'web' {
+	if (typeof window === 'undefined') return 'web';
+	try {
+		const p = (
+			window as CapacitorWindow & { Capacitor?: { getPlatform?: () => string } }
+		).Capacitor?.getPlatform?.();
+		return p === 'android' || p === 'ios' ? p : 'web';
+	} catch {
+		return 'web';
+	}
+}
