@@ -54,6 +54,30 @@ You need a Mac, Xcode (free from the Mac App Store, big download), and a USB cab
 With a free Apple ID the app **stops opening after 7 days**. Plug in and press ▶ again to renew it
 (your data is kept). A paid developer account ($99/year) lasts a year and allows TestFlight.
 
+## Android: first-time setup notes
+
+Things that tripped us up, so they don't again:
+
+- **Install Android Studio properly.** Drag _Android Studio_ from the downloaded `.dmg` into
+  _Applications_ **in Finder**, then eject the `.dmg`. Opening it from the disk image gives
+  "The application cannot be started right from a DMG file". (The "Android Developers" app in
+  `~/Applications/Chrome Apps` is only a Chrome shortcut to the website.)
+- **The Android SDK is a separate download** that Android Studio's first-run setup installs. If you
+  are asked to "Select SDKs" with just a path box, the SDK is missing: use
+  **Android Studio → Settings → Languages & Frameworks → Android SDK** and install
+  _Android 16 (API 36)_, or point it at `~/Library/Android/sdk` once it exists.
+- **Use Java 21 for Gradle.** The project compiles for Java 21 and Gradle 8.14 is not certified for
+  newer Java than 24, but newer Android Studios bundle Java 25. In Android Studio:
+  **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**, pick a 21 (use
+  _Download JDK…_ if none is listed).
+- **Building without Android Studio** (needs a JDK 21 and the SDK at `~/Library/Android/sdk`):
+
+  ```bash
+  cd android
+  JAVA_HOME=<path to a JDK 21> ./gradlew assembleDebug
+  # the app is android/app/build/outputs/apk/debug/app-debug.apk
+  ```
+
 ## Android (give it to a friend, free)
 
 You need Android Studio (free; it brings its own Java and the Android tools).
@@ -69,6 +93,14 @@ You need Android Studio (free; it brings its own Java and the Android tools).
 To update her: build a new APK **on the same computer** and send it; it installs over the old one
 and keeps her data. (A different computer signs it differently and she would have to uninstall
 first, which erases her data. Have her use **Settings → Save backup** before that.)
+
+## Testing Android without a phone
+
+Android Studio's _Device Manager_ can create a virtual phone. From the command line, with the SDK
+installed: `sdkmanager emulator "system-images;android-35;google_apis;arm64-v8a"`, create it with
+`avdmanager create avd -n dilation-test -k "system-images;android-35;google_apis;arm64-v8a"`, boot it
+with `emulator -avd dilation-test`, then `adb install -r app-debug.apk`. `adb shell dumpsys audio`
+shows whether the app holds audio focus ("may duck") while a sound plays.
 
 ## Moving your data from the web app to the app
 

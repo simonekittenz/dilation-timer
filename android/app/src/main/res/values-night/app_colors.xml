@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark mode: the web app's deep plum. -->
+    <color name="appBackground">#2B1626</color>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind the status bar and gesture bar: the same blush pink as the web app's background. -->
+    <color name="appBackground">#FFF0F6</color>
+</resources>
