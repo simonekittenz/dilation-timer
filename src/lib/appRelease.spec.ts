@@ -51,4 +51,27 @@ describe('the Android download on the website', () => {
 		expect(headers['Content-Type']).toBe('application/vnd.android.package-archive');
 		expect(headers['Content-Disposition']).toContain('attachment');
 	});
+
+	it('has a version the installed apps can compare, and it matches the app that was built', () => {
+		const gradle = read('android/app/build.gradle').toString();
+		const code = Number(/versionCode (\d+)/.exec(gradle)?.[1]);
+		expect(Number.isInteger(release.android.versionCode)).toBe(true);
+		expect(release.android.versionCode).toBeGreaterThanOrEqual(1);
+		expect(release.android.versionCode).toBe(code);
+		expect(/versionName "([^"]+)"/.exec(gradle)?.[1]).toBe(release.android.version);
+		expect(release.android.version).toBe(`1.${code - 1}`);
+	});
+
+	it('is published where the app looks for it, readable from the app and never cached', () => {
+		const vercel = JSON.parse(read('vercel.json').toString());
+		const rule = vercel.headers.find((h: { source: string }) => h.source === '/release.json');
+		const headers = Object.fromEntries(
+			rule.headers.map((h: { key: string; value: string }) => [h.key, h.value])
+		);
+		expect(headers['Access-Control-Allow-Origin']).toBe('*');
+		expect(headers['Cache-Control']).toContain('no-cache');
+		const route = read('src/routes/release.json/+server.ts').toString();
+		expect(route).toContain('export const prerender = true');
+		expect(route).toContain('appRelease.json');
+	});
 });

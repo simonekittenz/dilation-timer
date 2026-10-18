@@ -144,10 +144,28 @@ npm run apk          # builds the app and copies it to static/downloads/Dilation
 git add -A && git commit -m "New Android app build" && git push   # Vercel then serves the new file
 ```
 
-`npm run apk` also writes `src/lib/appRelease.json` (size, version, date, SHA-256) which the start page
+`npm run apk` also writes `src/lib/appRelease.json` (version, size, date, SHA-256) which the start page
 shows, and a test checks that the file and that information agree. Do this after any change to the
-web app that you want the Android app to have, and bump `versionName` / `versionCode` in
-`android/app/build.gradle` first if people should be able to tell versions apart.
+web app that you want the Android app to have.
+
+### Versions and update notices
+
+Every `npm run apk` raises the version by one: version code 2 is "1.1", 3 is "1.2", and so on (kept in
+`android/app/build.gradle` and `appRelease.json`, and a test checks they agree). Use
+`npm run apk -- --keep` to rebuild the same version while testing.
+
+The installed Android app carries its own version number. When it opens (and when it is switched back
+to, at most every 30 minutes) it asks `https://dilation-timer.vercel.app/release.json`, which is just
+`appRelease.json` published with the site. If the website has a higher version code it shows a
+"New version available" card on Today (never during a session) with a Download button, and Settings
+mentions it next to the version line at the bottom. "Later" hides that version; a still newer one
+shows it again. Offline, a bad answer, or an answer that links anywhere but our own `/downloads/`
+folder is ignored. The web version and iPhone never check: the website updates itself, and iPhone
+has no downloadable file.
+
+So after publishing, **installed apps only learn about it once the website is deployed**, and the
+first app that has this check is the first one that can announce the next. Updating over the old app
+keeps its data when it is signed with the same key (see below).
 
 Things to know:
 

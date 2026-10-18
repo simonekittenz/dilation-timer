@@ -5,12 +5,16 @@
 	import { page, updated } from '$app/state';
 	import { isNative } from '$lib/platform';
 	import { store } from '$lib/store.svelte';
+	import { updates } from '$lib/updates.svelte';
 	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '$lib/welcome';
 
 	let { children } = $props();
 
 	// Load saved data before any page script runs (pages copy settings into local drafts).
-	if (browser) store.boot();
+	if (browser) {
+		store.boot();
+		updates.start(); // the Android app only: is there a newer version to download?
+	}
 
 	// Brand-new visitors on the website see the start page once (the app, the installed web app,
 	// and anyone who already has data or has chosen never do).

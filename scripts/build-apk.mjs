@@ -1,5 +1,7 @@
 // Builds the Android app and publishes it on the website, so the download can't go stale:
-//   npm run apk
+//   npm run apk             builds the next version (version number goes up by one)
+//   npm run apk -- --keep   rebuilds the current version (for testing; installed apps won't see an update)
+// The version number is what installed apps compare against the website to offer an update.
 // It needs the Android SDK (see docs/native-apps.md) and a JDK 21, which it finds by itself.
 // Result: static/downloads/Dilation-timer.apk + src/lib/appRelease.json (what the welcome page shows).
 import { spawnSync } from 'node:child_process';
@@ -48,6 +50,36 @@ function run(cmd, args, options = {}) {
 	}
 }
 
+// ---- version: android/app/build.gradle holds the truth; the app itself reads appRelease.json ----
+const gradleFile = join(android, 'app/build.gradle');
+const releaseFile = join(root, 'src/lib/appRelease.json');
+const keep = process.argv.includes('--keep');
+const gradle = readFileSync(gradleFile, 'utf8');
+const currentCode = Number(/versionCode (\d+)/.exec(gradle)?.[1]);
+if (!Number.isInteger(currentCode) || currentCode < 1) {
+	console.error('Could not read versionCode from android/app/build.gradle.');
+	process.exit(1);
+}
+const versionCode = keep ? currentCode : currentCode + 1;
+/** Version 1 is "1.0", version 2 is "1.1", and so on. */
+const versionName = `1.${versionCode - 1}`;
+writeFileSync(
+	gradleFile,
+	gradle
+		.replace(/versionCode \d+/, `versionCode ${versionCode}`)
+		.replace(/versionName "[^"]*"/, `versionName "${versionName}"`)
+);
+// Written before the web build so the app carries its own version number. The file's size and
+// checksum are filled in once the app exists (the copy inside the app never uses them).
+const previous = JSON.parse(readFileSync(releaseFile, 'utf8')).android ?? {};
+writeFileSync(
+	releaseFile,
+	JSON.stringify({ android: { ...previous, version: versionName, versionCode } }, null, '\t') + '\n'
+);
+console.log(
+	`Building version ${versionName} (code ${versionCode})${keep ? ', same as before' : ''}`
+);
+
 const jdk = findJdk21();
 if (!jdk) {
 	console.error(
@@ -73,19 +105,17 @@ mkdirSync(outDir, { recursive: true });
 copyFileSync(built, join(outDir, APK_NAME));
 
 const bytes = readFileSync(join(outDir, APK_NAME));
-const versionName =
-	/versionName "([^"]+)"/.exec(readFileSync(join(android, 'app/build.gradle'), 'utf8'))?.[1] ??
-	'1.0';
 const release = {
 	android: {
 		file: `/downloads/${APK_NAME}`,
 		version: versionName,
+		versionCode,
 		sizeBytes: statSync(join(outDir, APK_NAME)).size,
 		sha256: createHash('sha256').update(bytes).digest('hex'),
 		builtAt: new Date().toISOString()
 	}
 };
-writeFileSync(join(root, 'src/lib/appRelease.json'), JSON.stringify(release, null, '\t') + '\n');
+writeFileSync(releaseFile, JSON.stringify(release, null, '\t') + '\n');
 console.log(
 	`\nPublished ${APK_NAME} (${(release.android.sizeBytes / 1e6).toFixed(1)} MB, v${versionName}) and src/lib/appRelease.json`
 );

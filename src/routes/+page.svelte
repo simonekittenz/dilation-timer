@@ -8,6 +8,7 @@
 	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
 	import Timer from '$lib/Timer.svelte';
+	import UpdateBanner from '$lib/UpdateBanner.svelte';
 	import { resolveSteps } from '$lib/dilators';
 
 	const phase = $derived(store.todayPhase);
@@ -41,6 +42,8 @@
 		{/if}
 	</p>
 </header>
+
+<UpdateBanner />
 
 {#if settingUp}
 	<Setup />

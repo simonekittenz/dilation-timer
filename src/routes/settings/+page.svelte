@@ -12,6 +12,8 @@
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
 	import Mascot from '$lib/Mascot.svelte';
 	import { isNative, nativePlatform } from '$lib/platform';
+	import { updates } from '$lib/updates.svelte';
+	import { APP_VERSION } from '$lib/version';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Settings } from '$lib/types';
@@ -560,6 +562,13 @@
 	<button class="btn ghost" onclick={resetToWih}>Reset to WIH program</button>
 </div>
 
+<p class="version muted" data-testid="version">
+	Dilation timer v{APP_VERSION}{isNative() ? ' · app' : ''}
+	{#if updates.available}
+		· <a href={updates.available.downloadUrl}>v{updates.available.version} is available</a>
+	{/if}
+</p>
+
 <style>
 	.head {
 		display: flex;
@@ -853,6 +862,12 @@
 	}
 	.num {
 		width: 4.5rem;
+	}
+	.version {
+		margin-top: 1.4rem;
+		text-align: center;
+		font-size: 0.78rem;
+		opacity: 0.8;
 	}
 	.actions {
 		justify-content: flex-start;
