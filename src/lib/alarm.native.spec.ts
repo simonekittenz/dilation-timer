@@ -13,7 +13,12 @@ class FakeAudioContext {
 	}
 	resume() {}
 	createGain() {
-		const param = { setValueAtTime() {}, linearRampToValueAtTime() {}, value: 1 };
+		const param = {
+			setValueAtTime() {},
+			linearRampToValueAtTime() {},
+			exponentialRampToValueAtTime() {},
+			value: 1
+		};
 		return { gain: param, connect: (n: unknown) => n };
 	}
 	createBiquadFilter() {
@@ -109,7 +114,7 @@ describe('alarm inside the iOS/Android app (native plugin)', () => {
 		alarm.startAlarm('Switch to Dilator 2');
 		await settle();
 		expect(plugin.loop).toHaveBeenCalledTimes(1);
-		expect(plugin.loop.mock.calls[0][0]).toMatchObject({ sound: 'arpeggio', intervalMs: 2500 });
+		expect(plugin.loop.mock.calls[0][0]).toMatchObject({ sound: 'nudge', intervalMs: 8000 });
 		alarm.stopAlarm();
 		await settle();
 		expect(plugin.stop).toHaveBeenCalledTimes(1);
@@ -157,7 +162,7 @@ describe('alarm inside the iOS/Android app (native plugin)', () => {
 			alarm.startAlarm('x');
 			await vi.advanceTimersByTimeAsync(0);
 			alarm.unlock(); // a later tap unlocks Web Audio
-			await vi.advanceTimersByTimeAsync(2600);
+			await vi.advanceTimersByTimeAsync(8100); // one full repeat of the nudge
 			expect(plugin.loop).toHaveBeenCalledTimes(1);
 			expect(oscillators.length).toBeGreaterThan(0);
 			alarm.stopAlarm();
@@ -192,8 +197,24 @@ describe('alarm inside the iOS/Android app (native plugin)', () => {
 		expect(native.nativeAudioAvailable()).toBe(true);
 		expect(calls).toEqual([
 			'play:{"sound":"ping","volume":1}',
-			'loop:{"sound":"arpeggio","volume":1,"intervalMs":2500}'
+			'loop:{"sound":"nudge","volume":1,"intervalMs":8000}'
 		]);
 		alarm.stopAlarm();
+	});
+
+	it('with the volume at 0 it plays nothing, and does not lower other apps for a silent sound', async () => {
+		const plugin = fakePlugin();
+		const { alarm } = await load(plugin);
+		alarm.setVolume(0);
+		alarm.chime();
+		alarm.ping();
+		alarm.celebrate();
+		alarm.startAlarm('x');
+		await settle();
+		expect(plugin.play).not.toHaveBeenCalled();
+		expect(plugin.loop).not.toHaveBeenCalled();
+		alarm.stopAlarm();
+		await settle();
+		expect(plugin.stop).not.toHaveBeenCalled();
 	});
 });

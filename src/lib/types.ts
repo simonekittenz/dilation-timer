@@ -46,12 +46,21 @@ export interface Messages {
 /** Which little friend keeps you company. */
 export type MascotKind = 'bunny' | 'kitty';
 
+/**
+ * First-run setup, shown on the Today screen. Saves from before this existed count as `done`.
+ *  - ask-date: we don't know the surgery date yet
+ *  - confirm: a date was chosen; "does this look right?" is still to be answered
+ */
+export type SetupStage = 'ask-date' | 'confirm' | 'done';
+
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
 	/** How long you get to switch dilators after a timer ends before the alarm escalates. */
 	switchWindowMinutes: number;
-	/** Alarm volume, 10 to 100. */
+	/** Where the first-run setup is up to. Missing means done. */
+	setup?: SetupStage;
+	/** Alarm volume, 0 (silent) to 100. */
 	volume: number;
 	mascot: MascotKind;
 	dilators: Dilator[];

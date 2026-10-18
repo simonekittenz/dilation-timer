@@ -12,11 +12,11 @@ export function messagesToText(m: Settings['messages']): MessageText {
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Keeps the volume between 10 and 100; a blank or broken value means full volume. */
+/** Keeps the volume between 0 (silent) and 100; a blank or broken value means full volume. */
 export function clampVolume(v: unknown): number {
 	const n = Number(v);
 	return Number.isFinite(n) && v !== null && v !== ''
-		? Math.min(100, Math.max(10, Math.round(n)))
+		? Math.min(100, Math.max(0, Math.round(n)))
 		: 100;
 }
 
@@ -49,6 +49,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		switchWindowMinutes: Math.max(0, Number(draft.switchWindowMinutes) || 0),
 		volume: clampVolume(draft.volume),
 		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
+		setup: draft.setup,
 		dilators,
 		messages: {
 			running: parseMessages(text.running),

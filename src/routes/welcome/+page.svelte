@@ -140,8 +140,9 @@
 		</li>
 	</ul>
 	<p class="note">
-		<strong>For now, neither version rings while the phone is locked,</strong> so keep the screen on during
-		a session. That's on the wish list.
+		<strong>Neither version can be relied on to ring while the phone is locked yet,</strong> because phones
+		pause apps when the screen goes off to save battery. Keep the screen on during a session. A proper
+		fix is on the wish list.
 	</p>
 </section>
 

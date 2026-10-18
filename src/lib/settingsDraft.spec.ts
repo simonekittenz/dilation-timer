@@ -57,9 +57,11 @@ describe('buildSettings', () => {
 		expect(buildSettings(draft, text)!.phases[1].toDay).toBeNull();
 	});
 
-	it('keeps the volume between 10 and 100, and full when blank', () => {
+	it('keeps the volume between 0 and 100, and full when blank', () => {
 		expect(clampVolume(70)).toBe(70);
-		expect(clampVolume(3)).toBe(10);
+		expect(clampVolume(0)).toBe(0); // silent is allowed
+		expect(clampVolume(3)).toBe(3);
+		expect(clampVolume(-20)).toBe(0);
 		expect(clampVolume(250)).toBe(100);
 		expect(clampVolume('55')).toBe(55);
 		expect(clampVolume(null)).toBe(100);

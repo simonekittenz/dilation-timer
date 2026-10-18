@@ -72,11 +72,16 @@ export function wihPhases(): Phase[] {
 	return structuredClone(WIH_PHASES);
 }
 
-/** Day 1 is your surgery date. It defaults to today; set the real date in Settings. */
+/**
+ * Day 1 is your surgery date. Until the user has told us, `startDate` is only a placeholder
+ * (today) that nothing shows: the Today screen asks for the real one.
+ */
 export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
 		switchWindowMinutes: 1,
+		// a brand-new install doesn't know the surgery date: Today asks for it instead of assuming
+		setup: 'ask-date',
 		volume: 100,
 		mascot: 'bunny',
 		dilators: wihDilators(),

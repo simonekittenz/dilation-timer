@@ -38,7 +38,18 @@
 	});
 
 	const inUse = $derived(stepsInUse(draft));
-	const day = $derived(dayNumber(draft.startDate, store.today));
+	// until the surgery date has been chosen, startDate is just a placeholder that must not be shown
+	const hasDate = $derived(draft.setup !== 'ask-date');
+	const day = $derived(hasDate ? dayNumber(draft.startDate, store.today) : 0);
+
+	/** Picking the first surgery date here counts as answering the Today screen's question. */
+	function setStartDate(value: string) {
+		if (draft.setup === 'ask-date') {
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+			draft.setup = 'confirm';
+		}
+		draft.startDate = value;
+	}
 	const currentPhase = $derived(phaseForDay(draft.phases, day));
 	const todayLabel = $derived(
 		new Date(store.now).toLocaleDateString(undefined, {
@@ -170,7 +181,12 @@
 
 <section class="card here">
 	<p class="muted">Today · {todayLabel}</p>
-	{#if day < 1}
+	{#if !hasDate}
+		<h2>Pick your surgery date</h2>
+		<p class="muted">
+			Then I can show where you are in the schedule. The Today screen asks for it too.
+		</p>
+	{:else if day < 1}
 		<h2>Starts in {1 - day} day{1 - day === 1 ? '' : 's'}</h2>
 	{:else if currentPhase}
 		<h2>Day {day} · {currentPhase.label}</h2>
@@ -188,7 +204,12 @@
 			dilation free period can be found and configured in the schedule below.
 		</small>
 	</span>
-	<input type="date" bind:value={draft.startDate} />
+	<input
+		type="date"
+		value={hasDate ? draft.startDate : ''}
+		oninput={(e) => setStartDate(e.currentTarget.value)}
+		aria-label="Surgery date (Day 1)"
+	/>
 </label>
 
 <fieldset class="card companion">
@@ -224,7 +245,7 @@
 		<span class="muted">Volume</span>
 		<input
 			type="range"
-			min="10"
+			min="0"
 			max="100"
 			step="5"
 			bind:value={draft.volume}
@@ -234,12 +255,18 @@
 			}}
 			aria-label="Alarm volume"
 		/>
-		<strong>{draft.volume}%</strong>
+		<strong>{Number(draft.volume) === 0 ? 'Off' : `${draft.volume}%`}</strong>
 	</label>
-	<small class="muted">
-		Still too quiet? On iPhone, tap Test and use the volume buttons while it plays, because the
-		alarm uses your media volume. It needs iOS 17 or newer to ring with the silent switch on.
-	</small>
+	{#if Number(draft.volume) === 0}
+		<small class="muted">
+			Sounds are off. The screen still shows your timers, and your phone may still vibrate.
+		</small>
+	{:else}
+		<small class="muted">
+			Still too quiet? On iPhone, tap Test and use the volume buttons while it plays, because the
+			alarm uses your media volume. It needs iOS 17 or newer to ring with the silent switch on.
+		</small>
+	{/if}
 </section>
 
 <details class="card phase">
@@ -349,7 +376,7 @@
 </p>
 
 {#each draft.phases as phase, pi (phase.id)}
-	{@const progress = phaseProgress(draft.phases, phase, day)}
+	{@const progress = hasDate ? phaseProgress(draft.phases, phase, day) : 'upcoming'}
 	<details
 		class="card phase {progress}"
 		id={progress === 'current' ? 'current-phase' : undefined}
@@ -358,7 +385,9 @@
 		<summary>
 			<span class="title">
 				<strong>{phase.label}</strong>
-				{#if progress === 'current'}
+				{#if !hasDate}
+					<!-- no date yet, so no "you are here" or countdowns -->
+				{:else if progress === 'current'}
 					<span class="badge now">📍 You are here</span>
 				{:else if progress === 'past'}
 					<span class="badge done">Done ✓</span>
@@ -369,7 +398,8 @@
 				{/if}
 			</span>
 			<span class="muted meta">
-				{dateRange(phase.fromDay, phase.toDay)} · day {phase.fromDay}{phase.toDay === null
+				{#if hasDate}{dateRange(phase.fromDay, phase.toDay)} ·{/if} day {phase.fromDay}{phase.toDay ===
+				null
 					? '+'
 					: phase.toDay === phase.fromDay
 						? ''
@@ -394,9 +424,11 @@
 				{#if phaseLength(phase) !== null}· {phaseLength(phase)} day{phaseLength(phase) === 1
 						? ''
 						: 's'}{/if}
-				<span class="muted"
-					>· starts {formatShortDate(addDays(draft.startDate, phase.fromDay - 1))}</span
-				>
+				{#if hasDate}
+					<span class="muted"
+						>· starts {formatShortDate(addDays(draft.startDate, phase.fromDay - 1))}</span
+					>
+				{/if}
 			</span>
 			{#if phase.toDay !== null}
 				<div class="row">

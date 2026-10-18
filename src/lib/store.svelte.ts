@@ -12,6 +12,7 @@ import {
 } from './alarm';
 import { toDateString, toTimeString } from './dates';
 import { FALLBACK_COLOR, resolveSteps } from './dilators';
+import { nativeAudioAvailable, stopNative } from './nativeAudio';
 import { defaultSettings } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import {
@@ -114,6 +115,8 @@ class Store {
 		for (const type of ['pointerup', 'touchend', 'click', 'keydown']) {
 			addEventListener(type, unlock, { passive: true });
 		}
+		// In the app, an alarm started by an earlier page load would otherwise keep ringing forever.
+		if (nativeAudioAvailable()) void stopNative();
 		if (this.active) void keepAwake(true);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
@@ -272,6 +275,18 @@ class Store {
 		setVolume(backup.settings.volume / 100);
 		this.save();
 		return { ok: true };
+	}
+
+	/** First run: the surgery date the user just told us. Next comes "does this look right?". */
+	chooseSurgeryDate(date: string) {
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+		this.updateSettings({ ...$state.snapshot(this.settings), startDate: date, setup: 'confirm' });
+	}
+
+	/** First run: they've answered the question (yes, or "no, I'll go and fix it in Settings"). */
+	finishSetup() {
+		if ((this.settings.setup ?? 'done') === 'done') return;
+		this.updateSettings({ ...$state.snapshot(this.settings), setup: 'done' });
 	}
 
 	removeLog(id: string) {

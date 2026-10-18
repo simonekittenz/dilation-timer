@@ -34,3 +34,14 @@ export function formatShortDate(date: string): string {
 	const [y, m, d] = date.split('-').map(Number);
 	return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+
+/** "Monday, 12 October 2026" for a YYYY-MM-DD string, in the user's locale. */
+export function formatLongDate(date: string): string {
+	const [y, m, d] = date.split('-').map(Number);
+	return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric'
+	});
+}

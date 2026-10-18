@@ -93,8 +93,8 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
         next.volume = request.volume
         next.delegate = finishObserver
         finishObserver.onFinish = { [weak self] in
-            // while looping, stay ducked between repeats; otherwise hand the audio back
-            if self?.loopTimer == nil { self?.endDucking() }
+            // hand the audio back as soon as a sound ends; the next repeat asks for it again
+            self?.endDucking()
         }
         next.prepareToPlay()
         player?.stop()

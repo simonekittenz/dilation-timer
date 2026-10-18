@@ -9,6 +9,7 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -22,6 +23,8 @@ import java.util.regex.Pattern;
  */
 @CapacitorPlugin(name = "AudioDucking")
 public class AudioDuckingPlugin extends Plugin {
+
+    private static final String TAG = "AudioDucking";
 
     private static final Pattern SAFE_NAME = Pattern.compile("^[a-z0-9-]+$");
 
@@ -44,6 +47,7 @@ public class AudioDuckingPlugin extends Plugin {
         final String sound = soundName(call);
         if (sound == null) return;
         final float volume = volume(call);
+        Log.d(TAG, "play " + sound + " requested");
         main.post(() -> {
             try {
                 cancelLoop();
@@ -62,6 +66,7 @@ public class AudioDuckingPlugin extends Plugin {
         if (sound == null) return;
         final float volume = volume(call);
         final long intervalMs = Math.max(500, call.getInt("intervalMs", 2500));
+        Log.d(TAG, "loop " + sound + " requested, every " + intervalMs + " ms");
         main.post(() -> {
             try {
                 cancelLoop();
@@ -126,12 +131,13 @@ public class AudioDuckingPlugin extends Plugin {
             next.setOnCompletionListener(mp -> {
                 mp.release();
                 if (player == mp) player = null;
-                // while looping, stay ducked between repeats; otherwise hand the audio back
-                if (loopTask == null) abandonFocus();
+                // hand the audio back as soon as a sound ends; the next repeat asks for it again
+                abandonFocus();
             });
             next.prepare();
             next.start();
             player = next;
+            Log.d(TAG, "playing " + sound + " at volume " + volume);
         } catch (Exception e) {
             next.release();
             throw e;
@@ -180,6 +186,7 @@ public class AudioDuckingPlugin extends Plugin {
             );
         }
         hasFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        Log.d(TAG, "audio focus request " + (hasFocus ? "granted" : "NOT granted (result " + result + ")"));
     }
 
     /** Lets the other app's audio return to normal volume. */

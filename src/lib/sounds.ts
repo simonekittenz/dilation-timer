@@ -16,18 +16,22 @@ export const PING_GAP = 1.1;
 export const FANFARE_LENGTH = 2.0;
 export const FANFARE_GAP = 2.3;
 export const CELEBRATE_TIMES = 3;
-/** How often the "switch now" alarm repeats until you respond. */
-export const ALARM_INTERVAL_MS = 2500;
+/** How often the gentle "have you switched yet?" nudge repeats until you respond. */
+export const ALARM_INTERVAL_MS = 8000;
 
 export interface Note {
 	freq: number;
+	/** Waveform; the default square wave is the old-school one. Triangle is softer. */
+	wave?: 'square' | 'triangle';
+	/** A ping that fades away, instead of a note that holds its level and then stops. */
+	decay?: boolean;
 	/** Seconds after the start of the sound. */
 	at: number;
 	length: number;
 	gain: number;
 }
 
-export const SOUND_NAMES = ['ping', 'ping-single', 'chime', 'arpeggio', 'fanfare'] as const;
+export const SOUND_NAMES = ['ping', 'ping-single', 'chime', 'nudge', 'fanfare'] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
 /** Single clear note, e.g. "10 seconds left". */
@@ -46,13 +50,14 @@ export function pingScore(times = 3): Note[] {
 	return notes;
 }
 
-/** The repeating "swap now" alarm: one rising C-E-G-C. */
-export function arpeggioScore(): Note[] {
+/**
+ * The gentle "have you switched yet?" nudge: two soft falling notes that fade away like a small
+ * bell, then a long quiet. It stays in the lower, friendlier part of the range on purpose.
+ */
+export function nudgeScore(): Note[] {
 	return [
-		{ freq: NOTES.C5, at: 0, length: 0.25, gain: 0.9 },
-		{ freq: NOTES.E5, at: 0.28, length: 0.25, gain: 0.9 },
-		{ freq: NOTES.G5, at: 0.56, length: 0.25, gain: 0.9 },
-		{ freq: NOTES.C6, at: 0.84, length: 0.5, gain: 0.9 }
+		{ freq: NOTES.E5, at: 0, length: 0.7, gain: 0.8, wave: 'triangle', decay: true },
+		{ freq: NOTES.C5, at: 0.3, length: 0.9, gain: 0.8, wave: 'triangle', decay: true }
 	];
 }
 
@@ -79,8 +84,8 @@ export function scoreFor(name: SoundName): Note[] {
 			return pingScore(1);
 		case 'chime':
 			return chimeScore();
-		case 'arpeggio':
-			return arpeggioScore();
+		case 'nudge':
+			return nudgeScore();
 		case 'fanfare':
 			return fanfareScore();
 	}
@@ -127,13 +132,20 @@ export function playNote(c: BaseAudioContext, bus: AudioNode, note: Note, startA
 	const start = startAt + note.at;
 	const osc = c.createOscillator();
 	const amp = c.createGain();
-	osc.type = 'square';
+	osc.type = note.wave ?? 'square';
 	osc.frequency.value = note.freq;
-	const release = Math.min(0.1, note.length / 2);
-	amp.gain.setValueAtTime(0, start);
-	amp.gain.linearRampToValueAtTime(note.gain, start + 0.015);
-	amp.gain.setValueAtTime(note.gain, start + note.length - release);
-	amp.gain.linearRampToValueAtTime(0, start + note.length);
+	if (note.decay) {
+		// a ping: a quick start, then a smooth fade
+		amp.gain.setValueAtTime(0.0001, start);
+		amp.gain.linearRampToValueAtTime(note.gain, start + 0.012);
+		amp.gain.exponentialRampToValueAtTime(0.001, start + note.length);
+	} else {
+		const release = Math.min(0.1, note.length / 2);
+		amp.gain.setValueAtTime(0, start);
+		amp.gain.linearRampToValueAtTime(note.gain, start + 0.015);
+		amp.gain.setValueAtTime(note.gain, start + note.length - release);
+		amp.gain.linearRampToValueAtTime(0, start + note.length);
+	}
 	osc.connect(amp).connect(bus);
 	osc.start(start);
 	osc.stop(start + note.length + 0.02);

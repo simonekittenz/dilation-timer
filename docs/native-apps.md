@@ -102,6 +102,15 @@ installed: `sdkmanager emulator "system-images;android-35;google_apis;arm64-v8a"
 with `emulator -avd dilation-test`, then `adb install -r app-debug.apk`. `adb shell dumpsys audio`
 shows whether the app holds audio focus ("may duck") while a sound plays.
 
+## The alarm with the screen off
+
+Measured on an Android 15 virtual phone: with the screen off the app's timer still fired on time and
+the sound played, **but Android refused the audio-focus request**, so other apps are not ducked in that
+state. A real phone also puts its processor to sleep within seconds of the screen going off, which the
+virtual phone never does, so a locked-screen alarm cannot be relied on. The fix is to have Android's
+alarm clock service wake the app at the exact moment (an exact alarm plus a foreground service on
+Android, local notifications on iOS). That needs extra permissions and is not built yet.
+
 ## Offering the Android app on the website
 
 The website has a start page (`/welcome`) where new visitors choose between downloading the Android
@@ -141,8 +150,8 @@ The app is a separate "browser" from the web app, so it starts empty. In the web
 
 ## Checking the ducking works (needs a real phone)
 
-Play Spotify, open the app, **Settings → 🔔 Test**. Spotify should get quieter during the ping and
-the tune, then return to normal. Please report back if it pauses instead, or is silent.
+Play Spotify, open the app, **Settings → 🔔 Test**. Spotify should get quieter during each ping, then
+return to normal in the quiet gaps. Please report back if it pauses instead, or is silent.
 
 ## Changing a sound
 

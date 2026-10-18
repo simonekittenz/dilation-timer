@@ -2,6 +2,7 @@
 	import { dayNumber } from '$lib/dates';
 	import Mascot from '$lib/Mascot.svelte';
 	import Schedule from '$lib/Schedule.svelte';
+	import Setup from '$lib/Setup.svelte';
 	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 	import DilatorName from '$lib/DilatorName.svelte';
@@ -10,6 +11,8 @@
 	import { resolveSteps } from '$lib/dilators';
 
 	const phase = $derived(store.todayPhase);
+	// first run: we don't know the surgery date yet, or haven't confirmed the week
+	const settingUp = $derived((store.settings.setup ?? 'done') !== 'done');
 	const day = $derived(dayNumber(store.settings.startDate, store.today));
 	const dateLabel = $derived(
 		new Date(store.now).toLocaleDateString(undefined, {
@@ -25,8 +28,11 @@
 
 <header>
 	<h1>{dateLabel} <span class="sparkle">✿</span></h1>
+	<!-- while setting up, "Day N" would just be a guess, so it isn't shown yet -->
 	<p class="muted">
-		{#if day < 1}
+		{#if settingUp}
+			&nbsp;
+		{:else if day < 1}
 			Starts in {1 - day} day{1 - day === 1 ? '' : 's'}
 		{:else if phase}
 			Day {day} · {phase.label}
@@ -36,7 +42,9 @@
 	</p>
 </header>
 
-{#if store.active}
+{#if settingUp}
+	<Setup />
+{:else if store.active}
 	<Timer />
 {:else if phase && isRestPhase(phase)}
 	<section class="rest card">

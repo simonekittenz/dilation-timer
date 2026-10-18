@@ -69,7 +69,9 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 	// "leeway" was the old name for the switch window; an untouched old default of 2 becomes 1.
 	const legacyWindow = leewayMinutes === 2 ? base.switchWindowMinutes : leewayMinutes;
 	const switchWindowMinutes = saved.switchWindowMinutes ?? legacyWindow ?? base.switchWindowMinutes;
-	return { ...base, ...rest, switchWindowMinutes, dilators, messages, mascot, phases };
+	// anything saved before first-run setup existed is an established user: never ask them
+	const setup = saved.setup === 'ask-date' || saved.setup === 'confirm' ? saved.setup : 'done';
+	return { ...base, ...rest, switchWindowMinutes, dilators, messages, mascot, setup, phases };
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {

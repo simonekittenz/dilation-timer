@@ -6,10 +6,10 @@ import {
 	FANFARE_LENGTH,
 	NOTES,
 	PING_GAP,
-	arpeggioScore,
 	buildChain,
 	chimeScore,
 	fanfareScore,
+	nudgeScore,
 	pingScore,
 	playScore,
 	type Note,
@@ -98,6 +98,8 @@ function ready(): boolean {
  * the plugin isn't there) with Web Audio via `web`.
  */
 function sound(name: SoundName, web: () => void) {
+	// Volume 0 means no sound at all: don't even play silence, which would still lower other apps' music.
+	if (volume <= 0) return;
 	if (nativeAudioAvailable()) {
 		void playNative(name, volume).then((played) => {
 			if (!played) web();
@@ -125,10 +127,10 @@ export function ping(times = 3) {
 	sound(times === 1 ? 'ping-single' : 'ping', () => webPlay(pingScore(times)));
 }
 
-function webArpeggio() {
+function webNudge() {
 	if (!ready()) return;
-	navigator.vibrate?.([200, 100, 200, 100, 300]);
-	webPlay(arpeggioScore());
+	navigator.vibrate?.([150, 80, 150]);
+	webPlay(nudgeScore());
 }
 
 /** How long the "all done" screen stays up: the whole fanfare plus a moment to enjoy it. */
@@ -160,15 +162,15 @@ export function previewSound() {
 export function testSound() {
 	unlock();
 	ping();
-	setTimeout(() => sound('arpeggio', webArpeggio), 3 * PING_GAP * 1000 + 300);
+	setTimeout(() => sound('nudge', webNudge), 3 * PING_GAP * 1000 + 300);
 }
 
 /** Repeats until stopAlarm(). Idempotent. */
 export function startAlarm(message: string) {
-	if (!loop && !nativeLooping) {
+	if (volume > 0 && !loop && !nativeLooping) {
 		if (nativeAudioAvailable()) {
 			nativeLooping = true;
-			void loopNative('arpeggio', volume, ALARM_INTERVAL_MS).then((started) => {
+			void loopNative('nudge', volume, ALARM_INTERVAL_MS).then((started) => {
 				if (started || !nativeLooping) return;
 				nativeLooping = false; // the plugin wasn't usable after all: use Web Audio
 				startWebLoop();
@@ -187,8 +189,8 @@ export function startAlarm(message: string) {
 }
 
 function startWebLoop() {
-	webArpeggio();
-	loop = setInterval(webArpeggio, ALARM_INTERVAL_MS);
+	webNudge();
+	loop = setInterval(webNudge, ALARM_INTERVAL_MS);
 }
 
 export function stopAlarm() {
