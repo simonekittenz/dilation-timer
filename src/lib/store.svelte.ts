@@ -48,6 +48,8 @@ class Store {
 	active = $state<ActiveSession | null>(null);
 	now = $state(Date.now());
 	cueUntil = $state(0);
+	/** True once anything has been saved on this device (the start page is for brand-new visitors). */
+	hasSavedData = $state(false);
 	soundReady = $state(false);
 	private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -89,6 +91,7 @@ class Store {
 		if (this.timer) return;
 		try {
 			const raw = localStorage.getItem(KEY);
+			this.hasSavedData = raw !== null;
 			if (raw) {
 				const saved: Persisted = JSON.parse(raw);
 				this.settings = migrateSettings(saved.settings);
@@ -125,6 +128,7 @@ class Store {
 			active: $state.snapshot(this.active)
 		};
 		localStorage.setItem(KEY, JSON.stringify(data));
+		this.hasSavedData = true;
 	}
 
 	private step() {

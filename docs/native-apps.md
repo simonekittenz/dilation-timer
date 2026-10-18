@@ -102,6 +102,37 @@ installed: `sdkmanager emulator "system-images;android-35;google_apis;arm64-v8a"
 with `emulator -avd dilation-test`, then `adb install -r app-debug.apk`. `adb shell dumpsys audio`
 shows whether the app holds audio focus ("may duck") while a sound plays.
 
+## Offering the Android app on the website
+
+The website has a start page (`/welcome`) where new visitors choose between downloading the Android
+app and using the web version, and where the limits of the web version are explained. It is shown once
+to brand-new visitors on the website only. Anyone with saved data, an installed web app, or the
+Android/iOS app never sees it, and Settings has a link back to it.
+
+To publish a new version of the Android app:
+
+```bash
+npm run apk          # builds the app and copies it to static/downloads/Dilation-timer.apk
+git add -A && git commit -m "New Android app build" && git push   # Vercel then serves the new file
+```
+
+`npm run apk` also writes `src/lib/appRelease.json` (size, version, date, SHA-256) which the start page
+shows, and a test checks that the file and that information agree. Do this after any change to the
+web app that you want the Android app to have, and bump `versionName` / `versionCode` in
+`android/app/build.gradle` first if people should be able to tell versions apart.
+
+Things to know:
+
+- The file is **debug-signed** with the debug key on the computer that built it. An update only
+  installs over the old app if it is signed with the same key, so always build on the same Mac.
+  Before many people depend on it, create a proper release key (Android Studio:
+  _Build → Generate Signed App Bundle / APK_) and keep that keystore safe: if it is lost, people must
+  uninstall (losing their data) to update.
+- Every build adds about 6 MB to the git history, so publish when something worth sharing changed.
+  (GitHub Releases would avoid that if it ever matters.)
+- The web app's offline cache skips `/downloads/` and `/sounds/`, and the app's own build removes
+  `build/downloads`, so the file is never downloaded by accident or packed inside itself.
+
 ## Moving your data from the web app to the app
 
 The app is a separate "browser" from the web app, so it starts empty. In the web app use

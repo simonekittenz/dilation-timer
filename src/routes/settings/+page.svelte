@@ -11,6 +11,7 @@
 	import { chainPhases, findPhaseProblems, phaseLength, resizePhase } from '$lib/phases';
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
 	import Mascot from '$lib/Mascot.svelte';
+	import { isNative } from '$lib/platform';
 	import Swatch from '$lib/Swatch.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Settings } from '$lib/types';
@@ -295,6 +296,13 @@
 	{/if}
 </section>
 
+{#if !isNative()}
+	<a class="card getapp" href="/welcome">
+		<span>📲 <strong>Get the Android app</strong> or see what the web version can't do</span>
+		<span aria-hidden="true">→</span>
+	</a>
+{/if}
+
 <details class="card phase">
 	<summary><strong>Encouragement 💌</strong></summary>
 	<p class="muted note">
@@ -535,6 +543,16 @@
 	.tile:has(input:focus-visible) {
 		outline: 3px solid var(--accent-strong);
 		outline-offset: 2px;
+	}
+	.getapp {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin: 0.6rem 0;
+		color: var(--ink);
+		text-decoration: none;
+		font-size: 0.95rem;
 	}
 	.backup {
 		display: grid;

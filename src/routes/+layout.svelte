@@ -1,14 +1,32 @@
 <script lang="ts">
 	import '../app.css';
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
 	import { isNative } from '$lib/platform';
 	import { store } from '$lib/store.svelte';
+	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '$lib/welcome';
 
 	let { children } = $props();
 
 	// Load saved data before any page script runs (pages copy settings into local drafts).
 	if (browser) store.boot();
+
+	// Brand-new visitors on the website see the start page once (the app, the installed web app,
+	// and anyone who already has data or has chosen never do).
+	const showWelcome = $derived(
+		browser &&
+			page.url.pathname === '/' &&
+			shouldShowWelcome({
+				native: isNative(),
+				standalone: isStandalonePwa(),
+				hasData: store.hasSavedData,
+				seen: hasSeenWelcome()
+			})
+	);
+	$effect(() => {
+		if (showWelcome) void goto('/welcome', { replaceState: true });
+	});
 
 	// An installed app can sit open in the background for days. When a new version has been
 	// deployed, reload into it, but never in the middle of a session.
@@ -31,14 +49,18 @@
 </script>
 
 <div class="shell" class:alerting={store.escalated}>
-	<main>{@render children()}</main>
-	<nav>
-		{#each tabs as t (t.href)}
-			<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}
-				><span aria-hidden="true">{t.icon}</span> {t.label}</a
-			>
-		{/each}
-	</nav>
+	<main>
+		{#if !showWelcome}{@render children()}{/if}
+	</main>
+	{#if page.url.pathname !== '/welcome'}
+		<nav>
+			{#each tabs as t (t.href)}
+				<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}
+					><span aria-hidden="true">{t.icon}</span> {t.label}</a
+				>
+			{/each}
+		</nav>
+	{/if}
 </div>
 
 <style>

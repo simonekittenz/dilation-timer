@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"build:native": "VITE_NATIVE=1 vite build",
+		"build:native": "VITE_NATIVE=1 vite build && rm -rf build/downloads",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
@@ -17,7 +17,8 @@
 		"cap:sync": "npm run build:native && cap sync",
 		"ios": "npm run cap:sync && cap open ios",
 		"android": "npm run cap:sync && cap open android",
-		"icons": "node scripts/render-icons.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#ff7eb6' --iconBackgroundColorDark '#c0558a' --splashBackgroundColor '#fff0f6' --splashBackgroundColorDark '#2b1626'"
+		"icons": "node scripts/render-icons.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#ff7eb6' --iconBackgroundColorDark '#c0558a' --splashBackgroundColor '#fff0f6' --splashBackgroundColorDark '#2b1626'",
+		"apk": "node scripts/build-apk.mjs"
 	},
 	"devDependencies": {
 		"@capacitor/cli": "^8.5.3",

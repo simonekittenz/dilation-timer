@@ -6,8 +6,10 @@ import { build, files, version } from '$service-worker';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `cache-${version}`;
-// The WAV alarm sounds are only used by the iOS/Android app, so the web app doesn't download them.
-const ASSETS = [...build, ...files.filter((f) => !f.startsWith('/sounds/')), '/200.html'];
+// The WAV alarm sounds and the Android app download are not needed by the web app itself, so its
+// offline cache must not fetch them.
+const SKIP = ['/sounds/', '/downloads/'];
+const ASSETS = [...build, ...files.filter((f) => !SKIP.some((p) => f.startsWith(p))), '/200.html'];
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(

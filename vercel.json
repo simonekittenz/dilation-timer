@@ -3,5 +3,14 @@
 	"framework": null,
 	"buildCommand": "npm run build",
 	"outputDirectory": "build",
-	"rewrites": [{ "source": "/(.*)", "destination": "/200.html" }]
+	"rewrites": [{ "source": "/(.*)", "destination": "/200.html" }],
+	"headers": [
+		{
+			"source": "/downloads/Dilation-timer.apk",
+			"headers": [
+				{ "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+				{ "key": "Content-Disposition", "value": "attachment; filename=\"Dilation-timer.apk\"" }
+			]
+		}
+	]
 }
