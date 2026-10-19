@@ -72,10 +72,12 @@
 				</li>
 			{/each}
 		</ol>
-		<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
-			{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
-		</button>
-		<a class="btn ghost small" href="/custom">✨ Custom session</a>
+		<div class="actions">
+			<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
+				{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
+			</button>
+			<a class="btn ghost" href="/custom">✨ Custom session</a>
+		</div>
 	</section>
 	<h2 class="sub">Schedule ♡</h2>
 	<Schedule />
@@ -109,6 +111,13 @@
 		gap: 0.7rem;
 		justify-items: start;
 		margin-bottom: 1.4rem;
+	}
+	/* the two ways to start sit together, the same width */
+	.actions {
+		display: grid;
+		gap: 0.55rem;
+		width: 100%;
+		margin-top: 0.3rem;
 	}
 	.steps {
 		list-style: none;
