@@ -87,6 +87,8 @@ export interface ActiveSession {
 	id: string;
 	date: string;
 	slot: SlotId | null;
+	/** Made up on the spot ("Custom session") instead of following the schedule. */
+	custom?: boolean;
 	startedAt: number;
 	steps: SessionStep[];
 	stepIndex: number;
@@ -110,6 +112,8 @@ export interface LogEntry {
 	id: string;
 	date: string;
 	slot: SlotId | null;
+	/** Made up on the spot ("Custom session") instead of following the schedule. */
+	custom?: boolean;
 	startedAt: number;
 	finishedAt: number;
 	/** Set when the slot was skipped instead of done. */

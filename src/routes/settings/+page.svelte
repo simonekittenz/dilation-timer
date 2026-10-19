@@ -7,7 +7,7 @@
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
 	import { PROGRAMS, wihPhases } from '$lib/defaults';
 	import type { ProgramId } from '$lib/types';
-	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
+	import { PALETTE, stepsInUse, wihDilators } from '$lib/dilators';
 	import { defaultMessages } from '$lib/messages';
 	import { chainPhases, findPhaseProblems, phaseLength, resizePhase } from '$lib/phases';
 	import { buildSettings, messagesToText } from '$lib/settingsDraft';
@@ -15,7 +15,7 @@
 	import { isNative, nativePlatform } from '$lib/platform';
 	import { updates } from '$lib/updates.svelte';
 	import { APP_VERSION } from '$lib/version';
-	import Swatch from '$lib/Swatch.svelte';
+	import StepsEditor from '$lib/StepsEditor.svelte';
 	import { store } from '$lib/store.svelte';
 	import type { Settings } from '$lib/types';
 
@@ -127,7 +127,6 @@
 		const m = defaultMessages();
 		messageText = messagesToText(m);
 	}
-	const colorOf = (id: string) => draft.dilators.find((d) => d.id === id)?.color ?? '#ff9ccb';
 
 	function addDilator() {
 		draft.dilators.push({
@@ -533,34 +532,11 @@
 		</label>
 		<div class="stack">
 			Dilators, in order
-			{#each phase.steps as step, si (si)}
-				<div class="row">
-					<Swatch color={colorOf(step.dilatorId)} size={26} />
-					<select class="grow" bind:value={step.dilatorId} aria-label="Dilator">
-						{#each draft.dilators as d (d.id)}
-							<option value={d.id}>{dilatorLabel(d)}</option>
-						{/each}
-					</select>
-					<input type="number" min="1" class="num" bind:value={step.minutes} aria-label="Minutes" />
-					<span class="muted">min</span>
-					<button
-						class="btn ghost small"
-						onclick={() => phase.steps.splice(si, 1)}
-						disabled={phase.slots.length > 0 && phase.steps.length === 1}
-						aria-label="Remove dilator">✕</button
-					>
-				</div>
-			{/each}
-			<button
-				class="btn ghost small"
-				onclick={() =>
-					phase.steps.push({
-						dilatorId: draft.dilators[phase.steps.length % draft.dilators.length]?.id ?? '',
-						minutes: 10
-					})}
-			>
-				+ Add dilator
-			</button>
+			<StepsEditor
+				bind:steps={phase.steps}
+				dilators={draft.dilators}
+				keepOne={phase.slots.length > 0}
+			/>
 		</div>
 	</details>
 {/each}

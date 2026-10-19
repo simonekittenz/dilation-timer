@@ -35,7 +35,15 @@
 					<p class="muted">Marked as skipped at {time(e.startedAt)}</p>
 				{:else}
 					<strong>{time(e.startedAt)}</strong>
-					{#if e.slot}<span class="muted"> ({SLOT_LABELS[e.slot].toLowerCase()} session)</span>{/if}
+					{#if e.custom}
+						<span class="muted">
+							(custom session{e.slot
+								? `, counted as ${SLOT_LABELS[e.slot].toLowerCase()}`
+								: ''})</span
+						>
+					{:else if e.slot}<span class="muted">
+							({SLOT_LABELS[e.slot].toLowerCase()} session)</span
+						>{/if}
 					<p class="muted chips">
 						{#each e.steps as st, i (i)}
 							<span

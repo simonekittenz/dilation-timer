@@ -59,6 +59,7 @@
 				Dilation starts in {untilDilation} day{untilDilation === 1 ? '' : 's'}.
 			{/if}
 		</p>
+		<a class="btn ghost small" href="/custom">✨ Do a custom session anyway</a>
 	</section>
 {:else if phase}
 	<section class="routine card">
@@ -74,6 +75,7 @@
 		<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
 			{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
 		</button>
+		<a class="btn ghost small" href="/custom">✨ Custom session</a>
 	</section>
 	<h2 class="sub">Schedule ♡</h2>
 	<Schedule />

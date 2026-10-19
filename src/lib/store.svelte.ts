@@ -45,7 +45,7 @@ import {
 	tick
 } from './session';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
-import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId } from './types';
+import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId, Step } from './types';
 
 const KEY = 'dilation-timer:v1';
 /** How long the "time to switch" ears cue stays up. */
@@ -254,6 +254,27 @@ class Store {
 		);
 		void keepAwake(true);
 		this.save();
+	}
+
+	/**
+	 * Starts a session made up on the spot, instead of today's routine. `slot` is the schedule slot it
+	 * stands in for (so Today counts it as done), or null for an extra session.
+	 */
+	startCustom(steps: Step[], slot: SlotId | null): boolean {
+		if (this.active) return false;
+		const usable = steps
+			.map((s) => ({ dilatorId: s.dilatorId, minutes: Number(s.minutes) }))
+			.filter((s) => Number.isFinite(s.minutes) && s.minutes > 0);
+		if (usable.length === 0) return false;
+		unlock();
+		void this.askForAlertPermission();
+		this.active = {
+			...startSession(resolveSteps(this.settings.dilators, usable), slot, this.today, Date.now()),
+			custom: true
+		};
+		void keepAwake(true);
+		this.save();
+		return true;
 	}
 
 	confirm() {

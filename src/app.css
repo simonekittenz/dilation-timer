@@ -98,6 +98,13 @@ a {
 		box-shadow 0.12s ease;
 }
 
+/* a link that looks like a button */
+a.btn {
+	display: inline-block;
+	text-align: center;
+	text-decoration: none;
+}
+
 .btn:hover {
 	transform: translateY(-1px);
 }

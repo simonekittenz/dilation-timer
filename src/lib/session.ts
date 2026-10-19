@@ -196,6 +196,7 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 		id: s.id,
 		date: s.date,
 		slot: s.slot,
+		...(s.custom ? { custom: true } : {}),
 		startedAt: s.startedAt,
 		finishedAt: now,
 		steps: records.map((r) => ({
