@@ -70,7 +70,10 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 	const legacyWindow = leewayMinutes === 2 ? base.switchWindowMinutes : leewayMinutes;
 	const switchWindowMinutes = saved.switchWindowMinutes ?? legacyWindow ?? base.switchWindowMinutes;
 	// anything saved before first-run setup existed is an established user: never ask them
-	const setup = saved.setup === 'ask-date' || saved.setup === 'confirm' ? saved.setup : 'done';
+	const setup =
+		saved.setup === 'ask-program' || saved.setup === 'ask-date' || saved.setup === 'confirm'
+			? saved.setup
+			: 'done';
 	return { ...base, ...rest, switchWindowMinutes, dilators, messages, mascot, setup, phases };
 }
 

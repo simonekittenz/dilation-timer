@@ -7,6 +7,7 @@
 		formatScheduleDate,
 		formatShortDate
 	} from './dates';
+	import { PROGRAMS } from './defaults';
 	import Mascot from './Mascot.svelte';
 	import { summarizeWeek } from './setup';
 	import { store } from './store.svelte';
@@ -35,7 +36,28 @@
 	}
 </script>
 
-{#if stage === 'ask-date'}
+{#if stage === 'ask-program'}
+	<section class="card setup" data-testid="ask-program">
+		<Mascot size={96} />
+		<h2>Which program do you follow? 🌸</h2>
+		<p class="muted">
+			Pick the schedule your clinic gave you. Not sure? Choose the standard one: you can switch any
+			time in Settings, and every part of it can be edited.
+		</p>
+		<div class="programs">
+			{#each PROGRAMS as program (program.id)}
+				<button
+					class="program"
+					data-program={program.id}
+					onclick={() => store.chooseProgram(program.id)}
+				>
+					<strong>{program.label}</strong>
+					<span class="muted">{program.blurb}</span>
+				</button>
+			{/each}
+		</div>
+	</section>
+{:else if stage === 'ask-date'}
 	<section class="card setup">
 		<Mascot size={96} />
 		<h2>When was your surgery? 🌸</h2>
@@ -108,6 +130,32 @@
 	h2 {
 		font-size: 1.4rem;
 		font-weight: 900;
+	}
+	.programs {
+		display: grid;
+		gap: 0.7rem;
+		width: 100%;
+	}
+	.program {
+		display: grid;
+		gap: 0.25rem;
+		text-align: left;
+		font: inherit;
+		color: var(--ink);
+		padding: 0.9rem 1rem;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 2px solid var(--line);
+		box-shadow: 0 3px 0 var(--line);
+		cursor: pointer;
+	}
+	.program strong {
+		font-size: 1.1rem;
+		color: var(--accent-strong);
+	}
+	.program:active {
+		transform: translateY(2px);
+		box-shadow: 0 1px 0 var(--line);
 	}
 	.field {
 		display: grid;

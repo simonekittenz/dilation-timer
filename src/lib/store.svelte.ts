@@ -25,7 +25,7 @@ import {
 	watchAppState,
 	type AlertsPermission
 } from './notifications';
-import { defaultSettings } from './defaults';
+import { defaultSettings, wihPhases } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import {
 	ADJUST_MS,
@@ -45,7 +45,7 @@ import {
 	tick
 } from './session';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
-import type { ActiveSession, LogEntry, Settings, SlotId } from './types';
+import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId } from './types';
 
 const KEY = 'dilation-timer:v1';
 /** How long the "time to switch" ears cue stays up. */
@@ -347,6 +347,16 @@ class Store {
 		setVolume(backup.settings.volume / 100);
 		this.save();
 		return { ok: true };
+	}
+
+	/** First run: which ready-made WIH schedule to start from. Next comes the surgery date. */
+	chooseProgram(program: ProgramId) {
+		if (this.settings.setup !== 'ask-program') return;
+		this.updateSettings({
+			...$state.snapshot(this.settings),
+			phases: wihPhases(program),
+			setup: 'ask-date'
+		});
 	}
 
 	/** First run: the surgery date the user just told us. Next comes "does this look right?". */

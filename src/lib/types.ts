@@ -48,10 +48,14 @@ export type MascotKind = 'bunny' | 'kitty';
 
 /**
  * First-run setup, shown on the Today screen. Saves from before this existed count as `done`.
+ *  - ask-program: which ready-made schedule to start from
  *  - ask-date: we don't know the surgery date yet
  *  - confirm: a date was chosen; "does this look right?" is still to be answered
  */
-export type SetupStage = 'ask-date' | 'confirm' | 'done';
+export type SetupStage = 'ask-program' | 'ask-date' | 'confirm' | 'done';
+
+/** The ready-made WIH schedules. Everything in a schedule can still be edited afterwards. */
+export type ProgramId = 'standard' | 'size5';
 
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */

@@ -5,7 +5,8 @@
 	import { saveTextFile } from '$lib/files';
 	import { addDays, dayNumber, formatDateRange, formatScheduleDate } from '$lib/dates';
 	import { phaseForDay, phaseProgress } from '$lib/schedule';
-	import { wihPhases } from '$lib/defaults';
+	import { PROGRAMS, wihPhases } from '$lib/defaults';
+	import type { ProgramId } from '$lib/types';
 	import { PALETTE, dilatorLabel, stepsInUse, wihDilators } from '$lib/dilators';
 	import { defaultMessages } from '$lib/messages';
 	import { chainPhases, findPhaseProblems, phaseLength, resizePhase } from '$lib/phases';
@@ -41,12 +42,12 @@
 
 	const inUse = $derived(stepsInUse(draft));
 	// until the surgery date has been chosen, startDate is just a placeholder that must not be shown
-	const hasDate = $derived(draft.setup !== 'ask-date');
+	const hasDate = $derived(draft.setup !== 'ask-date' && draft.setup !== 'ask-program');
 	const day = $derived(hasDate ? dayNumber(draft.startDate, store.today) : 0);
 
 	/** Picking the first surgery date here counts as answering the Today screen's question. */
 	function setStartDate(value: string) {
-		if (draft.setup === 'ask-date') {
+		if (draft.setup === 'ask-date' || draft.setup === 'ask-program') {
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
 			draft.setup = 'confirm';
 		}
@@ -172,12 +173,14 @@
 		});
 	}
 
-	function resetToWih() {
-		if (!confirm('Replace all dilators, phases and messages with the WIH standard program?'))
-			return;
+	let choosingProgram = $state(false);
+
+	/** Replaces the whole schedule (and dilators and messages) with a ready-made WIH program. */
+	function loadProgram(program: ProgramId) {
 		draft.dilators = wihDilators();
-		draft.phases = wihPhases();
+		draft.phases = wihPhases(program);
 		resetMessages();
+		choosingProgram = false;
 	}
 </script>
 
@@ -564,8 +567,25 @@
 
 <div class="row actions">
 	<button class="btn ghost" onclick={addPhase}>+ Add phase</button>
-	<button class="btn ghost" onclick={resetToWih}>Reset to WIH program</button>
+	<button class="btn ghost" onclick={() => (choosingProgram = !choosingProgram)}>
+		Load a WIH program…
+	</button>
 </div>
+{#if choosingProgram}
+	<section class="card choose-program" data-testid="choose-program">
+		<p>
+			<strong>Which program?</strong> This replaces all your dilators, phases and messages, including
+			any changes you made.
+		</p>
+		{#each PROGRAMS as program (program.id)}
+			<button class="program" data-program={program.id} onclick={() => loadProgram(program.id)}>
+				<strong>{program.label}</strong>
+				<span class="muted">{program.blurb}</span>
+			</button>
+		{/each}
+		<button class="btn ghost small" onclick={() => (choosingProgram = false)}>Cancel</button>
+	</section>
+{/if}
 
 <p class="version muted" data-testid="version">
 	Dilation timer v{APP_VERSION}{isNative() ? ' · app' : ''}
@@ -867,6 +887,27 @@
 	}
 	.num {
 		width: 4.5rem;
+	}
+	.choose-program {
+		display: grid;
+		gap: 0.7rem;
+		margin-top: 0.8rem;
+	}
+	.program {
+		display: grid;
+		gap: 0.25rem;
+		text-align: left;
+		font: inherit;
+		color: var(--ink);
+		padding: 0.8rem 1rem;
+		border-radius: var(--radius);
+		background: var(--surface);
+		border: 2px solid var(--line);
+		box-shadow: 0 3px 0 var(--line);
+		cursor: pointer;
+	}
+	.program strong {
+		color: var(--accent-strong);
 	}
 	.version {
 		margin-top: 1.4rem;
