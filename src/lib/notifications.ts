@@ -146,12 +146,17 @@ async function ensureChannels(n: NotificationsApi) {
 
 const channelFor = (kind: AlertKind, quiet: boolean) => (quiet ? CHANNELS.quiet : CHANNELS[kind]);
 
-/** Clears a session's alerts, scheduled or already showing. Never the Settings test alert. */
+/**
+ * Clears a session's alerts, scheduled or already showing. The Settings test alert is only taken off
+ * the screen once it has been shown: one still waiting to go off is left scheduled, so locking the
+ * phone doesn't cancel it, but a delivered one doesn't stay behind (it would leave a dot on the icon).
+ */
 function cancelAll(n: NotificationsApi) {
 	const ids = PLAN_IDS.map((id) => ({ id }));
+	const showing = [...ids, { id: TEST_ALERT_ID }];
 	return n
 		.cancel({ notifications: ids })
-		.then(() => n.removeDeliveredNotifications({ notifications: ids }));
+		.then(() => n.removeDeliveredNotifications({ notifications: showing }));
 }
 
 /** The app is going away for a while: hand these to the phone's alarm clock. */
@@ -182,6 +187,17 @@ export function disarmAlerts(): Promise<void> {
 }
 
 /** Settings' "send a test alert": one alert shortly, so the phone can be locked to try it. */
+/** Whether the app is in front, as far as appStateChange has told us. */
+let inFront = true;
+
+/** How long a test alert that went off while the app is open stays on the screen. */
+export const TEST_ALERT_SHOWN_FOR_SECONDS = 6;
+
+/** Called when the app goes to the background (false) or comes back (true). */
+export function noteAppActive(isActive: boolean) {
+	inFront = isActive;
+}
+
 export function sendTestAlert(quiet: boolean, inSeconds = 10): Promise<boolean> {
 	return enqueue(() =>
 		use(async (n) => {
@@ -198,6 +214,17 @@ export function sendTestAlert(quiet: boolean, inSeconds = 10): Promise<boolean> 
 					}
 				]
 			});
+			// If you stay in the app and watch it go off, take it down again afterwards so it doesn't
+			// leave a dot on the icon. (If you leave, coming back to the app clears it.)
+			setTimeout(
+				() => {
+					if (inFront)
+						void enqueue(() =>
+							use((m) => m.removeDeliveredNotifications({ notifications: [{ id: TEST_ALERT_ID }] }))
+						);
+				},
+				(inSeconds + TEST_ALERT_SHOWN_FOR_SECONDS) * 1000
+			);
 			return true;
 		})
 	).then((ok) => ok === true);
@@ -208,7 +235,10 @@ export async function watchAppState(callback: (isActive: boolean) => void): Prom
 	if (!isNative()) return;
 	try {
 		const { App } = await import('@capacitor/app');
-		await App.addListener('appStateChange', ({ isActive }) => callback(isActive));
+		await App.addListener('appStateChange', ({ isActive }) => {
+			noteAppActive(isActive);
+			callback(isActive);
+		});
 	} catch (error) {
 		console.warn('Could not watch the app going to the background.', error);
 	}

@@ -4,6 +4,8 @@ import {
 	armAlerts,
 	CHANNELS,
 	disarmAlerts,
+	noteAppActive,
+	TEST_ALERT_SHOWN_FOR_SECONDS,
 	getAlertsPermission,
 	notificationsAvailable,
 	sendTestAlert,
@@ -134,7 +136,7 @@ describe('locked-screen alerts', () => {
 		expect(PLAN_IDS).toContain(ALERT_ID);
 	});
 
-	it('leaving the app after "Send a test" does not cancel the test (the bug: it did)', async () => {
+	it('leaving the app after "Send a test" does not cancel a test that is still to go off (the bug: it did)', async () => {
 		const { api } = fake();
 		setNotificationsForTests(api);
 		expect(await sendTestAlert(false)).toBe(true);
@@ -142,15 +144,23 @@ describe('locked-screen alerts', () => {
 		await armAlerts([], false);
 		await armAlerts(alerts, false);
 		await disarmAlerts();
-		const touched = [
-			...api.cancel.mock.calls.flatMap((c) => c[0].notifications.map((n: { id: number }) => n.id)),
-			...api.removeDeliveredNotifications.mock.calls.flatMap((c) =>
-				c[0].notifications.map((n: { id: number }) => n.id)
-			)
-		];
-		expect(touched.length).toBeGreaterThan(0);
-		expect(touched).not.toContain(TEST_ALERT_ID);
+		const cancelled = api.cancel.mock.calls.flatMap((c) =>
+			c[0].notifications.map((n: { id: number }) => n.id)
+		);
+		expect(cancelled.length).toBeGreaterThan(0);
+		expect(cancelled).not.toContain(TEST_ALERT_ID); // cancelling would stop it from ever firing
 		expect(api.schedule.mock.calls[0][0].notifications[0].id).toBe(TEST_ALERT_ID);
+	});
+
+	it('coming back to the app takes a test alert that already went off off the screen (no dot left on the icon)', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		await disarmAlerts();
+		const removed = api.removeDeliveredNotifications.mock.calls.flatMap((c) =>
+			c[0].notifications.map((n: { id: number }) => n.id)
+		);
+		expect(removed).toContain(TEST_ALERT_ID);
+		for (const id of PLAN_IDS) expect(removed).toContain(id);
 	});
 
 	it("a session's alerts are all cleared when coming back to the app", async () => {
@@ -159,5 +169,40 @@ describe('locked-screen alerts', () => {
 		await disarmAlerts();
 		const cancelled = api.cancel.mock.calls[0][0].notifications.map((n: { id: number }) => n.id);
 		for (const id of PLAN_IDS) expect(cancelled).toContain(id);
+	});
+
+	describe('a test alert you watch go off with the app open', () => {
+		const wait = (s: number) => vi.advanceTimersByTimeAsync(s * 1000);
+		const removedIds = (api: ReturnType<typeof fake>['api']) =>
+			api.removeDeliveredNotifications.mock.calls.flatMap((c) =>
+				c[0].notifications.map((n: { id: number }) => n.id)
+			);
+
+		afterEach(() => {
+			vi.useRealTimers();
+			noteAppActive(true);
+		});
+
+		it('is taken down a few seconds after it went off, so it leaves no dot behind', async () => {
+			vi.useFakeTimers();
+			const { api } = fake();
+			setNotificationsForTests(api);
+			noteAppActive(true);
+			await sendTestAlert(false, 10);
+			await wait(10 + TEST_ALERT_SHOWN_FOR_SECONDS - 1);
+			expect(removedIds(api)).not.toContain(TEST_ALERT_ID);
+			await wait(2);
+			expect(removedIds(api)).toEqual([TEST_ALERT_ID]);
+		});
+
+		it('is left alone while you are away (coming back clears it instead)', async () => {
+			vi.useFakeTimers();
+			const { api } = fake();
+			setNotificationsForTests(api);
+			await sendTestAlert(false, 10);
+			noteAppActive(false);
+			await wait(60);
+			expect(removedIds(api)).toEqual([]);
+		});
 	});
 });
