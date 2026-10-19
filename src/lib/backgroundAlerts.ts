@@ -5,6 +5,13 @@ import type { ActiveSession, SessionStep } from './types';
 export const ALERT_ID = 41_000;
 /** How many "still waiting" reminders to send after the first alert, and how far apart. */
 export const MAX_NUDGES = 8;
+/** Every id a session's alerts can use: ALERT_ID .. ALERT_ID + MAX_NUDGES. */
+export const PLAN_IDS: readonly number[] = Array.from(
+	{ length: MAX_NUDGES + 1 },
+	(_, i) => ALERT_ID + i
+);
+/** Settings' "Send a test". Deliberately outside PLAN_IDS: clearing a session's alerts must never touch it. */
+export const TEST_ALERT_ID = ALERT_ID + 500;
 export const NUDGE_EVERY_MS = 60_000;
 
 export type AlertKind = 'switch' | 'nudge' | 'done';

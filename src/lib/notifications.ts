@@ -1,4 +1,4 @@
-import { ALERT_ID, MAX_NUDGES, type AlertKind, type BackgroundAlert } from './backgroundAlerts';
+import { PLAN_IDS, TEST_ALERT_ID, type AlertKind, type BackgroundAlert } from './backgroundAlerts';
 import { isNative, nativePlatform } from './platform';
 
 /**
@@ -27,7 +27,7 @@ export interface NotificationsApi {
 	}): Promise<void>;
 	schedule(options: { notifications: ScheduledNotification[] }): Promise<unknown>;
 	cancel(options: { notifications: { id: number }[] }): Promise<void>;
-	removeAllDeliveredNotifications(): Promise<void>;
+	removeDeliveredNotifications(options: { notifications: { id: number }[] }): Promise<void>;
 }
 
 interface ScheduledNotification {
@@ -146,10 +146,12 @@ async function ensureChannels(n: NotificationsApi) {
 
 const channelFor = (kind: AlertKind, quiet: boolean) => (quiet ? CHANNELS.quiet : CHANNELS[kind]);
 
-/** Clears whatever is scheduled or still showing from our earlier alerts. */
+/** Clears a session's alerts, scheduled or already showing. Never the Settings test alert. */
 function cancelAll(n: NotificationsApi) {
-	const ids = Array.from({ length: MAX_NUDGES + 100 }, (_, i) => ({ id: ALERT_ID + i }));
-	return n.cancel({ notifications: ids }).then(() => n.removeAllDeliveredNotifications());
+	const ids = PLAN_IDS.map((id) => ({ id }));
+	return n
+		.cancel({ notifications: ids })
+		.then(() => n.removeDeliveredNotifications({ notifications: ids }));
 }
 
 /** The app is going away for a while: hand these to the phone's alarm clock. */
@@ -188,7 +190,7 @@ export function sendTestAlert(quiet: boolean, inSeconds = 10): Promise<boolean> 
 			await n.schedule({
 				notifications: [
 					{
-						id: ALERT_ID + 99,
+						id: TEST_ALERT_ID,
 						title: 'Test alert 🔔',
 						body: 'If you can see this on your lock screen, locked-screen alerts work.',
 						channelId: channelFor('switch', quiet),

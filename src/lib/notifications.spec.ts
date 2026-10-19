@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ALERT_ID, type BackgroundAlert } from './backgroundAlerts';
+import { ALERT_ID, PLAN_IDS, TEST_ALERT_ID, type BackgroundAlert } from './backgroundAlerts';
 import {
 	armAlerts,
 	CHANNELS,
@@ -24,8 +24,12 @@ function fake(display = 'granted') {
 		requestPermissions: vi.fn(async () => ({ display: 'granted' })),
 		createChannel: vi.fn(async (c: { id: string }) => void calls.push('channel:' + c.id)),
 		schedule: vi.fn(async (_options: { notifications: Sent[] }) => void calls.push('schedule')),
-		cancel: vi.fn(async () => void calls.push('cancel')),
-		removeAllDeliveredNotifications: vi.fn(async () => void calls.push('clear'))
+		cancel: vi.fn(
+			async (_options: { notifications: { id: number }[] }) => void calls.push('cancel')
+		),
+		removeDeliveredNotifications: vi.fn(
+			async (_options: { notifications: { id: number }[] }) => void calls.push('clear')
+		)
 	};
 	return { api: api as unknown as NotificationsApi & typeof api, calls };
 }
@@ -123,5 +127,37 @@ describe('locked-screen alerts', () => {
 		const at = api.schedule.mock.calls[0][0].notifications[0].schedule.at.getTime();
 		expect(at - now).toBeGreaterThanOrEqual(9_000);
 		expect(at - now).toBeLessThanOrEqual(11_000);
+	});
+
+	it("the Settings test alert is not one of a session's alert ids", () => {
+		expect(PLAN_IDS).not.toContain(TEST_ALERT_ID);
+		expect(PLAN_IDS).toContain(ALERT_ID);
+	});
+
+	it('leaving the app after "Send a test" does not cancel the test (the bug: it did)', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		expect(await sendTestAlert(false)).toBe(true);
+		// what the app does as the phone is locked, and again when it is opened
+		await armAlerts([], false);
+		await armAlerts(alerts, false);
+		await disarmAlerts();
+		const touched = [
+			...api.cancel.mock.calls.flatMap((c) => c[0].notifications.map((n: { id: number }) => n.id)),
+			...api.removeDeliveredNotifications.mock.calls.flatMap((c) =>
+				c[0].notifications.map((n: { id: number }) => n.id)
+			)
+		];
+		expect(touched.length).toBeGreaterThan(0);
+		expect(touched).not.toContain(TEST_ALERT_ID);
+		expect(api.schedule.mock.calls[0][0].notifications[0].id).toBe(TEST_ALERT_ID);
+	});
+
+	it("a session's alerts are all cleared when coming back to the app", async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		await disarmAlerts();
+		const cancelled = api.cancel.mock.calls[0][0].notifications.map((n: { id: number }) => n.id);
+		for (const id of PLAN_IDS) expect(cancelled).toContain(id);
 	});
 });
