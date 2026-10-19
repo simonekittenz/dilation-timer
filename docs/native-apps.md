@@ -150,9 +150,13 @@ web app that you want the Android app to have.
 
 ### Versions and update notices
 
-Every `npm run apk` raises the version by one: version code 2 is "1.1", 3 is "1.2", and so on (kept in
-`android/app/build.gradle` and `appRelease.json`, and a test checks they agree). Use
-`npm run apk -- --keep` to rebuild the same version while testing.
+The version goes up once per release, not once per build. `npm run apk` looks at what is on
+`origin/main`: if the version in `android/app/build.gradle` is already published it raises it by one
+(version code 2 is "1.1", 3 is "1.2", and so on); if it isn't published yet it reuses it, so any number
+of test builds before a push share one version. `appRelease.json` and `build.gradle` are kept in step
+(a test checks they agree). Flags: `npm run apk -- --keep` never changes the version, and
+`npm run apk -- --bump` always raises it. If git can't tell what is published (offline), it raises it to
+be safe.
 
 The installed Android app carries its own version number. When it opens (and when it is switched back
 to, at most every 30 minutes) it asks `https://dilation-timer.vercel.app/release.json`, which is just
