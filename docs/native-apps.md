@@ -80,26 +80,29 @@ Things that tripped us up, so they don't again:
 
 ## Android (give it to a friend, free)
 
-You need Android Studio (free; it brings its own Java and the Android tools).
+Send her the download link from the website (see "Offering the Android app on the website" below), or
+the file `static/downloads/Dilation-timer.apk` itself (WhatsApp, Telegram, Drive, email, USB; AirDrop does
+not work). That file is the release-signed app that `npm run apk` makes.
 
-1. `npm run android`. Android Studio opens the `android` folder and syncs (first time: slow).
-2. **Build → Build Bundle(s) / APK(s) → Build APK(s)**. When done, click **locate**. The file is
-   `android/app/build/outputs/apk/debug/app-debug.apk`.
-3. Send that file to your friend (WhatsApp, Telegram, Drive, email, USB. AirDrop does not work).
-4. On her phone: tap the file. Android asks to allow _Install unknown apps_ for the app she
-   opened it from. Allow it, then **Install**. If Play Protect says it does not recognise the app,
-   tap **More details → Install anyway**.
+On her phone: tap the file. Android asks to allow _Install unknown apps_ for the app she opened it
+from. Allow it, then **Install**. If Play Protect says it does not recognise the app, tap
+**More details → Install anyway**.
 
-To update her: build a new APK **on the same computer** and send it; it installs over the old one
-and keeps her data. (A different computer signs it differently and she would have to uninstall
-first, which erases her data. Have her use **Settings → Save backup** before that.)
+To update her: she is told inside the app when a newer version is published ("New version
+available"); she taps Download and installs over the old one, and her data stays. Any computer that
+has the signing folder can make that build (see "Signing").
+
+Building by hand in Android Studio (`npm run android`, then **Build → Build APK(s)**) gives a **debug**
+build, which is only for testing: don't hand it to people.
 
 ## Testing Android without a phone
 
 Android Studio's _Device Manager_ can create a virtual phone. From the command line, with the SDK
 installed: `sdkmanager emulator "system-images;android-35;google_apis;arm64-v8a"`, create it with
 `avdmanager create avd -n dilation-test -k "system-images;android-35;google_apis;arm64-v8a"`, boot it
-with `emulator -avd dilation-test`, then `adb install -r app-debug.apk`. `adb shell dumpsys audio`
+with `emulator -avd dilation-test`, build the testing version with `npm run apk:debug`, then
+`adb install -r android/app/build/outputs/signing/Dilation-timer-test.apk` (it installs over a release
+build, no uninstall needed). `adb shell dumpsys audio`
 shows whether the app holds audio focus ("may duck") while a sound plays.
 
 ## The alarm with the screen off
@@ -129,6 +132,42 @@ Verified on an Android 15 virtual phone with the screen off and Doze forced on: 
 the app cleared them. **Not yet tried on a real phone or on iPhone.** Some makers (Samsung, Xiaomi,
 Oppo) kill background apps harder than stock Android; if alerts are late there, turn off battery
 optimisation for the app. iPhone uses the same code with its normal notification sound.
+
+## Signing
+
+Android only lets an update replace an installed app if both were signed with the same key. The first
+builds were signed with Android's automatic "debug" key; the published app is now signed with a real
+release key, and Android's **key rotation** lets phones that have an older build update to it without
+uninstalling (their data stays). Everything lives in one folder **outside the project**:
+`~/.dilation-timer-signing` (or wherever `DILATION_SIGNING_DIR` points):
+
+| file                                | what it is                                                          |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `release.keystore` + `password.txt` | the release key and its password                                    |
+| `old-signer.keystore`               | the original debug key (password `android`)                         |
+| `lineage.bin`                       | the rotation record: "the debug key handed over to the release key" |
+
+**Keep a copy of that whole folder somewhere safe and off this computer** (password manager file
+storage, or an encrypted USB stick). If it is lost, nobody can update the app any more: everyone has to
+uninstall (losing their data) and install again. It must never be committed (`.gitignore` and a test
+guard against that) or shared. The release key's public fingerprint (SHA-256) is
+`BF:35:33:F4:E9:77:99:85:8E:5D:53:FC:64:13:25:31:21:94:BD:E0:7A:E2:8D:B6:42:77:22:9D:CB:D8:B5:64`
+and is recorded in `appRelease.json` as `signer`.
+
+How `npm run apk` signs: it builds the release app (`assembleRelease`), aligns it, then runs
+`apksigner` with **both** keys: the old key signs the classic signature (v2, which phones older than
+Android 9 check) and the release key signs v3 together with `lineage.bin` (Android 9 and up). It then
+refuses to publish unless the signature verifies, the app is not marked debuggable, and the signer
+matches the previous release.
+
+Things to remember:
+
+- The old key can never be dropped: phones still on an old build, and phones older than Android 9,
+  keep trusting it. That is why it is in the folder and in the backup.
+- A release build can't be inspected with the Chrome debugging connection that the emulator tests use.
+  For tests, `npm run apk:debug` builds the identical app with debugging on, signed the same way
+  (`adb install -r android/app/build/outputs/signing/Dilation-timer-test.apk`).
+- To start over with a new key, everybody must uninstall once. Don't, unless the key is compromised.
 
 ## Offering the Android app on the website
 
@@ -173,11 +212,10 @@ keeps its data when it is signed with the same key (see below).
 
 Things to know:
 
-- The file is **debug-signed** with the debug key on the computer that built it. An update only
-  installs over the old app if it is signed with the same key, so always build on the same Mac.
-  Before many people depend on it, create a proper release key (Android Studio:
-  _Build → Generate Signed App Bundle / APK_) and keep that keystore safe: if it is lost, people must
-  uninstall (losing their data) to update.
+- The published file is **release-signed** (see "Signing" below), so it can be built on any computer
+  that has the signing folder. A debug build for testing is `npm run apk:debug`; it is never
+  published; it is the same app signed with the same keys but with debugging on, so it installs over
+  the release build and the release over it, with no uninstall in between.
 - Every build adds about 6 MB to the git history, so publish when something worth sharing changed.
   (GitHub Releases would avoid that if it ever matters.)
 - The web app's offline cache skips `/downloads/` and `/sounds/`, and the app's own build removes

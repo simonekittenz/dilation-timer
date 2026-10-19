@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -73,5 +74,34 @@ describe('the Android download on the website', () => {
 		const route = read('src/routes/release.json/+server.ts').toString();
 		expect(route).toContain('export const prerender = true');
 		expect(route).toContain('appRelease.json');
+	});
+
+	it('records which key signed it, and that key never changes (or nobody could update)', () => {
+		// the SHA-256 of the release certificate; the same value is in the signing folder's README
+		expect(release.android.signer).toMatch(/^[0-9a-f]{64}$/);
+		expect(release.android.signer).toBe(
+			'bf3533f4e97799858e5d53fc641325312194bde07ae28db64277229dcbd8b564'
+		);
+	});
+
+	it('keeps signing keys and passwords out of git, whatever happens', () => {
+		const ignore = read('.gitignore').toString();
+		for (const pattern of ['*.keystore', '*.jks', 'password.txt', 'lineage.bin'])
+			expect(ignore).toContain(pattern);
+		const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n');
+		const secrets = tracked.filter((f) =>
+			/\.(keystore|jks|p12|pfx)$|(^|\/)(password\.txt|lineage\.bin)$/.test(f)
+		);
+		expect(secrets).toEqual([]);
+	});
+
+	it('has a debug build for testing that is kept apart from the published one', () => {
+		const scripts = JSON.parse(read('package.json').toString()).scripts;
+		expect(scripts.apk).toBe('node scripts/build-apk.mjs');
+		expect(scripts['apk:debug']).toBe('node scripts/build-apk.mjs --debug');
+		const script = read('scripts/build-apk.mjs').toString();
+		expect(script).toContain('assembleRelease');
+		expect(script).toContain('--lineage');
+		expect(script).toContain('application-debuggable');
 	});
 });

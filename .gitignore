@@ -3,3 +3,9 @@ node_modules
 build
 .DS_Store
 .env
+
+# signing material must never be committed (the real ones live outside this folder)
+*.keystore
+*.jks
+password.txt
+lineage.bin
