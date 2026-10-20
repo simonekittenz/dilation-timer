@@ -41,7 +41,10 @@ to switch to the next one.
 There is no server and no account. Everything (settings, schedule, history, the running session) is
 stored on your device, in the browser's local storage, under the key `dilation-timer:v1`. "Save backup"
 writes it to a file you keep. The only thing the Android app ever asks the network for is whether a
-newer version has been published (`/release.json`).
+newer version has been published (`/release.json`). The website (not the apps) counts page views
+anonymously with Vercel Web Analytics: no cookies, only the page, country, device and browser, and it
+honours Do Not Track. It is set up in `src/lib/analytics.ts`, which never runs in the apps. See the
+app's `/privacy` page for the wording users see.
 
 ## Running it
 

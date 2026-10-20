@@ -108,6 +108,9 @@ describe('the Android download on the website', () => {
 	it('has a privacy page that Google Play and the apps can link to', () => {
 		const page = read('src/routes/privacy/+page.svelte').toString();
 		expect(page).toContain('no accounts');
+		// the page must tell the truth about the website's visit counter, and say the apps have none
+		expect(page).toContain('Vercel Web Analytics');
+		expect(page).toContain('no analytics or tracking at all');
 		expect(page).toContain('github.com/simonekittenz/dilation-timer/issues');
 		// reachable from inside the app and from the start page
 		expect(read('src/routes/settings/+page.svelte').toString()).toContain('href="/privacy"');

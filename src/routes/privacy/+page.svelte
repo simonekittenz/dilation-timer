@@ -1,12 +1,13 @@
 <h1>Privacy ✿</h1>
-<p class="muted updated">Dilation timer · last updated 20 October 2026</p>
+<p class="muted updated">Dilation timer · last updated 21 October 2026</p>
 
 <section class="card">
 	<h2>The short version</h2>
 	<p>
-		Your information stays on your phone or computer. There are no accounts, no ads, no analytics
-		and no tracking. Nothing you enter (your surgery date, schedule, sessions or history) is ever
-		sent to me or to anyone else.
+		Your information stays on your phone or computer. There are no accounts and no ads. Nothing you
+		enter (your surgery date, schedule, sessions or history) is ever sent to me or to anyone else.
+		The Android and iPhone apps contain no analytics or tracking at all. The website counts visits
+		anonymously, as explained below.
 	</p>
 </section>
 
@@ -36,6 +37,15 @@
 			<strong>The website</strong> sends you its pages and files, like any website. The company that hosts
 			it (Vercel) can see the technical details every web server sees, such as your IP address and browser.
 			I don't use them.
+		</li>
+		<li>
+			<strong>Visit counts (the website only):</strong> the website uses Vercel Web Analytics to see how
+			many people visit which pages. It uses no cookies and no accounts, and does not follow you between
+			websites. For each page view it records the page address (never anything you typed), where you came
+			from, your country or region, your device type and your browser and system. It cannot tell who you
+			are, and it is not used for anything but counting. It is switched off for browsers that send "Do
+			Not Track" or "Global Privacy Control", and it is not part of the Android or iPhone app, including
+			the Google Play version.
 		</li>
 		<li>
 			<strong>The Android app</strong>, when downloaded from the website, asks the website whether a

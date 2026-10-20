@@ -6,6 +6,7 @@
 	import { isNative } from '$lib/platform';
 	import { store } from '$lib/store.svelte';
 	import { updates } from '$lib/updates.svelte';
+	import { startAnalytics } from '$lib/analytics';
 	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '$lib/welcome';
 
 	let { children } = $props();
@@ -14,6 +15,7 @@
 	if (browser) {
 		store.boot();
 		updates.start(); // the Android app only: is there a newer version to download?
+		void startAnalytics(); // the website only: anonymous page-view counts
 	}
 
 	// Brand-new visitors on the website see the start page once (the app, the installed web app,
