@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { dayNumber, formatCompactDate } from '#lib/dates.ts';
 	import Mascot from '#lib/Mascot.svelte';
 	import MilestoneCard from '#lib/MilestoneCard.svelte';
+	import NewDilatorCard from '#lib/NewDilatorCard.svelte';
+	import PushBackNote from '#lib/PushBackNote.svelte';
 	import Schedule from '#lib/Schedule.svelte';
 	import Setup from '#lib/Setup.svelte';
 	import { daysUntilDilation, isRestPhase } from '#lib/schedule.ts';
@@ -29,6 +32,9 @@
 	);
 	const nextSlot = $derived(store.nextSlot);
 	const untilDilation = $derived(daysUntilDilation(store.settings.phases, day));
+	const intro = $derived(store.dilatorIntro);
+	// the "pushed back" note belongs to this visit: leave Today and it is gone, so Undo can't clash
+	onDestroy(() => store.dismissPushBackNote());
 	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
 </script>
 
@@ -57,6 +63,7 @@
 
 <UpdateBanner />
 {#if !settingUp && !store.active}<MilestoneCard />{/if}
+{#if !settingUp && !store.active}<PushBackNote />{/if}
 
 {#if settingUp}
 	<Setup />
@@ -74,6 +81,8 @@
 		</p>
 		<a class="btn ghost small" href="/custom">✨ Do a custom session anyway</a>
 	</section>
+{:else if intro}
+	<NewDilatorCard />
 {:else if phase}
 	<section class="routine card">
 		<h2>Today's routine 🎀</h2>

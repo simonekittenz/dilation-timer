@@ -11,7 +11,7 @@ import {
 	stopAlarm,
 	unlock
 } from './alarm';
-import { toDateString, toTimeString } from './dates';
+import { addDays, toDateString, toTimeString } from './dates';
 import { FALLBACK_COLOR, resolveSteps } from './dilators';
 import { planBackgroundAlerts } from './backgroundAlerts';
 import { nativeAudioAvailable, stopNative } from './nativeAudio';
@@ -45,13 +45,25 @@ import {
 	tick
 } from './session';
 import { currentMilestone, type Milestone } from './milestones';
+import { introKey, pendingIntro, type DilatorIntro } from './newDilators';
+import { pushBackPhase } from './phases';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
 import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId, Step } from './types';
 
 const KEY = 'dilation-timer:v1';
 const SEEN_KEY = 'dilation-timer:milestones-seen';
+const INTROS_KEY = 'dilation-timer:dilator-intros-seen';
 /** How long the "time to switch" ears cue stays up. */
 const CUE_MS = 3500;
+
+/** What "push back" just did, for the note on Today and its Undo. Not saved: it is gone on reload. */
+export interface PushBackNote {
+	phaseLabel: string;
+	days: number;
+	/** The date the phase starts on now. */
+	startsOn: string;
+	before: Settings['phases'];
+}
 
 interface Persisted {
 	settings: Settings;
@@ -72,6 +84,9 @@ class Store {
 	soundReady = $state(false);
 	/** Milestone messages already dismissed on this device (their ids include the surgery date). */
 	seenMilestones = $state<string[]>([]);
+	/** Dilators whose "new dilator appears" message was answered with "Okay here we go". */
+	seenIntros = $state<string[]>([]);
+	pushBackNote = $state<PushBackNote | null>(null);
 	private timer: ReturnType<typeof setInterval> | null = null;
 
 	get today() {
@@ -94,6 +109,53 @@ class Store {
 		} catch {
 			// private mode: it simply shows again next time
 		}
+	}
+
+	/** The "new dilator appears!" message to show today, or null (also while setting up). */
+	get dilatorIntro(): DilatorIntro | null {
+		if ((this.settings.setup ?? 'done') !== 'done') return null;
+		return pendingIntro(this.settings, this.today, this.seenIntros);
+	}
+
+	/** "Okay here we go": the new dilator is known, don't ask about it again. */
+	acknowledgeIntro() {
+		const intro = this.dilatorIntro;
+		if (!intro) return;
+		const keys = intro.dilators.map((n) => introKey(this.settings.startDate, n.dilator.id));
+		this.seenIntros = [...this.seenIntros, ...keys].slice(-60);
+		try {
+			localStorage.setItem(INTROS_KEY, JSON.stringify(this.seenIntros));
+		} catch {
+			// private mode: it simply asks again next time
+		}
+	}
+
+	/** "I'm not ready": start the phase that brings in the new dilator `days` later. */
+	pushBackIntro(days: number) {
+		const intro = this.dilatorIntro;
+		if (!intro) return;
+		const before = $state.snapshot(this.settings.phases);
+		const phases = pushBackPhase(before, intro.phase.id, days);
+		if (phases === before) return;
+		const moved = phases.find((p) => p.id === intro.phase.id)!;
+		this.updateSettings({ ...$state.snapshot(this.settings), phases });
+		this.pushBackNote = {
+			phaseLabel: intro.phase.label,
+			days,
+			startsOn: addDays(this.settings.startDate, moved.fromDay - 1),
+			before
+		};
+	}
+
+	undoPushBack() {
+		const note = this.pushBackNote;
+		if (!note) return;
+		this.updateSettings({ ...$state.snapshot(this.settings), phases: note.before });
+		this.pushBackNote = null;
+	}
+
+	dismissPushBackNote() {
+		this.pushBackNote = null;
 	}
 
 	get switchWindowMs() {
@@ -150,6 +212,12 @@ class Store {
 		try {
 			const seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]');
 			if (Array.isArray(seen)) this.seenMilestones = seen.filter((x) => typeof x === 'string');
+		} catch {
+			// nothing remembered
+		}
+		try {
+			const intros = JSON.parse(localStorage.getItem(INTROS_KEY) ?? '[]');
+			if (Array.isArray(intros)) this.seenIntros = intros.filter((x) => typeof x === 'string');
 		} catch {
 			// nothing remembered
 		}

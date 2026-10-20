@@ -24,6 +24,39 @@ export function resizePhase(phases: Phase[], id: string, newToDay: number): Phas
 	});
 }
 
+/**
+ * Starts a phase `days` later. It and every phase after it move back by that much, and the phase
+ * before it carries on through the days that open up (a rest phase fills them if nothing comes
+ * before), so no day is left without a routine.
+ */
+export function pushBackPhase(phases: Phase[], id: string, days: number): Phase[] {
+	const shift = Math.round(days);
+	const ordered = inDayOrder(phases);
+	const at = ordered.findIndex((p) => p.id === id);
+	if (at < 0 || !Number.isFinite(shift) || shift < 1) return phases;
+	const target = ordered[at];
+	const moving = new Set(ordered.slice(at).map((p) => p.id));
+	const lastFreedDay = target.fromDay + shift - 1;
+	const before = ordered[at - 1];
+	const moved = phases.map((p) => {
+		if (moving.has(p.id)) {
+			return { ...p, fromDay: p.fromDay + shift, toDay: p.toDay === null ? null : p.toDay + shift };
+		}
+		return p.id === before?.id ? { ...p, toDay: lastFreedDay } : p;
+	});
+	if (before) return moved;
+	const rest: Phase = {
+		id: `rest-${crypto.randomUUID().slice(0, 8)}`,
+		label: 'Rest',
+		fromDay: target.fromDay,
+		toDay: lastFreedDay,
+		slots: [],
+		steps: []
+	};
+	const index = phases.findIndex((p) => p.id === id);
+	return [...moved.slice(0, index), rest, ...moved.slice(index)];
+}
+
 export interface PhaseProblem {
 	id: string;
 	kind: 'overlap' | 'gap';
