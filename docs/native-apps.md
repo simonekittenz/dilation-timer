@@ -169,6 +169,13 @@ Things to remember:
   (`adb install -r android/app/build/outputs/signing/Dilation-timer-test.apk`).
 - To start over with a new key, everybody must uninstall once. Don't, unless the key is compromised.
 
+## Google Play
+
+The same app can go on Google Play. `npm run aab` builds the bundle Play wants (signed with a separate
+**upload key**, with the app's real signing key handed to Google once so both channels stay compatible)
+and leaves out the "new version" notice, because Play does the updating. The account setup, the exact
+form answers and the listing text are in [`play-store.md`](play-store.md).
+
 ## Offering the Android app on the website
 
 The website has a start page (`/welcome`) where new visitors choose between downloading the Android

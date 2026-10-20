@@ -568,6 +568,7 @@
 	{#if updates.available}
 		· <a href={updates.available.downloadUrl}>v{updates.available.version} is available</a>
 	{/if}
+	· <a href="/privacy">Privacy</a>
 </p>
 
 <style>

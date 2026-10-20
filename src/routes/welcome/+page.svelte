@@ -3,9 +3,17 @@
 	import Mascot from '$lib/Mascot.svelte';
 	import release from '$lib/appRelease.json';
 	import { store } from '$lib/store.svelte';
-	import { describeDownload, detectPlatform, hasSeenWelcome, markWelcomeSeen } from '$lib/welcome';
+	import {
+		describeDownload,
+		detectPlatform,
+		hasSeenWelcome,
+		markWelcomeSeen,
+		playStoreUrl
+	} from '$lib/welcome';
 
 	const android = release.android;
+	// set once the app is on Google Play; until then only the downloadable file is offered
+	const playUrl = playStoreUrl(android);
 	const platform = detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
 	// someone who already uses the app (or came back here on purpose) gets a "back" button
 	const returning = store.hasSavedData || hasSeenWelcome();
@@ -38,9 +46,28 @@
 			<li>Sound just works, with no "tap to turn the sound on" step</li>
 			<li>Its own bunny icon on your home screen</li>
 		</ul>
-		<a class="btn" href={android.file} download onclick={() => markWelcomeSeen('android')}>
-			⬇ Download for Android
-		</a>
+		{#if playUrl}
+			<a
+				class="btn"
+				href={playUrl}
+				data-testid="play-link"
+				onclick={() => markWelcomeSeen('android')}
+			>
+				▶ Get it on Google Play
+			</a>
+			<a
+				class="btn ghost small"
+				href={android.file}
+				download
+				onclick={() => markWelcomeSeen('android')}
+			>
+				Or download the app file directly
+			</a>
+		{:else}
+			<a class="btn" href={android.file} download onclick={() => markWelcomeSeen('android')}>
+				⬇ Download for Android
+			</a>
+		{/if}
 		<p class="muted small" data-testid="download-info">{describeDownload(android)}</p>
 		{#if platform === 'ios'}
 			<p class="note">This one is for Android phones only.</p>
@@ -49,9 +76,12 @@
 			<summary>How do I install it?</summary>
 			<ol>
 				<li>
-					Tap <strong>Download for Android</strong>. If your browser warns that this kind of file
-					can be harmful, choose <strong>Download anyway</strong>. The app isn't on the Play Store
-					yet, which is why Android asks for a few extra taps.
+					Tap <strong
+						>{playUrl ? 'Or download the app file directly' : 'Download for Android'}</strong
+					>. If your browser warns that this kind of file can be harmful, choose
+					<strong>Download anyway</strong>.{playUrl
+						? ' (Installing from Google Play skips all of this.)'
+						: " The app isn't on the Play Store yet, which is why Android asks for a few extra taps."}
 				</li>
 				<li>
 					Open the downloaded file. If asked, allow your browser to
@@ -152,6 +182,8 @@
 	app starts it empty: use <strong>Settings → Save backup</strong> here, then
 	<strong>Restore backup</strong> in the app.
 </p>
+
+<p class="muted small moving"><a href="/privacy">How your information is handled</a></p>
 
 <style>
 	header {

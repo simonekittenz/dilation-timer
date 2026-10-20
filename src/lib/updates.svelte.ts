@@ -26,6 +26,8 @@ class Updates {
 	}
 
 	start() {
+		// The Google Play build (npm run aab) is updated by Play itself: no notice, and no asking the website.
+		if (import.meta.env.VITE_PLAY === '1') return;
 		if (this.started || nativePlatform() !== 'android') return;
 		this.started = true;
 		try {

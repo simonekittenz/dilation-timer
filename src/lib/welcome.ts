@@ -62,6 +62,20 @@ export interface AndroidRelease {
 }
 
 /** "5.7 MB · v1.0 · 18 Oct 2026" */
+/** This app's page on Google Play, once it has been published. */
+export const PLAY_STORE_URL =
+	'https://play.google.com/store/apps/details?id=com.simonekittenz.dilationtimer';
+
+/**
+ * The Play Store address to offer, or null while the app isn't there yet. It is set by adding
+ * `"playUrl"` to the android entry of appRelease.json; anything but this app's own Play page is
+ * ignored, so a typo can't send people somewhere else.
+ */
+export function playStoreUrl(release: object): string | null {
+	const url = (release as { playUrl?: unknown }).playUrl;
+	return typeof url === 'string' && url.startsWith(PLAY_STORE_URL) ? url : null;
+}
+
 export function describeDownload(r: AndroidRelease, locale?: string): string {
 	const mb = `${(r.sizeBytes / 1e6).toFixed(1)} MB`;
 	const date = new Date(r.builtAt).toLocaleDateString(locale, {

@@ -62,6 +62,8 @@ npm run dev      # http://localhost:5173
 | `npm run icons`                           | Re-make the app icons and launch screens                       |
 | `npm run android` / `npm run ios`         | Build for the app and open Android Studio / Xcode              |
 | `npm run apk`                             | Build, sign and publish the Android app (see below)            |
+| `npm run aab`                             | The Google Play version of the app (see below)                 |
+| `npm run store:assets`                    | Pictures for the Play listing (icon, banner, screenshots)      |
 | `npm run apk:debug`                       | A debuggable test build of the Android app, for emulators      |
 
 ## How it's built
@@ -99,6 +101,9 @@ page sleeps or the app is closed and reopened.
   `static/downloads/` together with `src/lib/appRelease.json`. Commit both and push. The version goes up
   once per release (the script works out whether the current one is already published), and installed
   apps then offer the update themselves.
+- **Google Play:** `npm run aab` builds the bundle to upload, signed with a separate upload key. The
+  account steps, form answers and listing text are in [`docs/play-store.md`](docs/play-store.md). The
+  privacy policy the listing needs is the app's own `/privacy` page.
 - **Signing key:** the release key lives **outside** this folder, in `~/.dilation-timer-signing`. Keep a
   backup of that whole folder: without it nobody can update the app. Details are in
   [`docs/native-apps.md`](docs/native-apps.md#signing).

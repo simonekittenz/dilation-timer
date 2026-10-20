@@ -104,4 +104,35 @@ describe('the Android download on the website', () => {
 		expect(script).toContain('--lineage');
 		expect(script).toContain('application-debuggable');
 	});
+
+	it('has a privacy page that Google Play and the apps can link to', () => {
+		const page = read('src/routes/privacy/+page.svelte').toString();
+		expect(page).toContain('no accounts');
+		expect(page).toContain('github.com/simonekittenz/dilation-timer/issues');
+		// reachable from inside the app and from the start page
+		expect(read('src/routes/settings/+page.svelte').toString()).toContain('href="/privacy"');
+		expect(read('src/routes/welcome/+page.svelte').toString()).toContain('href="/privacy"');
+	});
+
+	it('can build the Google Play bundle, without the self-update notice and never for the website', () => {
+		const scripts = JSON.parse(read('package.json').toString()).scripts;
+		expect(scripts.aab).toBe('node scripts/build-apk.mjs --aab');
+		const script = read('scripts/build-apk.mjs').toString();
+		expect(script).toContain('bundleRelease');
+		expect(script).toContain('jarsigner'); // bundles are signed with the upload key
+		expect(script).toContain("VITE_PLAY: aabBuild ? '1' : '0'");
+		// the bundle goes to the build folder only, never into the website's downloads
+		expect(
+			script.slice(script.indexOf('if (aabBuild) {'), script.indexOf('process.exit(0);'))
+		).not.toContain('static/downloads');
+		expect(read('src/lib/updates.svelte.ts').toString()).toContain("VITE_PLAY === '1'");
+	});
+
+	it('documents the Play steps and uses the real privacy page address', () => {
+		const doc = read('docs/play-store.md').toString();
+		expect(doc).toContain('https://dilation-timer.vercel.app/privacy');
+		expect(doc).toContain('com.simonekittenz.dilationtimer');
+		expect(doc).toContain('12 testers');
+		expect(doc).toContain('Not affiliated with or endorsed by WIH International Hospital');
+	});
 });

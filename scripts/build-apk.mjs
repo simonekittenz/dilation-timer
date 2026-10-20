@@ -3,6 +3,10 @@
 //                           is already published (on origin/main); otherwise it is reused.
 //   npm run apk -- --keep   never changes the version
 //   npm run apk -- --bump   always raises the version
+//   npm run aab             the Google Play version: an app bundle (.aab) signed with the upload key.
+//                           Never published on the website, version untouched; it is for uploading to
+//                           the Play Console. (Built without the in-app "new version" notice, since
+//                           Play updates the app.)
 //   npm run apk:debug       a test build for an emulator: the same app, signed with the same keys, but
 //                           with remote debugging on. Not published, and it installs over (and under)
 //                           the release build without uninstalling.
@@ -29,6 +33,7 @@ const root = new URL('..', import.meta.url).pathname;
 const android = join(root, 'android');
 const APK_NAME = 'Dilation-timer.apk';
 const debugBuild = process.argv.includes('--debug');
+const aabBuild = process.argv.includes('--aab');
 
 // The release key lives outside the repository. Losing it means everyone must uninstall to update.
 const SIGNING_DIR = process.env.DILATION_SIGNING_DIR ?? join(homedir(), '.dilation-timer-signing');
@@ -39,7 +44,12 @@ const signing = {
 	// signed by that same key, or by a key it was handed over to ("rotated", via lineage.bin).
 	oldKeystore: join(SIGNING_DIR, 'old-signer.keystore'), // the debug key, password "android"
 	lineage: join(SIGNING_DIR, 'lineage.bin'),
-	alias: 'dilation-timer'
+	alias: 'dilation-timer',
+	// Google Play checks uploads against this key. The app's real signing key is the release key,
+	// which is handed to Play App Signing once (docs/play-store.md).
+	uploadKeystore: join(SIGNING_DIR, 'upload.keystore'),
+	uploadPassword: join(SIGNING_DIR, 'upload-password.txt'),
+	uploadAlias: 'upload'
 };
 
 function androidSdk() {
@@ -116,8 +126,8 @@ if (!Number.isInteger(currentCode) || currentCode < 1) {
 }
 const decision = decideVersionCode({
 	current: currentCode,
-	published: keep || bump || debugBuild ? null : publishedVersionCode(),
-	keep: keep || debugBuild,
+	published: keep || bump || debugBuild || aabBuild ? null : publishedVersionCode(),
+	keep: keep || debugBuild || aabBuild,
 	bump
 });
 const versionCode = decision.code;
@@ -140,7 +150,10 @@ console.log(`Building version ${versionName} (code ${versionCode}): ${decision.w
 
 const tools = buildTools();
 {
-	const missing = Object.values(signing).filter((f) => f.startsWith('/') && !existsSync(f));
+	const needed = aabBuild
+		? [signing.uploadKeystore, signing.uploadPassword]
+		: [signing.keystore, signing.password, signing.oldKeystore, signing.lineage];
+	const missing = needed.filter((f) => !existsSync(f));
 	if (missing.length > 0) {
 		console.error(
 			`The release signing key is missing (${missing.join(', ')}).\n` +
@@ -164,8 +177,43 @@ if (!jdk) {
 }
 console.log(`Using Java 21 at ${jdk}`);
 
-run('npm', ['run', 'cap:sync']); // builds the web app for the wrapper and copies it into android/
+// builds the web app for the wrapper and copies it into android/. The Play version is built with
+// VITE_PLAY=1, which leaves out the self-update notice (Play delivers the updates).
+run('npm', ['run', 'cap:sync'], { env: { ...process.env, VITE_PLAY: aabBuild ? '1' : '0' } });
 const gradleEnv = { ...process.env, JAVA_HOME: jdk };
+
+if (aabBuild) {
+	run('./gradlew', ['bundleRelease', '--console=plain'], { cwd: android, env: gradleEnv });
+	const bundle = join(android, 'app/build/outputs/bundle/release/app-release.aab');
+	if (!existsSync(bundle)) {
+		console.error(`Expected the bundle at ${bundle}, but it isn't there.`);
+		process.exit(1);
+	}
+	const outDir = join(android, 'app/build/outputs/signing');
+	mkdirSync(outDir, { recursive: true });
+	const out = join(outDir, 'Dilation-timer-play.aab');
+	copyFileSync(bundle, out);
+	run(join(jdk, 'bin/jarsigner'), [
+		'-keystore',
+		signing.uploadKeystore,
+		'-storepass:file',
+		signing.uploadPassword,
+		'-sigalg',
+		'SHA256withRSA',
+		'-digestalg',
+		'SHA-256',
+		out,
+		signing.uploadAlias
+	]);
+	const check = spawnSync(join(jdk, 'bin/jarsigner'), ['-verify', out], { encoding: 'utf8' });
+	if (!/jar verified/.test(check.stdout)) {
+		console.error(`\nThe bundle's signature does not verify.\n${check.stdout}${check.stderr}`);
+		process.exit(1);
+	}
+	console.log(`\nPlay bundle (NOT for the website): ${out}`);
+	console.log('Upload it in the Play Console (see docs/play-store.md).');
+	process.exit(0);
+}
 
 run('./gradlew', ['assembleRelease', ...(debugBuild ? ['-PtestBuild'] : []), '--console=plain'], {
 	cwd: android,

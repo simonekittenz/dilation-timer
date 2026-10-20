@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { describeDownload, detectPlatform, shouldShowWelcome } from './welcome';
+import {
+	PLAY_STORE_URL,
+	describeDownload,
+	detectPlatform,
+	playStoreUrl,
+	shouldShowWelcome
+} from './welcome';
 
 const UA = {
 	pixel:
@@ -52,5 +58,34 @@ describe('describeDownload', () => {
 			'en-GB'
 		);
 		expect(text).toBe('5.7 MB · v1.0 · 18 Oct 2026');
+	});
+});
+
+describe('playStoreUrl', () => {
+	it('is null until the app is on Google Play (nothing is set yet)', () => {
+		expect(playStoreUrl({})).toBeNull();
+		expect(playStoreUrl({ playUrl: undefined })).toBeNull();
+	});
+
+	it("accepts this app's own Play Store page", () => {
+		expect(playStoreUrl({ playUrl: PLAY_STORE_URL })).toBe(PLAY_STORE_URL);
+		expect(PLAY_STORE_URL).toBe(
+			'https://play.google.com/store/apps/details?id=com.simonekittenz.dilationtimer'
+		);
+	});
+
+	it('ignores anything else, so a typo can never send people somewhere else', () => {
+		for (const bad of [
+			'',
+			'play.google.com/store/apps/details?id=com.simonekittenz.dilationtimer',
+			'http://play.google.com/store/apps/details?id=com.simonekittenz.dilationtimer',
+			'https://evil.example/store/apps/details?id=com.simonekittenz.dilationtimer',
+			'https://play.google.com/store/apps/details?id=com.someone.else',
+			'https://play.google.com.evil.example/store/apps/details?id=com.simonekittenz.dilationtimer',
+			42,
+			null,
+			{}
+		])
+			expect(playStoreUrl({ playUrl: bad })).toBeNull();
 	});
 });

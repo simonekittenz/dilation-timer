@@ -19,7 +19,9 @@
 		"android": "npm run cap:sync && cap open android",
 		"icons": "node scripts/render-icons.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#ff7eb6' --iconBackgroundColorDark '#c0558a' --splashBackgroundColor '#fff0f6' --splashBackgroundColorDark '#2b1626'",
 		"apk": "node scripts/build-apk.mjs",
-		"apk:debug": "node scripts/build-apk.mjs --debug"
+		"apk:debug": "node scripts/build-apk.mjs --debug",
+		"aab": "node scripts/build-apk.mjs --aab",
+		"store:assets": "node scripts/render-store-assets.mjs"
 	},
 	"devDependencies": {
 		"@capacitor/cli": "^8.5.3",
