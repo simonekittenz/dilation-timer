@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ALERT_ID, PLAN_IDS, TEST_ALERT_ID, type BackgroundAlert } from './backgroundAlerts';
+import { REMINDER_IDS, SNOOZE_ID, SNOOZE_MINUTES, type PlannedReminder } from './reminders';
 import {
 	armAlerts,
 	CHANNELS,
+	clearReminderNotifications,
+	REMINDER_ACTION_TYPE,
+	snoozeReminder,
+	syncReminders,
+	watchReminderActions,
 	disarmAlerts,
 	noteAppActive,
 	TEST_ALERT_SHOWN_FOR_SECONDS,
@@ -31,6 +37,10 @@ function fake(display = 'granted') {
 		),
 		removeDeliveredNotifications: vi.fn(
 			async (_options: { notifications: { id: number }[] }) => void calls.push('clear')
+		),
+		registerActionTypes: vi.fn(async (_options: unknown) => void calls.push('actions')),
+		addListener: vi.fn(
+			async (_event: string, _listener: (a: unknown) => void) => void calls.push('listen')
 		)
 	};
 	return { api: api as unknown as NotificationsApi & typeof api, calls };
@@ -204,5 +214,147 @@ describe('locked-screen alerts', () => {
 			await wait(60);
 			expect(removedIds(api)).toEqual([]);
 		});
+	});
+});
+
+describe('daily reminders', () => {
+	const planned: PlannedReminder[] = [
+		{
+			id: REMINDER_IDS[0],
+			at: 1_000_000,
+			slot: 'morning',
+			date: '2026-01-15',
+			title: 'Time for your morning session ♡',
+			body: 'Dilator 0 · 25 min'
+		},
+		{
+			id: REMINDER_IDS[1],
+			at: 2_000_000,
+			slot: 'evening',
+			date: '2026-01-15',
+			title: 'Time for your evening session ♡',
+			body: 'Dilator 0 · 25 min'
+		}
+	];
+	const idsOf = (calls: { notifications: { id: number }[] }[]) =>
+		calls.flatMap((c) => c.notifications.map((n) => n.id));
+
+	it('does nothing in a normal browser', async () => {
+		await syncReminders(planned, false);
+		expect(await snoozeReminder('morning', '2026-01-15', 't', 'b', false)).toBe(false);
+		await clearReminderNotifications({ pendingSnooze: true });
+		await watchReminderActions(() => {});
+	});
+
+	it('schedules each reminder with its three buttons and what they need to know', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		await syncReminders(planned, false);
+		const sent = api.schedule.mock.calls[0][0].notifications as unknown as Array<
+			Sent & { actionTypeId: string; extra: Record<string, string>; title: string }
+		>;
+		expect(sent.map((n) => n.id)).toEqual([REMINDER_IDS[0], REMINDER_IDS[1]]);
+		expect(sent[0].schedule.at.getTime()).toBe(1_000_000);
+		expect(sent.every((n) => n.schedule.allowWhileIdle)).toBe(true);
+		expect(sent.every((n) => n.channelId === CHANNELS.reminder)).toBe(true);
+		expect(sent.every((n) => n.actionTypeId === REMINDER_ACTION_TYPE)).toBe(true);
+		expect(sent[1].extra).toEqual({ slot: 'evening', date: '2026-01-15' });
+		const types = (
+			api.registerActionTypes.mock.calls[0][0] as {
+				types: { actions: { id: string; title: string }[] }[];
+			}
+		).types;
+		expect(types[0].actions.map((a) => a.id)).toEqual(['start', 'snooze', 'off']);
+		expect(types[0].actions.map((a) => a.title)).toEqual([
+			'Start session',
+			'Remind me in 30 min',
+			'Turn off'
+		]);
+	});
+
+	it('replaces the old plan instead of adding to it, and never touches the alerts or a snooze', async () => {
+		const { api, calls } = fake();
+		setNotificationsForTests(api);
+		await syncReminders(planned, false);
+		expect(calls.indexOf('cancel')).toBeLessThan(calls.indexOf('schedule'));
+		const cancelled = idsOf(api.cancel.mock.calls.map((c) => c[0]));
+		for (const id of REMINDER_IDS) expect(cancelled).toContain(id);
+		for (const id of [...PLAN_IDS, TEST_ALERT_ID, SNOOZE_ID]) expect(cancelled).not.toContain(id);
+	});
+
+	it('uses the silent channel when the volume is off', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		await syncReminders(planned, true);
+		const sent = api.schedule.mock.calls[0][0].notifications;
+		expect(sent.every((n) => n.channelId === CHANNELS.quiet)).toBe(true);
+	});
+
+	it('an empty plan just clears, and no permission schedules nothing', async () => {
+		const a = fake();
+		setNotificationsForTests(a.api);
+		await syncReminders([], false);
+		expect(a.api.cancel).toHaveBeenCalled();
+		expect(a.api.schedule).not.toHaveBeenCalled();
+
+		const b = fake('denied');
+		setNotificationsForTests(b.api);
+		await syncReminders(planned, false);
+		expect(b.api.schedule).not.toHaveBeenCalled();
+	});
+
+	it('"remind me in 30 minutes" schedules one more reminder, with the same buttons', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		const now = 5_000_000;
+		expect(await snoozeReminder('evening', '2026-01-15', 'Time ♡', 'Soon', false, now)).toBe(true);
+		const sent = api.schedule.mock.calls[0][0].notifications as unknown as Array<
+			Sent & { actionTypeId: string; extra: Record<string, string> }
+		>;
+		expect(sent).toHaveLength(1);
+		expect(sent[0].id).toBe(SNOOZE_ID);
+		expect(sent[0].schedule.at.getTime()).toBe(now + SNOOZE_MINUTES * 60_000);
+		expect(sent[0].actionTypeId).toBe(REMINDER_ACTION_TYPE);
+		expect(sent[0].extra).toEqual({ slot: 'evening', date: '2026-01-15' });
+	});
+
+	it('cannot snooze without permission', async () => {
+		const { api } = fake('denied');
+		setNotificationsForTests(api);
+		expect(await snoozeReminder('evening', '2026-01-15', 't', 'b', false)).toBe(false);
+	});
+
+	it('takes shown reminders off the screen, and a waiting snooze away only when asked', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		await clearReminderNotifications({ pendingSnooze: false });
+		expect(api.cancel).not.toHaveBeenCalled();
+		const shown = idsOf(api.removeDeliveredNotifications.mock.calls.map((c) => c[0]));
+		for (const id of [...REMINDER_IDS, SNOOZE_ID]) expect(shown).toContain(id);
+
+		await clearReminderNotifications({ pendingSnooze: true });
+		expect(idsOf(api.cancel.mock.calls.map((c) => c[0]))).toEqual([SNOOZE_ID]);
+	});
+
+	it('turns a tapped button into start / snooze / off, and anything else into just opening', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api);
+		const seen: unknown[] = [];
+		await watchReminderActions((action, extra) => seen.push([action, extra]));
+		const listener = api.addListener.mock.calls[0][1] as (a: unknown) => void;
+		const tap = (actionId: string, extra?: object) =>
+			listener({ actionId, notification: { id: 1, extra } });
+		tap('start', { slot: 'morning', date: '2026-01-15' });
+		tap('snooze', { slot: 'evening', date: '2026-01-15' });
+		tap('off', { slot: 'evening', date: '2026-01-15' });
+		tap('tap', { slot: 7 });
+		tap('tap');
+		expect(seen).toEqual([
+			['start', { slot: 'morning', date: '2026-01-15' }],
+			['snooze', { slot: 'evening', date: '2026-01-15' }],
+			['off', { slot: 'evening', date: '2026-01-15' }],
+			['open', { slot: undefined, date: undefined }],
+			['open', { slot: undefined, date: undefined }]
+		]);
 	});
 });

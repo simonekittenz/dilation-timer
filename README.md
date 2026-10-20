@@ -35,6 +35,9 @@ to switch to the next one.
   phone's own alarm clock shows a notification when a timer ends, then gentle reminders. Settings has a
   "Send a test". A web page can't do this, so the browser version needs the screen on during a session.
   (Tried on Android; the iPhone app uses the same code but hasn't been tried.)
+- **Daily reminders (apps only).** Pick a time for each session (morning, evening or once a day) and
+  the phone reminds you on the days that have one. The reminder has buttons to start the session, be
+  reminded again in 30 minutes, or turn that one off. Set up from a small button on Today, or in Settings.
 
 ## Privacy
 
@@ -86,7 +89,7 @@ src/
     customSession.ts stretching a routine to fit a chosen time
     store.svelte.ts  app state, saved to local storage
     sounds.ts        the alarm notes (one source for the web and the app sound files)
-    notifications.ts locked-screen alerts; backgroundAlerts.ts plans them
+    notifications.ts locked-screen alerts and reminders; backgroundAlerts.ts and reminders.ts plan them
     update.ts        "is there a newer Android app?"
 static/              icons, alarm sounds, the Android app download
 android/  ios/       the Capacitor projects, plus the native audio plugin

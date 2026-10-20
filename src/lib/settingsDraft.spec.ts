@@ -16,6 +16,16 @@ describe('buildSettings', () => {
 		expect(out.messages).toEqual(draft.messages);
 	});
 
+	it('keeps the reminders (autosave must never drop them)', () => {
+		const { draft, text } = fresh();
+		draft.reminders = {
+			enabled: true,
+			times: { morning: '07:00', evening: '21:00', daily: '10:00' }
+		};
+		expect(buildSettings(draft, text)!.reminders).toEqual(draft.reminders);
+		expect(buildSettings(fresh().draft, text)!.reminders).toBeUndefined();
+	});
+
 	it('waits (returns null) while the date or a day number is blank', () => {
 		const a = fresh();
 		a.draft.startDate = '';

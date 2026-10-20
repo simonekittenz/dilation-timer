@@ -57,6 +57,13 @@ export type SetupStage = 'ask-program' | 'ask-date' | 'confirm' | 'done';
 /** The ready-made WIH schedules. Everything in a schedule can still be edited afterwards. */
 export type ProgramId = 'standard' | 'size5';
 
+/** Daily reminders to start a session (the phone app only). */
+export interface Reminders {
+	enabled: boolean;
+	/** The clock time (HH:MM) of the reminder for each part of the day. */
+	times: Record<SlotId, string>;
+}
+
 export interface Settings {
 	/** Local date (YYYY-MM-DD) that counts as day 1. */
 	startDate: string;
@@ -69,6 +76,8 @@ export interface Settings {
 	mascot: MascotKind;
 	/** Show a small, dismissible message on each monthly and yearly milestone. Missing means yes. */
 	celebrations?: boolean;
+	/** Daily reminders to start a session. Missing means never set up. */
+	reminders?: Reminders;
 	dilators: Dilator[];
 	messages: Messages;
 	phases: Phase[];

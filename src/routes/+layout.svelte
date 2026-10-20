@@ -34,6 +34,15 @@
 		if (showWelcome) void goto('/welcome', { replace: true });
 	});
 
+	// A reminder asked for Today (for instance "Start session"): go there from wherever we were.
+	let seenReminderOpens = store.reminderOpened;
+	$effect(() => {
+		const opens = store.reminderOpened;
+		if (opens === seenReminderOpens) return;
+		seenReminderOpens = opens;
+		if (page.url.pathname !== '/') void goto('/');
+	});
+
 	// An installed app can sit open in the background for days. When a new version has been
 	// deployed, reload into it, but never in the middle of a session.
 	$effect(() => {

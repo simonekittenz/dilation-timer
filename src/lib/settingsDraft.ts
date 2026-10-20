@@ -50,6 +50,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		volume: clampVolume(draft.volume),
 		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
 		celebrations: draft.celebrations !== false,
+		reminders: draft.reminders,
 		setup: draft.setup,
 		dilators,
 		messages: {

@@ -1,5 +1,6 @@
 import { defaultSettings } from './defaults';
 import { PALETTE } from './dilators';
+import { normalizeReminders } from './reminders';
 import type { Dilator, LogEntry, Phase, Settings, SlotId } from './types';
 
 const TIME = /^(\d{1,2}):\d{2}$/;
@@ -83,6 +84,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		messages,
 		mascot,
 		celebrations,
+		reminders: normalizeReminders(saved.reminders),
 		setup,
 		phases
 	};

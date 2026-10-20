@@ -5,6 +5,7 @@
 	import MilestoneCard from '#lib/MilestoneCard.svelte';
 	import NewDilatorCard from '#lib/NewDilatorCard.svelte';
 	import PushBackNote from '#lib/PushBackNote.svelte';
+	import ReminderPrompt from '#lib/ReminderPrompt.svelte';
 	import Schedule from '#lib/Schedule.svelte';
 	import Setup from '#lib/Setup.svelte';
 	import { daysUntilDilation, isRestPhase } from '#lib/schedule.ts';
@@ -64,6 +65,9 @@
 <UpdateBanner />
 {#if !settingUp && !store.active}<MilestoneCard />{/if}
 {#if !settingUp && !store.active}<PushBackNote />{/if}
+{#if store.reminderNote}
+	<p class="card reminder-note" role="status">{store.reminderNote}</p>
+{/if}
 
 {#if settingUp}
 	<Setup />
@@ -103,6 +107,7 @@
 	</section>
 	<h2 class="sub">Schedule ♡</h2>
 	<Schedule />
+	<ReminderPrompt />
 {:else}
 	<p class="card muted">
 		No routine covers today. Check the start date and phases in <a href="/settings">Settings</a>.
@@ -112,6 +117,10 @@
 <style>
 	header {
 		margin-bottom: 1.2rem;
+	}
+	.reminder-note {
+		margin-bottom: 1rem;
+		font-weight: 700;
 	}
 	.session-meta {
 		white-space: nowrap;

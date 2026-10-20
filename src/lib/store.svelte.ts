@@ -17,14 +17,21 @@ import { planBackgroundAlerts } from './backgroundAlerts';
 import { nativeAudioAvailable, stopNative } from './nativeAudio';
 import {
 	armAlerts,
+	clearReminderNotifications,
 	disarmAlerts,
 	getAlertsPermission,
 	notificationsAvailable,
 	requestAlertsPermission,
+	sendAppToBackground,
 	sendTestAlert,
+	snoozeReminder,
+	syncReminders,
 	watchAppState,
-	type AlertsPermission
+	watchReminderActions,
+	type AlertsPermission,
+	type ReminderAction
 } from './notifications';
+import { planReminders, SNOOZE_MINUTES } from './reminders';
 import { defaultSettings, wihPhases } from './defaults';
 import { migrateLog, migrateSettings, normalizeSlot } from './migrate';
 import {
@@ -47,8 +54,16 @@ import {
 import { currentMilestone, type Milestone } from './milestones';
 import { introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
-import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
-import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId, Step } from './types';
+import { isOpen, nextOpenSlot, phaseForDate, SLOT_LABELS, slotsForDate } from './schedule';
+import type {
+	ActiveSession,
+	LogEntry,
+	ProgramId,
+	Reminders,
+	Settings,
+	SlotId,
+	Step
+} from './types';
 
 const KEY = 'dilation-timer:v1';
 const SEEN_KEY = 'dilation-timer:milestones-seen';
@@ -87,6 +102,13 @@ class Store {
 	/** Dilators whose "new dilator appears" message was answered with "Okay here we go". */
 	seenIntros = $state<string[]>([]);
 	pushBackNote = $state<PushBackNote | null>(null);
+	/** What the last tap on a reminder did ("I'll remind you again in 30 minutes"). Shown on Today. */
+	reminderNote = $state('');
+	/** Goes up when a reminder asks to open the app on Today. */
+	reminderOpened = $state(0);
+	private reminderSyncTimer: ReturnType<typeof setTimeout> | null = null;
+	private reminderNoteTimer: ReturnType<typeof setTimeout> | null = null;
+	private lastReminderPlan = '';
 	private timer: ReturnType<typeof setInterval> | null = null;
 
 	get today() {
@@ -156,6 +178,99 @@ class Store {
 
 	dismissPushBackNote() {
 		this.pushBackNote = null;
+	}
+
+	get reminders(): Reminders | undefined {
+		return this.settings.reminders;
+	}
+
+	/** Today's "Set up reminders" button: the phone app only, and only until they were set up or turned off. */
+	get canOfferReminders() {
+		return (
+			notificationsAvailable() &&
+			this.settings.reminders === undefined &&
+			(this.settings.setup ?? 'done') === 'done'
+		);
+	}
+
+	/** Settings' and Today's way to turn the daily reminders on or off, or change their times. */
+	async setReminders(reminders: Reminders) {
+		this.updateSettings({ ...$state.snapshot(this.settings), reminders });
+		if (reminders.enabled && this.alertsPermission !== 'granted') {
+			this.alertsPermission = await requestAlertsPermission();
+		}
+		this.syncRemindersNow(true);
+	}
+
+	/** Reminders follow the schedule and the log, so they are worked out again whenever either changes. */
+	private syncRemindersSoon() {
+		if (!notificationsAvailable()) return;
+		if (this.reminderSyncTimer) clearTimeout(this.reminderSyncTimer);
+		this.reminderSyncTimer = setTimeout(() => this.syncRemindersNow(), 400);
+	}
+
+	private syncRemindersNow(force = false) {
+		if (this.reminderSyncTimer) clearTimeout(this.reminderSyncTimer);
+		this.reminderSyncTimer = null;
+		if (!notificationsAvailable()) return;
+		const plan = planReminders(
+			$state.snapshot(this.settings),
+			$state.snapshot(this.log),
+			Date.now()
+		);
+		const quiet = this.settings.volume === 0;
+		// saving happens a lot (every timer change); only bother the phone when the plan is different
+		const key = JSON.stringify([plan, quiet]);
+		if (!force && key === this.lastReminderPlan) return;
+		this.lastReminderPlan = key;
+		void syncReminders(plan, quiet);
+	}
+
+	private tellAboutReminder(text: string) {
+		this.reminderNote = text;
+		if (this.reminderNoteTimer) clearTimeout(this.reminderNoteTimer);
+		this.reminderNoteTimer = setTimeout(() => (this.reminderNote = ''), 8000);
+	}
+
+	dismissReminderNote() {
+		this.reminderNote = '';
+	}
+
+	/** A button on a reminder was tapped. All of them open the app first. */
+	private async onReminderAction(action: ReminderAction, extra: { slot?: string; date?: string }) {
+		const slot =
+			extra.slot === 'morning' || extra.slot === 'evening' || extra.slot === 'daily'
+				? extra.slot
+				: null;
+		const current = slot !== null && extra.date === this.today;
+		void clearReminderNotifications({ pendingSnooze: action !== 'open' });
+		if (action === 'start') {
+			const view = this.todaySlots.find((s) => s.slot === slot);
+			if (current && view && isOpen(view) && !this.active) this.start(slot);
+			this.reminderOpened++;
+		} else if (action === 'snooze') {
+			if (!current) return;
+			const ok = await snoozeReminder(
+				slot,
+				extra.date!,
+				slot === 'daily'
+					? 'Time for your session ♡'
+					: `Time for your ${SLOT_LABELS[slot].toLowerCase()} session ♡`,
+				'Ready when you are.',
+				this.settings.volume === 0
+			);
+			this.tellAboutReminder(
+				ok
+					? `Okay, I'll remind you again in ${SNOOZE_MINUTES} minutes ♡`
+					: "Couldn't set that reminder. Check that notifications are allowed for this app."
+			);
+			void sendAppToBackground();
+		} else if (action === 'off') {
+			this.tellAboutReminder('Okay, no more reminders for this session ♡');
+			void sendAppToBackground();
+		} else {
+			this.reminderOpened++;
+		}
 	}
 
 	get switchWindowMs() {
@@ -230,6 +345,7 @@ class Store {
 		// In the app, an alarm started by an earlier page load would otherwise keep ringing forever.
 		if (nativeAudioAvailable()) void stopNative();
 		void this.startLockedScreenAlerts();
+		void this.startReminders();
 		if (this.active) void keepAwake(true);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
@@ -250,6 +366,8 @@ class Store {
 			setAppActive(isActive);
 			if (isActive) {
 				void disarmAlerts();
+				void clearReminderNotifications({ pendingSnooze: false });
+				this.syncRemindersSoon(); // a new day may have started while the app was away
 				this.step();
 			} else {
 				this.step();
@@ -265,6 +383,12 @@ class Store {
 		});
 	}
 
+	private async startReminders() {
+		if (!notificationsAvailable()) return;
+		await watchReminderActions((action, extra) => void this.onReminderAction(action, extra));
+		this.syncRemindersNow();
+	}
+
 	/** Asks the phone for permission to show alerts, once: the first time a session is started. */
 	private async askForAlertPermission() {
 		if (!notificationsAvailable() || this.alertsPermission === 'granted') return;
@@ -274,6 +398,7 @@ class Store {
 	/** Settings' "Turn on" button. */
 	async enableLockedScreenAlerts() {
 		this.alertsPermission = await requestAlertsPermission();
+		this.syncRemindersNow(true);
 	}
 
 	/** Settings' "send a test alert": lets the user lock their phone and see it work. */
@@ -289,6 +414,7 @@ class Store {
 		};
 		localStorage.setItem(KEY, JSON.stringify(data));
 		this.hasSavedData = true;
+		this.syncRemindersSoon();
 	}
 
 	private step() {
@@ -342,6 +468,7 @@ class Store {
 		if (this.active || !phase || phase.steps.length === 0) return;
 		unlock();
 		void this.askForAlertPermission();
+		void clearReminderNotifications({ pendingSnooze: true }); // no need to nudge about a session that has begun
 		this.active = startSession(
 			resolveSteps(this.settings.dilators, phase.steps),
 			slot,

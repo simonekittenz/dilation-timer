@@ -72,4 +72,15 @@ describe('migrate', () => {
 		const log = [{ id: '1', slot: '08:00' }] as unknown as LogEntry[];
 		expect(migrateLog(log)[0].slot).toBe('morning');
 	});
+
+	it('keeps reminders that were set up, tidies them, and leaves them unset otherwise', () => {
+		expect(migrateSettings({}).reminders).toBeUndefined();
+		const kept = migrateSettings({
+			reminders: { enabled: true, times: { morning: '07:00', evening: 'bad', daily: '09:30' } }
+		} as never).reminders;
+		expect(kept).toEqual({
+			enabled: true,
+			times: { morning: '07:00', evening: '20:00', daily: '09:30' }
+		});
+	});
 });

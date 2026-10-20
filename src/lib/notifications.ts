@@ -1,5 +1,7 @@
 import { PLAN_IDS, TEST_ALERT_ID, type AlertKind, type BackgroundAlert } from './backgroundAlerts';
 import { isNative, nativePlatform } from './platform';
+import { REMINDER_IDS, SNOOZE_ID, SNOOZE_MINUTES, type PlannedReminder } from './reminders';
+import type { SlotId } from './types';
 
 /**
  * Locked-screen alerts. When the app goes to the background the phone's own alarm clock is given a
@@ -28,6 +30,16 @@ export interface NotificationsApi {
 	schedule(options: { notifications: ScheduledNotification[] }): Promise<unknown>;
 	cancel(options: { notifications: { id: number }[] }): Promise<void>;
 	removeDeliveredNotifications(options: { notifications: { id: number }[] }): Promise<void>;
+	registerActionTypes(options: {
+		types: { id: string; actions: { id: string; title: string; foreground?: boolean }[] }[];
+	}): Promise<void>;
+	addListener(
+		event: 'localNotificationActionPerformed',
+		listener: (action: {
+			actionId: string;
+			notification: { id: number; extra?: Record<string, unknown> };
+		}) => void
+	): Promise<unknown>;
 }
 
 interface ScheduledNotification {
@@ -36,6 +48,8 @@ interface ScheduledNotification {
 	body: string;
 	channelId: string;
 	schedule: { at: Date; allowWhileIdle: boolean };
+	actionTypeId?: string;
+	extra?: Record<string, unknown>;
 }
 
 /** Android channel ids. A channel's sound can't be changed once it exists, so bump the version
@@ -44,7 +58,8 @@ export const CHANNELS = {
 	switch: 'dt-switch-v1',
 	nudge: 'dt-nudge-v1',
 	done: 'dt-done-v1',
-	quiet: 'dt-quiet-v1'
+	quiet: 'dt-quiet-v1',
+	reminder: 'dt-reminder-v1'
 } as const;
 
 /** Importance 4 = high: a sound and a banner. 3 = default. */
@@ -77,6 +92,15 @@ const CHANNEL_DEFS = [
 		vibration: true
 	},
 	{
+		id: CHANNELS.reminder,
+		name: 'Session reminders',
+		description: 'Your daily reminders to start a session',
+		importance: 4,
+		visibility: 1,
+		sound: 'bg_ping',
+		vibration: true
+	},
+	{
 		id: CHANNELS.quiet,
 		name: 'Silent alerts',
 		description: 'Used when the alarm volume is off',
@@ -89,11 +113,13 @@ const CHANNEL_DEFS = [
 let injected: NotificationsApi | null | undefined;
 let queue: Promise<unknown> = Promise.resolve();
 let channelsReady = false;
+let reminderActionsReady = false;
 
 /** Tests swap in a fake (or `null` for "not available"); `undefined` resets. */
 export function setNotificationsForTests(api: NotificationsApi | null | undefined) {
 	injected = api;
 	channelsReady = false;
+	reminderActionsReady = false;
 	queue = Promise.resolve();
 }
 
@@ -144,7 +170,8 @@ async function ensureChannels(n: NotificationsApi) {
 	channelsReady = true;
 }
 
-const channelFor = (kind: AlertKind, quiet: boolean) => (quiet ? CHANNELS.quiet : CHANNELS[kind]);
+const channelFor = (kind: AlertKind | 'reminder', quiet: boolean) =>
+	quiet ? CHANNELS.quiet : CHANNELS[kind];
 
 /**
  * Clears a session's alerts, scheduled or already showing. The Settings test alert is only taken off
@@ -241,5 +268,121 @@ export async function watchAppState(callback: (isActive: boolean) => void): Prom
 		});
 	} catch (error) {
 		console.warn('Could not watch the app going to the background.', error);
+	}
+}
+
+// ---- daily reminders to start a session ----
+
+/** The buttons on a reminder. They all open the app: that is the only way to be sure the phone runs our code. */
+export const REMINDER_ACTION_TYPE = 'dt-reminder';
+export type ReminderAction = 'start' | 'snooze' | 'off' | 'open';
+export const REMINDER_ACTIONS = [
+	{ id: 'start', title: 'Start session', foreground: true },
+	{ id: 'snooze', title: `Remind me in ${SNOOZE_MINUTES} min`, foreground: true },
+	{ id: 'off', title: 'Turn off', foreground: true }
+];
+
+async function ensureReminderActions(n: NotificationsApi) {
+	if (reminderActionsReady) return;
+	await n.registerActionTypes({
+		types: [{ id: REMINDER_ACTION_TYPE, actions: REMINDER_ACTIONS }]
+	});
+	reminderActionsReady = true;
+}
+
+const reminderIds = [...REMINDER_IDS, SNOOZE_ID].map((id) => ({ id }));
+
+function reminderNotification(
+	r: Pick<PlannedReminder, 'id' | 'title' | 'body' | 'slot' | 'date'>,
+	at: number,
+	quiet: boolean
+): ScheduledNotification {
+	return {
+		id: r.id,
+		title: r.title,
+		body: r.body,
+		channelId: channelFor('reminder', quiet),
+		schedule: { at: new Date(at), allowWhileIdle: true },
+		actionTypeId: REMINDER_ACTION_TYPE,
+		extra: { slot: r.slot, date: r.date }
+	};
+}
+
+/**
+ * Hands the phone the planned reminders, replacing whatever was planned before. An empty plan (or
+ * no permission) just clears them. A pending "remind me again" is left alone.
+ */
+export function syncReminders(planned: PlannedReminder[], quiet: boolean): Promise<void> {
+	return enqueue(() =>
+		use(async (n) => {
+			const ids = REMINDER_IDS.map((id) => ({ id }));
+			await n.cancel({ notifications: ids });
+			if (!planned.length) return;
+			if (toPermission((await n.checkPermissions()).display) !== 'granted') return;
+			await ensureChannels(n);
+			await ensureReminderActions(n);
+			await n.schedule({ notifications: planned.map((r) => reminderNotification(r, r.at, quiet)) });
+		})
+	).then(() => undefined);
+}
+
+/** "Remind me in 30 minutes": one more reminder for the same session. */
+export function snoozeReminder(
+	slot: SlotId,
+	date: string,
+	title: string,
+	body: string,
+	quiet: boolean,
+	now = Date.now()
+): Promise<boolean> {
+	return enqueue(() =>
+		use(async (n) => {
+			if (toPermission((await n.checkPermissions()).display) !== 'granted') return false;
+			await ensureChannels(n);
+			await ensureReminderActions(n);
+			const at = now + SNOOZE_MINUTES * 60_000;
+			await n.schedule({
+				notifications: [reminderNotification({ id: SNOOZE_ID, title, body, slot, date }, at, quiet)]
+			});
+			return true;
+		})
+	).then((ok) => ok === true);
+}
+
+/** Takes reminders that already went off off the screen, and a waiting "remind me again" away. */
+export function clearReminderNotifications(options: { pendingSnooze: boolean }): Promise<void> {
+	return enqueue(() =>
+		use(async (n) => {
+			if (options.pendingSnooze) await n.cancel({ notifications: [{ id: SNOOZE_ID }] });
+			await n.removeDeliveredNotifications({ notifications: reminderIds });
+		})
+	).then(() => undefined);
+}
+
+/** Calls back when a button on a reminder (or the reminder itself) is tapped. */
+export async function watchReminderActions(
+	callback: (action: ReminderAction, extra: { slot?: string; date?: string }) => void
+): Promise<void> {
+	await use((n) =>
+		n.addListener('localNotificationActionPerformed', ({ actionId, notification }) => {
+			const action: ReminderAction =
+				actionId === 'start' || actionId === 'snooze' || actionId === 'off' ? actionId : 'open';
+			const extra = notification.extra ?? {};
+			callback(action, {
+				slot: typeof extra.slot === 'string' ? extra.slot : undefined,
+				date: typeof extra.date === 'string' ? extra.date : undefined
+			});
+		})
+	);
+}
+
+/** Android only: after "snooze" or "turn off" there is no reason to keep the app in front. */
+export async function sendAppToBackground(): Promise<void> {
+	if (!isNative() || nativePlatform() !== 'android') return;
+	try {
+		const { App } = await import('@capacitor/app');
+		await App.minimizeApp();
+	} catch {
+		// staying in the app is harmless
 	}
 }

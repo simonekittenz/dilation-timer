@@ -59,7 +59,8 @@
 	<h2>Permissions on Android</h2>
 	<ul>
 		<li>
-			<strong>Notifications:</strong> to alert you when a timer ends, even when the phone is locked.
+			<strong>Notifications:</strong> to alert you when a timer ends, and to remind you of your sessions
+			at the times you choose, even when the phone is locked.
 		</li>
 		<li>
 			<strong>Alarms and reminders, and starting after a restart:</strong> so those alerts arrive on time,

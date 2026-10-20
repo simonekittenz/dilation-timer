@@ -15,9 +15,11 @@
 	import { isNative, nativePlatform } from '#lib/platform.ts';
 	import { updates } from '#lib/updates.svelte.ts';
 	import { APP_VERSION } from '#lib/version.ts';
+	import ReminderTimes from '#lib/ReminderTimes.svelte';
+	import { defaultReminders, slotsInSchedule } from '#lib/reminders.ts';
 	import StepsEditor from '#lib/StepsEditor.svelte';
 	import { store } from '#lib/store.svelte.ts';
-	import type { Settings } from '#lib/types.ts';
+	import type { Reminders, Settings } from '#lib/types.ts';
 
 	let draft = $state<Settings>($state.snapshot(store.settings));
 	let messageText = $state(messagesToText(store.settings.messages));
@@ -74,6 +76,14 @@
 		document
 			.getElementById('current-phase')
 			?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	}
+
+	const reminders = $derived(draft.reminders ?? { ...defaultReminders(), enabled: false });
+	const reminderSlots = $derived(slotsInSchedule(draft));
+	/** Changes made here also go to the store right away, so the phone's reminders follow. */
+	function changeReminders(next: Reminders) {
+		draft.reminders = next;
+		void store.setReminders($state.snapshot(next));
 	}
 
 	const settingsVolumeOff = $derived(Number(draft.volume) === 0);
@@ -339,6 +349,44 @@
 		</small>
 	</section>
 {/if}
+
+<section class="card alerts" id="reminders">
+	<div class="sound-head">
+		<span>Daily reminders ⏰</span>
+		{#if isNative()}
+			<input
+				type="checkbox"
+				class="toggle"
+				checked={reminders.enabled}
+				onchange={(e) => changeReminders({ ...reminders, enabled: e.currentTarget.checked })}
+				aria-label="Daily reminders"
+			/>
+		{/if}
+	</div>
+	{#if !isNative()}
+		<p class="muted">
+			Daily reminders to start your session are part of the phone app, because a website can't
+			reliably wake your phone up. Get the app to use them.
+		</p>
+	{:else}
+		<p class="muted">
+			Your phone reminds you at the time you pick for each session, on the days that have one. From
+			the reminder you can start the session, ask to be reminded again in 30 minutes, or turn that
+			one off.
+		</p>
+		{#if reminders.enabled}
+			<ReminderTimes value={reminders} slots={reminderSlots} onchange={changeReminders} />
+			{#if store.alertsPermission === 'denied'}
+				<small class="warn-text">
+					Allow notifications for Dilation timer in your phone's settings to get these.
+				</small>
+			{/if}
+			<small class="muted">
+				Reminders are planned two weeks ahead each time you open the app, so open it now and then.
+			</small>
+		{/if}
+	{/if}
+</section>
 
 <details class="card phase">
 	<summary
@@ -704,6 +752,13 @@
 	.alerts .warn-text {
 		color: var(--warn);
 		font-weight: 800;
+	}
+	.toggle {
+		flex: none;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0;
+		accent-color: var(--accent-strong);
 	}
 	.sound-test {
 		display: grid;
