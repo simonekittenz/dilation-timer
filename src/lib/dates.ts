@@ -29,6 +29,19 @@ export function addDays(date: string, n: number): string {
 	return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
 
+/**
+ * The same day of the month, `n` months after `date`. A day that the month doesn't have (the 31st in
+ * a 30-day month, 29 February in a normal year) becomes the month's last day.
+ */
+export function addMonths(date: string, n: number): string {
+	const [y, m, d] = date.split('-').map(Number);
+	const index = y * 12 + (m - 1) + n;
+	const year = Math.floor(index / 12);
+	const month = index % 12; // 0-based
+	const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+	return `${year}-${pad(month + 1)}-${pad(Math.min(d, daysInMonth))}`;
+}
+
 /** "Oct 9" style label for a YYYY-MM-DD string, in the user's locale. */
 export function formatShortDate(date: string, withYear = false): string {
 	const [y, m, d] = date.split('-').map(Number);

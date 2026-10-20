@@ -44,10 +44,12 @@ import {
 	switchWindowLeftMs,
 	tick
 } from './session';
+import { currentMilestone, type Milestone } from './milestones';
 import { nextOpenSlot, phaseForDate, slotsForDate } from './schedule';
 import type { ActiveSession, LogEntry, ProgramId, Settings, SlotId, Step } from './types';
 
 const KEY = 'dilation-timer:v1';
+const SEEN_KEY = 'dilation-timer:milestones-seen';
 /** How long the "time to switch" ears cue stays up. */
 const CUE_MS = 3500;
 
@@ -68,10 +70,30 @@ class Store {
 	/** Whether the phone lets us show alerts while it's locked (the iOS/Android app only). */
 	alertsPermission = $state<AlertsPermission>('unavailable');
 	soundReady = $state(false);
+	/** Milestone messages already dismissed on this device (their ids include the surgery date). */
+	seenMilestones = $state<string[]>([]);
 	private timer: ReturnType<typeof setInterval> | null = null;
 
 	get today() {
 		return toDateString(new Date(this.now));
+	}
+
+	/** The monthly/yearly milestone to celebrate today, or null (also while setting up or switched off). */
+	get milestone(): Milestone | null {
+		if (this.settings.celebrations === false || (this.settings.setup ?? 'done') !== 'done')
+			return null;
+		return currentMilestone(this.settings.startDate, this.today, this.seenMilestones);
+	}
+
+	dismissMilestone(id: string) {
+		if (this.seenMilestones.includes(id)) return;
+		// keep only recent ones, it only has to remember the last few days' worth
+		this.seenMilestones = [...this.seenMilestones, id].slice(-40);
+		try {
+			localStorage.setItem(SEEN_KEY, JSON.stringify(this.seenMilestones));
+		} catch {
+			// private mode: it simply shows again next time
+		}
 	}
 
 	get switchWindowMs() {
@@ -124,6 +146,12 @@ class Store {
 			}
 		} catch {
 			// corrupt storage: fall back to defaults
+		}
+		try {
+			const seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]');
+			if (Array.isArray(seen)) this.seenMilestones = seen.filter((x) => typeof x === 'string');
+		} catch {
+			// nothing remembered
 		}
 		this.timer = setInterval(() => this.step(), 250);
 		this.step();

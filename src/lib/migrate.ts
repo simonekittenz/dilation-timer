@@ -65,6 +65,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		)
 	};
 	const mascot = saved.mascot === 'kitty' ? 'kitty' : 'bunny';
+	const celebrations = saved.celebrations !== false;
 	const { leewayMinutes, ...rest } = saved as Partial<Settings> & { leewayMinutes?: number };
 	// "leeway" was the old name for the switch window; an untouched old default of 2 becomes 1.
 	const legacyWindow = leewayMinutes === 2 ? base.switchWindowMinutes : leewayMinutes;
@@ -74,7 +75,17 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		saved.setup === 'ask-program' || saved.setup === 'ask-date' || saved.setup === 'confirm'
 			? saved.setup
 			: 'done';
-	return { ...base, ...rest, switchWindowMinutes, dilators, messages, mascot, setup, phases };
+	return {
+		...base,
+		...rest,
+		switchWindowMinutes,
+		dilators,
+		messages,
+		mascot,
+		celebrations,
+		setup,
+		phases
+	};
 }
 
 export function migrateLog(log: LogEntry[]): LogEntry[] {

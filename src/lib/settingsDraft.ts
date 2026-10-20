@@ -49,6 +49,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		switchWindowMinutes: Math.max(0, Number(draft.switchWindowMinutes) || 0),
 		volume: clampVolume(draft.volume),
 		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
+		celebrations: draft.celebrations !== false,
 		setup: draft.setup,
 		dilators,
 		messages: {

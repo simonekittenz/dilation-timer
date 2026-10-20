@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dayNumber, formatCompactDate } from '$lib/dates';
 	import Mascot from '$lib/Mascot.svelte';
+	import MilestoneCard from '$lib/MilestoneCard.svelte';
 	import Schedule from '$lib/Schedule.svelte';
 	import Setup from '$lib/Setup.svelte';
 	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
@@ -55,6 +56,7 @@
 {/if}
 
 <UpdateBanner />
+{#if !settingUp && !store.active}<MilestoneCard />{/if}
 
 {#if settingUp}
 	<Setup />

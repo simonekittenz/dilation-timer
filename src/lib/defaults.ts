@@ -137,6 +137,7 @@ export function defaultSettings(today = new Date()): Settings {
 		setup: 'ask-program',
 		volume: 100,
 		mascot: 'bunny',
+		celebrations: true,
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

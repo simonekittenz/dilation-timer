@@ -67,6 +67,8 @@ export interface Settings {
 	/** Alarm volume, 0 (silent) to 100. */
 	volume: number;
 	mascot: MascotKind;
+	/** Show a small, dismissible message on each monthly and yearly milestone. Missing means yes. */
+	celebrations?: boolean;
 	dilators: Dilator[];
 	messages: Messages;
 	phases: Phase[];

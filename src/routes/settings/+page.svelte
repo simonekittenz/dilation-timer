@@ -240,6 +240,22 @@
 	</div>
 </fieldset>
 
+<label class="card field celebrate">
+	<span>
+		Celebrate milestones
+		<small class="muted">
+			A small, dismissible message on Today for each month of your first year and every anniversary
+			after
+		</small>
+	</span>
+	<input
+		type="checkbox"
+		checked={draft.celebrations !== false}
+		onchange={(e) => (draft.celebrations = e.currentTarget.checked)}
+		aria-label="Celebrate milestones"
+	/>
+</label>
+
 <label class="card field switch-window">
 	<span>
 		Gentle switch window
@@ -721,6 +737,13 @@
 		display: block;
 		font-size: 0.8rem;
 		margin-top: 0.15rem;
+	}
+	.celebrate input {
+		flex: none;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0;
+		accent-color: var(--accent-strong);
 	}
 	.switch-window small {
 		display: block;
