@@ -184,22 +184,34 @@
 </p>
 
 <section class="card community" data-testid="community">
-	<h2>A community project 🌸</h2>
-	<p>
-		Dilation timer is made by one person, for people like us. I'm a trans girl, and I use the app
-		myself, so I keep it free, private and gentle.
+	<header class="who">
+		<Mascot size={64} />
+		<h2>A project for the trans community 🌸</h2>
+	</header>
+	<p class="story">
+		Hi there! I'm Simone, or Zephyra, a trans girl like you! I had my PPV surgery at WIH in
+		September 2025. I started Dilation timer, for us. I use the app myself, and it warms my heart to
+		know it helps others. I keep it free, and try to make it just nice to use, free and simple,
+		because we deserve that.
 	</p>
-	<p class="muted">
-		If it helps you and you'd like to show some support, you can buy me a coffee. It is never
-		expected.
+	<p class="disclaimer">
+		Disclaimer: AI has been used to write the code for the app, but never in the app itself.
+		Everything is carefully reviewed, tested and used by me and some other girls.
 	</p>
-	<a
-		class="btn ghost small"
-		href="https://ko-fi.com/zephyralux"
-		target="_blank"
-		rel="noopener noreferrer"
-		data-testid="kofi">☕ Buy me a coffee on Ko-fi</a
-	>
+	<div class="support">
+		<p>
+			If it helps you and you'd like to show some support, you can buy me a coffee. It can help pay
+			for some of the costs of maintaining the apps and the stores involved. But feel no pressure at
+			all!
+		</p>
+		<a
+			class="btn ghost kofi"
+			href="https://ko-fi.com/zephyralux"
+			target="_blank"
+			rel="noopener noreferrer"
+			data-testid="kofi">☕ Buy me a coffee on Ko-fi</a
+		>
+	</div>
 </section>
 
 <p class="muted small moving"><a href="/privacy">How your information is handled</a></p>
@@ -324,12 +336,52 @@
 	}
 	.community {
 		display: grid;
-		gap: 0.6rem;
-		justify-items: start;
-		margin-top: 1.4rem;
+		gap: 0.9rem;
+		margin-top: 1.6rem;
+		padding: 1.2rem 1.1rem 1.3rem;
+		background: linear-gradient(
+			160deg,
+			color-mix(in srgb, var(--accent-soft) 70%, var(--surface)),
+			var(--surface) 60%
+		);
+	}
+	.community .who {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 0.7rem;
+		margin: 0;
+		text-align: left;
 	}
 	.community h2 {
-		font-size: 1.1rem;
+		text-align: left;
+		font-size: 1.15rem;
 		font-weight: 900;
+		line-height: 1.2;
+		color: var(--accent-strong);
+	}
+	.community p {
+		line-height: 1.55;
+	}
+	.community .disclaimer {
+		padding: 0.1rem 0 0.1rem 0.8rem;
+		border-left: 4px solid var(--accent);
+		color: var(--muted);
+		font-size: 0.88rem;
+	}
+	.community .support {
+		display: grid;
+		gap: 0.7rem;
+		padding-top: 0.8rem;
+		border-top: 2px dashed var(--line);
+	}
+	.community .support p {
+		color: var(--muted);
+		font-size: 0.92rem;
+	}
+	.community .kofi {
+		display: block;
+		text-align: center;
+		padding: 0.85rem 1rem;
 	}
 </style>
