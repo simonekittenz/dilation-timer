@@ -8,15 +8,15 @@
 		formatDuration,
 		inferCustomSteps,
 		totalMinutes
-	} from '$lib/customSession';
-	import { dayNumber } from '$lib/dates';
-	import DilatorName from '$lib/DilatorName.svelte';
-	import Mascot from '$lib/Mascot.svelte';
-	import { SLOT_EMOJI, isOpen } from '$lib/schedule';
-	import StepsEditor from '$lib/StepsEditor.svelte';
-	import { store } from '$lib/store.svelte';
-	import Swatch from '$lib/Swatch.svelte';
-	import type { SlotId, Step } from '$lib/types';
+	} from '#lib/customSession.ts';
+	import { dayNumber } from '#lib/dates.ts';
+	import DilatorName from '#lib/DilatorName.svelte';
+	import Mascot from '#lib/Mascot.svelte';
+	import { SLOT_EMOJI, isOpen } from '#lib/schedule.ts';
+	import StepsEditor from '#lib/StepsEditor.svelte';
+	import { store } from '#lib/store.svelte.ts';
+	import Swatch from '#lib/Swatch.svelte';
+	import type { SlotId, Step } from '#lib/types.ts';
 
 	const dilators = $derived(store.settings.dilators);
 	const routineFor = () =>
@@ -27,7 +27,7 @@
 
 	// the first-run questions come first
 	$effect(() => {
-		if ((store.settings.setup ?? 'done') !== 'done') void goto('/', { replaceState: true });
+		if ((store.settings.setup ?? 'done') !== 'done') void goto('/', { replace: true });
 	});
 
 	let stage = $state<'pick' | 'review'>('pick');

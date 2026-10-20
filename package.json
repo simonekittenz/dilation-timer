@@ -25,8 +25,8 @@
 	},
 	"devDependencies": {
 		"@capacitor/cli": "^8.5.3",
-		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.57.0",
+		"@sveltejs/adapter-static": "^4.0.0",
+		"@sveltejs/kit": "^3.1.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"prettier": "^3.9.10",
 		"prettier-plugin-svelte": "^4.1.1",
@@ -44,5 +44,15 @@
 		"@capacitor/ios": "^8.5.3",
 		"@capacitor/local-notifications": "^8.3.1",
 		"@vercel/analytics": "^2.0.1"
+	},
+	"overrides": {
+		"xcode": "^4.0.0",
+		"@vercel/analytics": {
+			"@sveltejs/kit": "$@sveltejs/kit"
+		}
+	},
+	"imports": {
+		"#lib": "./src/lib/index.ts",
+		"#lib/*": "./src/lib/*"
 	}
 }

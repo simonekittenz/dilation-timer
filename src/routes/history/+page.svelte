@@ -1,8 +1,8 @@
 <script lang="ts">
-	import DilatorName from '$lib/DilatorName.svelte';
-	import Swatch from '$lib/Swatch.svelte';
-	import { SLOT_LABELS } from '$lib/schedule';
-	import { store } from '$lib/store.svelte';
+	import DilatorName from '#lib/DilatorName.svelte';
+	import Swatch from '#lib/Swatch.svelte';
+	import { SLOT_LABELS } from '#lib/schedule.ts';
+	import { store } from '#lib/store.svelte.ts';
 
 	const groups = $derived(
 		Object.entries(

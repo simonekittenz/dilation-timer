@@ -1,13 +1,13 @@
 <script lang="ts">
 	import '../app.css';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
-	import { isNative } from '$lib/platform';
-	import { store } from '$lib/store.svelte';
-	import { updates } from '$lib/updates.svelte';
-	import { startAnalytics } from '$lib/analytics';
-	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '$lib/welcome';
+	import { isNative } from '#lib/platform.ts';
+	import { store } from '#lib/store.svelte.ts';
+	import { updates } from '#lib/updates.svelte.ts';
+	import { startAnalytics } from '#lib/analytics.ts';
+	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '#lib/welcome.ts';
 
 	let { children } = $props();
 
@@ -31,7 +31,7 @@
 			})
 	);
 	$effect(() => {
-		if (showWelcome) void goto('/welcome', { replaceState: true });
+		if (showWelcome) void goto('/welcome', { replace: true });
 	});
 
 	// An installed app can sit open in the background for days. When a new version has been

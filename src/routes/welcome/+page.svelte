@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Mascot from '$lib/Mascot.svelte';
-	import release from '$lib/appRelease.json';
-	import { store } from '$lib/store.svelte';
+	import Mascot from '#lib/Mascot.svelte';
+	import release from '#lib/appRelease.json';
+	import { store } from '#lib/store.svelte.ts';
 	import {
 		describeDownload,
 		detectPlatform,
 		hasSeenWelcome,
 		markWelcomeSeen,
 		playStoreUrl
-	} from '$lib/welcome';
+	} from '#lib/welcome.ts';
 
 	const android = release.android;
 	// set once the app is on Google Play; until then only the downloadable file is offered

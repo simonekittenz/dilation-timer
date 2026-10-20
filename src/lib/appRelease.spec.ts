@@ -40,7 +40,7 @@ describe('the Android download on the website', () => {
 		expect(JSON.parse(read('package.json').toString()).scripts['build:native']).toContain(
 			'rm -rf build/downloads'
 		);
-		expect(read('src/service-worker.ts').toString()).toContain("'/downloads/'");
+		expect(read('src/service-worker/index.ts').toString()).toContain("'/downloads/'");
 	});
 
 	it('is served as a download with the right file type', () => {

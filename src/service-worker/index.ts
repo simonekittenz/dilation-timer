@@ -1,15 +1,17 @@
-/// <reference types="@sveltejs/kit" />
-/// <reference no-default-lib="true"/>
-/// <reference lib="esnext" />
-/// <reference lib="webworker" />
-import { build, files, version } from '$service-worker';
+import { self as sw } from '$app/service-worker';
+import { version } from '$app/env';
+import { assets, immutable } from '$app/manifest';
+import { resolve } from '$app/paths';
 
-const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `cache-${version}`;
 // The WAV alarm sounds and the Android app download are not needed by the web app itself, so its
 // offline cache must not fetch them.
 const SKIP = ['/sounds/', '/downloads/'];
-const ASSETS = [...build, ...files.filter((f) => !SKIP.some((p) => f.startsWith(p))), '/200.html'];
+const ASSETS = [
+	...immutable.map((a) => resolve(a.path)),
+	...assets.map((a) => resolve(a.path)).filter((f) => !SKIP.some((p) => f.startsWith(p))),
+	'/200.html'
+];
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(

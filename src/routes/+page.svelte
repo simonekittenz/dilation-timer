@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { dayNumber, formatCompactDate } from '$lib/dates';
-	import Mascot from '$lib/Mascot.svelte';
-	import MilestoneCard from '$lib/MilestoneCard.svelte';
-	import Schedule from '$lib/Schedule.svelte';
-	import Setup from '$lib/Setup.svelte';
-	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
-	import { store } from '$lib/store.svelte';
-	import DilatorName from '$lib/DilatorName.svelte';
-	import Swatch from '$lib/Swatch.svelte';
-	import Timer from '$lib/Timer.svelte';
-	import UpdateBanner from '$lib/UpdateBanner.svelte';
-	import { resolveSteps } from '$lib/dilators';
+	import { dayNumber, formatCompactDate } from '#lib/dates.ts';
+	import Mascot from '#lib/Mascot.svelte';
+	import MilestoneCard from '#lib/MilestoneCard.svelte';
+	import Schedule from '#lib/Schedule.svelte';
+	import Setup from '#lib/Setup.svelte';
+	import { daysUntilDilation, isRestPhase } from '#lib/schedule.ts';
+	import { store } from '#lib/store.svelte.ts';
+	import DilatorName from '#lib/DilatorName.svelte';
+	import Swatch from '#lib/Swatch.svelte';
+	import Timer from '#lib/Timer.svelte';
+	import UpdateBanner from '#lib/UpdateBanner.svelte';
+	import { resolveSteps } from '#lib/dilators.ts';
 
 	const phase = $derived(store.todayPhase);
 	// first run: we don't know the surgery date yet, or haven't confirmed the week
