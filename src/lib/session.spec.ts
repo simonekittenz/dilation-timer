@@ -290,4 +290,51 @@ describe('estimatedFinish: when the session should be over', () => {
 		const lapsed = start(); // timer overdue but not yet ticked
 		expect(estimatedFinish(lapsed, 99 * MIN)).toBeGreaterThanOrEqual(99 * MIN);
 	});
+
+	describe('with the gentle switch window from Settings counted per swap', () => {
+		const W = 2 * MIN;
+
+		it('adds one window for every swap still to come while a dilator is running', () => {
+			// 3 dilators: 2 swaps ahead of the first one
+			expect(estimatedFinish(start(), 0, W)).toBe(60 * MIN + 2 * W);
+			// on the second dilator: one swap left
+			let s = confirmSwitch(tick(start(), 10 * MIN), 10 * MIN);
+			expect(estimatedFinish(s, 12 * MIN, W)).toBe(12 * MIN + 18 * MIN + 30 * MIN + W);
+			// on the last dilator: no swaps left
+			s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
+			expect(estimatedFinish(s, 40 * MIN, W)).toBe(60 * MIN);
+		});
+
+		it('while waiting to switch, counts what is left of this swap, then a window per later swap', () => {
+			const waiting = tick(start(), 10 * MIN + 1000); // alert began at 10:00
+			// 30 s into the 2 min window: 1.5 min of this swap left, plus one more swap, plus 20 + 30
+			expect(estimatedFinish(waiting, 10 * MIN + 30_000, W)).toBe(
+				10 * MIN + 30_000 + 90_000 + W + 50 * MIN
+			);
+		});
+
+		it('once the window has passed, this swap adds nothing more (the later ones still do)', () => {
+			const waiting = tick(start(), 10 * MIN + 1000);
+			expect(estimatedFinish(waiting, 20 * MIN, W)).toBe(20 * MIN + W + 50 * MIN);
+		});
+
+		it('follows "+ 1 min" on the switch screen, which lengthens this swap', () => {
+			const waiting = extendSwitchWindow(tick(start(), 10 * MIN + 1000), 10 * MIN + 2000, W);
+			expect(estimatedFinish(waiting, 10 * MIN + 30_000, W)).toBe(
+				10 * MIN + 30_000 + 150_000 + W + 50 * MIN
+			);
+		});
+
+		it('is the same as before when the window is set to 0', () => {
+			expect(estimatedFinish(start(), 0, 0)).toBe(estimatedFinish(start(), 0));
+			expect(estimatedFinish(start(), 0, 0)).toBe(60 * MIN);
+		});
+
+		it('never goes backwards and is null when over', () => {
+			let s = confirmSwitch(tick(start(), 10 * MIN), 10 * MIN);
+			s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
+			expect(estimatedFinish(tick(s, 61 * MIN), 61 * MIN, W)).toBeNull();
+			expect(estimatedFinish(start(), 99 * MIN, W)).toBeGreaterThanOrEqual(99 * MIN);
+		});
+	});
 });

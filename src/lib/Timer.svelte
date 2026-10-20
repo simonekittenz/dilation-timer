@@ -26,7 +26,7 @@
 	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
 	const overtime = $derived(overtimeMs(s, store.now));
 	const escalated = $derived(store.escalated);
-	const finish = $derived(estimatedFinish(s, store.now));
+	const finish = $derived(estimatedFinish(s, store.now, store.switchWindowMs));
 	const canShorten = $derived(left >= ADJUST_MS + 1000);
 	const bubble = $derived.by(() => {
 		const m = store.settings.messages;
