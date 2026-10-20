@@ -104,6 +104,22 @@ export function chillOut(s: ActiveSession, now: number, switchWindowMs: number):
 	return { ...s, quietUntil: now + (switchWindowMs > 0 ? switchWindowMs : MIN_CHILL_MS) };
 }
 
+/**
+ * When the whole session should be over, as a timestamp, or null once it already is.
+ * It adds up the time left on this dilator and the planned time of the ones after it, as if you
+ * carried on right now. Time spent swapping is not counted (it is up to you), so in practice
+ * you finish a little later. While paused the estimate moves on with the clock.
+ */
+export function estimatedFinish(s: ActiveSession, now: number): number | null {
+	if (s.phase === 'finished') return null;
+	const later = s.steps
+		.slice(s.stepIndex + 1)
+		.reduce((sum, step) => sum + step.minutes * 60_000, 0);
+	// 'switch': this dilator is done and the next one starts when you press the button
+	const thisOne = s.phase === 'running' ? Math.max(0, remainingMs(s, now)) : 0;
+	return now + thisOne + later;
+}
+
 export function isLastStep(s: ActiveSession): boolean {
 	return s.stepIndex === s.steps.length - 1;
 }

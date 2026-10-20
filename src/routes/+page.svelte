@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { dayNumber } from '$lib/dates';
+	import { dayNumber, formatCompactDate } from '$lib/dates';
 	import Mascot from '$lib/Mascot.svelte';
 	import Schedule from '$lib/Schedule.svelte';
 	import Setup from '$lib/Setup.svelte';
-	import { SLOT_LABELS, daysUntilDilation, isRestPhase } from '$lib/schedule';
+	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
@@ -22,6 +22,10 @@
 			day: 'numeric'
 		})
 	);
+	// "Tue, Oct 20 · Day 48 · Week 6": built here as one string so no line-wrapping can eat a space
+	const sessionMeta = $derived(
+		[formatCompactDate(store.now), `Day ${day}`, phase?.label].filter(Boolean).join(' · ')
+	);
 	const nextSlot = $derived(store.nextSlot);
 	const untilDilation = $derived(daysUntilDilation(store.settings.phases, day));
 	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
@@ -30,11 +34,7 @@
 {#if store.active && !settingUp}
 	<!-- a session is on screen: keep the top quiet, so the timer has the focus -->
 	<p class="session-meta">
-		Day {day} · {store.active.custom
-			? 'Custom session'
-			: store.active.slot
-				? `${SLOT_LABELS[store.active.slot]} session`
-				: 'Extra session'}
+		{sessionMeta}
 	</p>
 {:else}
 	<header>
@@ -103,6 +103,9 @@
 		margin-bottom: 1.2rem;
 	}
 	.session-meta {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		text-align: center;
 		margin-bottom: 0.6rem;
 		color: var(--muted);

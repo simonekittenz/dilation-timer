@@ -143,6 +143,9 @@ describe('the Android download on the website', () => {
 		const timer = read('src/lib/Timer.svelte').toString();
 		expect(timer).toContain('class="steps"');
 		expect(timer).toContain('class="round main"');
+		// the finish estimate is a pill on the same row as the dilator chips, and no diameter on the ring
+		expect(timer).toContain('data-testid="eta"');
+		expect(timer).not.toContain('current.diameterMm');
 		// the strip's own rule must not wrap onto a second line
 		const strip = /\t\.steps \{[^}]*\}/.exec(timer)?.[0] ?? '';
 		expect(strip).toContain('display: flex');

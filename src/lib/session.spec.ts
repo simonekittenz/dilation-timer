@@ -6,6 +6,7 @@ import {
 	alertStart,
 	chillOut,
 	confirmSwitch,
+	estimatedFinish,
 	escalateAt,
 	extendSwitchWindow,
 	MIN_CHILL_MS,
@@ -231,5 +232,62 @@ describe('+1 min and "Chill out" on the switch screen', () => {
 		const s = ended();
 		expect(s.windowExtraMs).toBeUndefined();
 		expect(escalateAt(s, W)).toBe(60_000 + W);
+	});
+});
+
+describe('estimatedFinish: when the session should be over', () => {
+	const three = [
+		{ label: 'A', minutes: 10, color: '#fff' },
+		{ label: 'B', minutes: 20, color: '#000' },
+		{ label: 'C', minutes: 30, color: '#999' }
+	];
+	const MIN = 60_000;
+	const start = () => startSession(three, null, '2026-01-01', 0, 'x');
+
+	it('is the time left on this dilator plus the planned time of the ones after it', () => {
+		expect(estimatedFinish(start(), 0)).toBe(60 * MIN);
+		expect(estimatedFinish(start(), 4 * MIN)).toBe(4 * MIN + 6 * MIN + 50 * MIN);
+	});
+
+	it('does not move while the clock runs normally (the same answer a minute later)', () => {
+		expect(estimatedFinish(start(), 0)).toBe(estimatedFinish(start(), 5 * MIN));
+	});
+
+	it('follows +1 min, and a skipped dilator', () => {
+		const longer = adjust(start(), MIN, 2 * MIN);
+		expect(estimatedFinish(longer, 2 * MIN)).toBe(61 * MIN);
+		const skipped = skipStep(start(), 3 * MIN);
+		// waiting to swap: B and C still to do from now
+		expect(estimatedFinish(skipped, 3 * MIN)).toBe(3 * MIN + 50 * MIN);
+	});
+
+	it('while waiting to switch, counts the dilators still to come from now', () => {
+		const waiting = tick(start(), 10 * MIN + 1000);
+		expect(waiting.phase).toBe('switch');
+		expect(estimatedFinish(waiting, 12 * MIN)).toBe(12 * MIN + 50 * MIN);
+		// the longer you take, the later the end
+		expect(estimatedFinish(waiting, 15 * MIN)).toBe(15 * MIN + 50 * MIN);
+	});
+
+	it('on the last dilator it is when that timer ends', () => {
+		let s = confirmSwitch(tick(start(), 10 * MIN), 10 * MIN);
+		s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
+		expect(estimatedFinish(s, 40 * MIN)).toBe(60 * MIN);
+	});
+
+	it('while paused it moves along with the clock, as if you resumed now', () => {
+		const paused = pause(start(), 2 * MIN);
+		expect(estimatedFinish(paused, 2 * MIN)).toBe(2 * MIN + 8 * MIN + 50 * MIN);
+		expect(estimatedFinish(paused, 5 * MIN)).toBe(5 * MIN + 8 * MIN + 50 * MIN);
+	});
+
+	it('is null once the session is over, and never earlier than now', () => {
+		let s = confirmSwitch(tick(start(), 10 * MIN), 10 * MIN);
+		s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
+		const done = tick(s, 61 * MIN);
+		expect(done.phase).toBe('finished');
+		expect(estimatedFinish(done, 61 * MIN)).toBeNull();
+		const lapsed = start(); // timer overdue but not yet ticked
+		expect(estimatedFinish(lapsed, 99 * MIN)).toBeGreaterThanOrEqual(99 * MIN);
 	});
 });

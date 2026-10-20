@@ -60,6 +60,20 @@ export function formatDateRange(start: string, end: string | null, refYear: numb
 	return `${formatShortDate(start, years)} – ${formatShortDate(end, years)}`;
 }
 
+/** "10:42" (or "10:42 AM"), the way this phone shows the time. */
+export function formatClockTime(timestamp: number, locale?: string): string {
+	return new Date(timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+/** "Tue 20 Oct": a short date for tight spaces. */
+export function formatCompactDate(timestamp: number, locale?: string): string {
+	return new Date(timestamp).toLocaleDateString(locale, {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short'
+	});
+}
+
 /** "Monday, 12 October 2026" for a YYYY-MM-DD string, in the user's locale. */
 export function formatLongDate(date: string): string {
 	const [y, m, d] = date.split('-').map(Number);

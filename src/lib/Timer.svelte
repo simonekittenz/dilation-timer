@@ -3,10 +3,11 @@
 	import MascotEars from './MascotEars.svelte';
 	import DilatorName from './DilatorName.svelte';
 	import Swatch from './Swatch.svelte';
-	import { formatClock } from './dates';
+	import { formatClock, formatClockTime } from './dates';
 	import { pickMessage } from './messages';
 	import {
 		ADJUST_MS,
+		estimatedFinish,
 		isLastStep,
 		isPaused,
 		overtimeMs,
@@ -25,6 +26,7 @@
 	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
 	const overtime = $derived(overtimeMs(s, store.now));
 	const escalated = $derived(store.escalated);
+	const finish = $derived(estimatedFinish(s, store.now));
 	const canShorten = $derived(left >= ADJUST_MS + 1000);
 	const bubble = $derived.by(() => {
 		const m = store.settings.messages;
@@ -51,26 +53,33 @@
 		<p class="soundhint">🔇 Tap anywhere to turn the alarm sound on</p>
 	{/if}
 
-	<!-- which dilator you are on, in one line: ticks for the finished ones, a colour for the rest -->
-	<ol class="steps" aria-label="Dilators">
-		{#each s.steps as step, i (i)}
-			{@const done = i < s.stepIndex || s.phase === 'finished'}
-			{@const now = i === s.stepIndex && s.phase !== 'finished'}
-			{@const name = step.nickname ? `${step.label} (${step.nickname})` : step.label}
-			<li
-				class:done
-				class:current={now}
-				title={name}
-				aria-label={`${name}${done ? ', done' : now ? ', now' : ''}`}
-			>
-				{#if done}<span class="tick" aria-hidden="true">✓</span>{:else}<Swatch
-						color={step.color}
-						size={14}
-					/>{/if}
-				{#if now}<span class="pos">{i + 1}/{s.steps.length}</span>{/if}
-			</li>
-		{/each}
-	</ol>
+	<!-- one row: which dilator you are on, and when the session should be done -->
+	<div class="top" class:solo={finish === null}>
+		<ol class="steps" aria-label="Dilators" class:many={s.steps.length > 4}>
+			{#each s.steps as step, i (i)}
+				{@const done = i < s.stepIndex || s.phase === 'finished'}
+				{@const now = i === s.stepIndex && s.phase !== 'finished'}
+				{@const name = step.nickname ? `${step.label} (${step.nickname})` : step.label}
+				<li
+					class:done
+					class:current={now}
+					title={name}
+					aria-label={`${name}${done ? ', done' : now ? ', now' : ''}`}
+				>
+					{#if done}<span class="tick" aria-hidden="true">✓</span>{:else}<Swatch
+							color={step.color}
+							size={14}
+						/>{/if}
+					{#if now}<span class="pos">{i + 1}/{s.steps.length}</span>{/if}
+				</li>
+			{/each}
+		</ol>
+		{#if finish !== null}
+			<p class="eta" data-testid="eta" title="When the session should be done">
+				ETA <strong>{formatClockTime(finish)}</strong>
+			</p>
+		{/if}
+	</div>
 
 	{#if s.phase === 'running'}
 		<div class="stage">
@@ -91,9 +100,7 @@
 					<p class="clock">{formatClock(left)}</p>
 					<p class="label">
 						{#if paused}Paused{:else}
-							<DilatorName label={current.label} nickname={current.nickname} />{current.diameterMm
-								? ` · ${current.diameterMm} mm`
-								: ''}
+							<DilatorName label={current.label} nickname={current.nickname} />
 						{/if}
 					</p>
 				</div>
@@ -251,6 +258,35 @@
 		border-color: var(--warn);
 		animation: glow 0.9s ease-in-out infinite;
 	}
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		width: 100%;
+	}
+	.top.solo {
+		justify-content: center;
+	}
+	.eta {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		height: 1.9rem;
+		padding: 0 0.6rem;
+		border-radius: 999px;
+		border: 2px solid var(--line);
+		background: var(--accent-soft);
+		color: var(--muted);
+		font-size: 0.78rem;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.eta strong {
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
 	.stage {
 		flex: 1;
 		width: 100%;
@@ -268,9 +304,9 @@
 	}
 	.steps {
 		display: flex;
-		gap: 0.4rem;
-		justify-content: center;
-		width: 100%;
+		gap: 0.3rem;
+		justify-content: flex-start;
+		min-width: 0;
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -280,14 +316,27 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.3rem;
-		min-width: 2.1rem;
-		height: 2rem;
-		padding: 0 0.55rem;
+		min-width: 1.9rem;
+		height: 1.9rem;
+		padding: 0 0.45rem;
 		border-radius: 999px;
 		border: 2px solid var(--line);
 		color: var(--muted);
 		font-size: 0.8rem;
 		font-weight: 800;
+	}
+	/* five or more dilators: smaller chips and no "3/4", so they and the ETA pill share the row */
+	.steps.many {
+		gap: 0.2rem;
+	}
+	.steps.many li {
+		min-width: 1.5rem;
+		height: 1.6rem;
+		padding: 0 0.2rem;
+		gap: 0;
+	}
+	.steps.many .pos {
+		display: none;
 	}
 	.steps li.done {
 		background: var(--ok);
