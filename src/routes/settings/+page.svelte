@@ -150,6 +150,16 @@
 		});
 	}
 
+	/**
+	 * Phases the user opened or closed by hand (the current one starts open, the rest closed). Kept
+	 * here because editing a phase rebuilds the list, and the page must not forget what is unfolded.
+	 */
+	let folded = $state<Record<string, boolean>>({});
+	function remember(id: string, open: boolean, byDefault: boolean) {
+		if (open === byDefault) delete folded[id];
+		else folded[id] = open;
+	}
+
 	const problems = $derived(findPhaseProblems(draft.phases));
 	const labelOf = (id: string) => draft.phases.find((p) => p.id === id)?.label ?? '';
 
@@ -499,7 +509,8 @@
 	<details
 		class="card phase {progress}"
 		id={progress === 'current' ? 'current-phase' : undefined}
-		open={progress === 'current'}
+		open={folded[phase.id] ?? progress === 'current'}
+		ontoggle={(e) => remember(phase.id, e.currentTarget.open, progress === 'current')}
 	>
 		<summary>
 			<span class="title">
@@ -553,17 +564,15 @@
 				{/if}
 			</span>
 			{#if phase.toDay !== null}
-				<div class="row">
-					<button
-						class="btn ghost small"
-						onclick={() => setEnd(phase.id, phase.toDay! - 1)}
-						disabled={phaseLength(phase) === 1}
-					>
-						− 1 day
-					</button>
-					<button class="btn ghost small" onclick={() => setEnd(phase.id, phase.toDay! + 1)}>
-						+ 1 day
-					</button>
+				<div class="resize">
+					<div class="row">
+						<button class="btn ghost small" onclick={() => setEnd(phase.id, phase.toDay! + 1)}>
+							+ 1 day
+						</button>
+						<button class="btn ghost small" onclick={() => setEnd(phase.id, phase.toDay! + 7)}>
+							+ 1 week
+						</button>
+					</div>
 					<label class="inline">
 						Ends day
 						<input
@@ -575,6 +584,22 @@
 							onchange={(e) => commitEnd(phase.id, e.currentTarget)}
 						/>
 					</label>
+					<div class="row">
+						<button
+							class="btn ghost small"
+							onclick={() => setEnd(phase.id, phase.toDay! - 1)}
+							disabled={phaseLength(phase) === 1}
+						>
+							− 1 day
+						</button>
+						<button
+							class="btn ghost small"
+							onclick={() => setEnd(phase.id, phase.toDay! - 7)}
+							disabled={(phaseLength(phase) ?? 0) <= 7}
+						>
+							− 1 week
+						</button>
+					</div>
 				</div>
 				<small class="muted">Adding or removing days moves every later phase too.</small>
 			{:else}
@@ -946,6 +971,12 @@
 	}
 	.num {
 		width: 4.5rem;
+	}
+	/* plus above the day number, minus below it */
+	.resize {
+		display: grid;
+		justify-items: start;
+		gap: 0.5rem;
 	}
 	.choose-program {
 		display: grid;
