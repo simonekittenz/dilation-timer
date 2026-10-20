@@ -143,6 +143,9 @@ describe('the Android download on the website', () => {
 		const timer = read('src/lib/Timer.svelte').toString();
 		expect(timer).toContain('class="steps"');
 		expect(timer).toContain('class="round main"');
-		expect(timer).not.toContain('flex-wrap: wrap');
+		// the strip's own rule must not wrap onto a second line
+		const strip = /\t\.steps \{[^}]*\}/.exec(timer)?.[0] ?? '';
+		expect(strip).toContain('display: flex');
+		expect(strip).not.toContain('flex-wrap');
 	});
 });
