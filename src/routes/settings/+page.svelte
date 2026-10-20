@@ -89,11 +89,15 @@
 
 	async function saveBackup() {
 		const backup = createBackup($state.snapshot(store.settings), $state.snapshot(store.log));
-		const result = await saveTextFile(backupFileName(), JSON.stringify(backup, null, 2));
-		backupNote =
-			result === 'cancelled'
-				? null
-				: { kind: 'ok', text: 'Backup saved. Keep the file somewhere safe ♡' };
+		try {
+			const result = await saveTextFile(backupFileName(), JSON.stringify(backup, null, 2));
+			backupNote =
+				result === 'cancelled'
+					? null
+					: { kind: 'ok', text: 'Backup saved. Keep the file somewhere safe ♡' };
+		} catch {
+			backupNote = { kind: 'error', text: "Couldn't save the backup. Please try again." };
+		}
 	}
 
 	async function restoreBackup(event: Event & { currentTarget: HTMLInputElement }) {
