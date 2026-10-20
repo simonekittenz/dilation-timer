@@ -3,7 +3,7 @@
 	import Mascot from '$lib/Mascot.svelte';
 	import Schedule from '$lib/Schedule.svelte';
 	import Setup from '$lib/Setup.svelte';
-	import { daysUntilDilation, isRestPhase } from '$lib/schedule';
+	import { SLOT_LABELS, daysUntilDilation, isRestPhase } from '$lib/schedule';
 	import { store } from '$lib/store.svelte';
 	import DilatorName from '$lib/DilatorName.svelte';
 	import Swatch from '$lib/Swatch.svelte';
@@ -27,21 +27,32 @@
 	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
 </script>
 
-<header>
-	<h1>{dateLabel} <span class="sparkle">✿</span></h1>
-	<!-- while setting up, "Day N" would just be a guess, so it isn't shown yet -->
-	<p class="muted">
-		{#if settingUp}
-			&nbsp;
-		{:else if day < 1}
-			Starts in {1 - day} day{1 - day === 1 ? '' : 's'}
-		{:else if phase}
-			Day {day} · {phase.label}
-		{:else}
-			Day {day} · no phase covers today
-		{/if}
+{#if store.active && !settingUp}
+	<!-- a session is on screen: keep the top quiet, so the timer has the focus -->
+	<p class="session-meta">
+		Day {day} · {store.active.custom
+			? 'Custom session'
+			: store.active.slot
+				? `${SLOT_LABELS[store.active.slot]} session`
+				: 'Extra session'}
 	</p>
-</header>
+{:else}
+	<header>
+		<h1>{dateLabel} <span class="sparkle">✿</span></h1>
+		<!-- while setting up, "Day N" would just be a guess, so it isn't shown yet -->
+		<p class="muted">
+			{#if settingUp}
+				&nbsp;
+			{:else if day < 1}
+				Starts in {1 - day} day{1 - day === 1 ? '' : 's'}
+			{:else if phase}
+				Day {day} · {phase.label}
+			{:else}
+				Day {day} · no phase covers today
+			{/if}
+		</p>
+	</header>
+{/if}
 
 <UpdateBanner />
 
@@ -90,6 +101,13 @@
 <style>
 	header {
 		margin-bottom: 1.2rem;
+	}
+	.session-meta {
+		text-align: center;
+		margin-bottom: 0.6rem;
+		color: var(--muted);
+		font-size: 0.85rem;
+		font-weight: 800;
 	}
 	h1 {
 		font-size: 1.7rem;

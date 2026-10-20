@@ -135,4 +135,14 @@ describe('the Android download on the website', () => {
 		expect(doc).toContain('12 testers');
 		expect(doc).toContain('Not affiliated with or endorsed by WIH International Hospital');
 	});
+
+	it('keeps the session screen focused: no menu, a one-line dilator strip, round controls', () => {
+		const layout = read('src/routes/+layout.svelte').toString();
+		expect(layout).toContain("page.url.pathname === '/' && !!store.active");
+		expect(layout).toContain("page.url.pathname !== '/welcome' && !focus");
+		const timer = read('src/lib/Timer.svelte').toString();
+		expect(timer).toContain('class="steps"');
+		expect(timer).toContain('class="round main"');
+		expect(timer).not.toContain('flex-wrap: wrap');
+	});
 });

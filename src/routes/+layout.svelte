@@ -45,6 +45,9 @@
 		return () => document.removeEventListener('visibilitychange', check);
 	});
 
+	// While a session is on screen there is nothing else to look at: no menu, just the timer.
+	const focus = $derived(page.url.pathname === '/' && !!store.active);
+
 	const tabs = [
 		{ href: '/', label: 'Today', icon: '🌸' },
 		{ href: '/history', label: 'History', icon: '📖' },
@@ -53,10 +56,10 @@
 </script>
 
 <div class="shell" class:alerting={store.escalated}>
-	<main>
+	<main class:focus>
 		{#if !showWelcome}{@render children()}{/if}
 	</main>
-	{#if page.url.pathname !== '/welcome'}
+	{#if page.url.pathname !== '/welcome' && !focus}
 		<nav>
 			{#each tabs as t (t.href)}
 				<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}
@@ -79,6 +82,10 @@
 		width: min(560px, 100%);
 		margin: 0 auto;
 		padding: 1.2rem 1rem 7rem;
+	}
+	main.focus {
+		padding-top: 0.6rem;
+		padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 	}
 	nav {
 		position: fixed;
