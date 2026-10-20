@@ -154,4 +154,17 @@ describe('the Android download on the website', () => {
 		expect(strip).toContain('display: flex');
 		expect(strip).not.toContain('flex-wrap');
 	});
+
+	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
+		const welcome = read('src/routes/welcome/+page.svelte').toString();
+		expect(welcome).toContain('href="https://ko-fi.com/zephyralux"');
+		expect(welcome).toContain('rel="noopener noreferrer"');
+		// the apps never show the start page, so no donation link ends up in the Play version
+		for (const file of [
+			'src/routes/+layout.svelte',
+			'src/routes/+page.svelte',
+			'src/lib/Timer.svelte'
+		])
+			expect(read(file).toString()).not.toContain('ko-fi');
+	});
 });

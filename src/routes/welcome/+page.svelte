@@ -183,6 +183,25 @@
 	<strong>Restore backup</strong> in the app.
 </p>
 
+<section class="card community" data-testid="community">
+	<h2>A community project 🌸</h2>
+	<p>
+		Dilation timer is made by one person, for people like us. I'm a trans girl, and I use the app
+		myself, so I keep it free, private and gentle.
+	</p>
+	<p class="muted">
+		If it helps you and you'd like to show some support, you can buy me a coffee. It is never
+		expected.
+	</p>
+	<a
+		class="btn ghost small"
+		href="https://ko-fi.com/zephyralux"
+		target="_blank"
+		rel="noopener noreferrer"
+		data-testid="kofi">☕ Buy me a coffee on Ko-fi</a
+	>
+</section>
+
 <p class="muted small moving"><a href="/privacy">How your information is handled</a></p>
 
 <style>
@@ -302,5 +321,15 @@
 	}
 	.moving {
 		margin: 1rem 0.2rem 0;
+	}
+	.community {
+		display: grid;
+		gap: 0.6rem;
+		justify-items: start;
+		margin-top: 1.4rem;
+	}
+	.community h2 {
+		font-size: 1.1rem;
+		font-weight: 900;
 	}
 </style>
