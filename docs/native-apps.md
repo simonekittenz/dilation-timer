@@ -7,16 +7,16 @@ and restored) instead of paused.
 
 ## What lives where
 
-| Thing                        | Where                                                                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| The app (Svelte)             | `src/`                                                                                                                  |
-| Alarm sound definitions      | `src/lib/sounds.ts` (notes, one source of truth)                                                                        |
-| Alarm WAV files for the apps | `static/sounds/*.wav` (made by `npm run sounds:render`)                                                                 |
-| JS side of the native plugin | `src/lib/nativeAudio.ts` (+ `alarm.ts`)                                                                                 |
-| iOS plugin (Swift)           | `ios/App/App/AudioDuckingPlugin.swift`, registered in `MyViewController.swift`                                          |
+| Thing                        | Where                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| The app (Svelte)             | `src/`                                                                                                                 |
+| Alarm sound definitions      | `src/lib/sounds.ts` (notes, one source of truth)                                                                       |
+| Alarm WAV files for the apps | `static/sounds/*.wav` (made by `npm run sounds:render`)                                                                |
+| JS side of the native plugin | `src/lib/nativeAudio.ts` (+ `alarm.ts`)                                                                                |
+| iOS plugin (Swift)           | `ios/App/App/AudioDuckingPlugin.swift`, registered in `MyViewController.swift`                                         |
 | Android plugin (Java)        | `android/app/src/main/java/com/simonekittenz/dilationtimer/AudioDuckingPlugin.java`, registered in `MainActivity.java` |
 | App id / name                | `capacitor.config.ts` (`com.simonekittenz.dilationtimer`)                                                              |
-| Icon + launch screen art     | `assets/` (made by `npm run icons`)                                                                                     |
+| Icon + launch screen art     | `assets/` (made by `npm run icons`)                                                                                    |
 
 In a browser the alarm is played live with Web Audio. Inside an app it is played natively from the
 WAV files. If the native plugin ever fails, the app falls back to Web Audio instead of going silent.
@@ -135,39 +135,36 @@ optimisation for the app. iPhone uses the same code with its normal notification
 
 ## Signing
 
-Android only lets an update replace an installed app if both were signed with the same key. The first
-builds were signed with Android's automatic "debug" key; the published app is now signed with a real
-release key, and Android's **key rotation** lets phones that have an older build update to it without
-uninstalling (their data stays). Everything lives in one folder **outside the project**:
+Android only lets an update replace an installed app if both were signed with the same key. The app is
+signed with one release key. Everything lives in one folder **outside the project**:
 `~/.dilation-timer-signing` (or wherever `DILATION_SIGNING_DIR` points):
 
-| file                                | what it is                                                          |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `release.keystore` + `password.txt` | the release key and its password                                    |
-| `old-signer.keystore`               | the original debug key (password `android`)                         |
-| `lineage.bin`                       | the rotation record: "the debug key handed over to the release key" |
+| file                                      | what it is                                                   |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| `release.keystore` + `password.txt`       | the release key and its password (alias `dilation-timer`)    |
+| `upload.keystore` + `upload-password.txt` | the Google Play upload key and its password (alias `upload`) |
 
 **Keep a copy of that whole folder somewhere safe and off this computer** (password manager file
 storage, or an encrypted USB stick). If it is lost, nobody can update the app any more: everyone has to
 uninstall (losing their data) and install again. It must never be committed (`.gitignore` and a test
-guard against that) or shared. The release key's public fingerprint (SHA-256) is
-`BF:35:33:F4:E9:77:99:85:8E:5D:53:FC:64:13:25:31:21:94:BD:E0:7A:E2:8D:B6:42:77:22:9D:CB:D8:B5:64`
-and is recorded in `appRelease.json` as `signer`.
+guard against that) or shared. The release key's public fingerprint (SHA-256) is recorded in
+`appRelease.json` as `signer`. The key's owner name is `CN=Dilation timer, O=simone`, and that is public:
+it is readable in every APK.
 
 How `npm run apk` signs: it builds the release app (`assembleRelease`), aligns it, then runs
-`apksigner` with **both** keys: the old key signs the classic signature (v2, which phones older than
-Android 9 check) and the release key signs v3 together with `lineage.bin` (Android 9 and up). It then
-refuses to publish unless the signature verifies, the app is not marked debuggable, and the signer
-matches the previous release.
+`apksigner` with the release key (schemes v2 and v3). It then refuses to publish unless the signature
+verifies, the app is not marked debuggable, and the signer matches the previous release.
 
 Things to remember:
 
-- The old key can never be dropped: phones still on an old build, and phones older than Android 9,
-  keep trusting it. That is why it is in the folder and in the backup.
 - A release build can't be inspected with the Chrome debugging connection that the emulator tests use.
   For tests, `npm run apk:debug` builds the identical app with debugging on, signed the same way
   (`adb install -r android/app/build/outputs/signing/Dilation-timer-test.apk`).
 - To start over with a new key, everybody must uninstall once. Don't, unless the key is compromised.
+- **Builds before 1.7 used another app id** and another key, so they are a different app to Android.
+  Version 1.7 installs next to the old one instead of replacing it. To move over: in the old app
+  **Settings → Save backup**, install the new app, **Settings → Restore backup**, then uninstall the
+  old one.
 
 ## Google Play
 

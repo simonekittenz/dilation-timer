@@ -40,10 +40,6 @@ const SIGNING_DIR = process.env.DILATION_SIGNING_DIR ?? join(homedir(), '.dilati
 const signing = {
 	keystore: join(SIGNING_DIR, 'release.keystore'),
 	password: join(SIGNING_DIR, 'password.txt'),
-	// The app was first signed with Android's debug key. Phones that have it only accept an update
-	// signed by that same key, or by a key it was handed over to ("rotated", via lineage.bin).
-	oldKeystore: join(SIGNING_DIR, 'old-signer.keystore'), // the debug key, password "android"
-	lineage: join(SIGNING_DIR, 'lineage.bin'),
 	alias: 'dilation-timer',
 	// Google Play checks uploads against this key. The app's real signing key is the release key,
 	// which is handed to Play App Signing once (docs/play-store.md).
@@ -152,7 +148,7 @@ const tools = buildTools();
 {
 	const needed = aabBuild
 		? [signing.uploadKeystore, signing.uploadPassword]
-		: [signing.keystore, signing.password, signing.oldKeystore, signing.lineage];
+		: [signing.keystore, signing.password];
 	const missing = needed.filter((f) => !existsSync(f));
 	if (missing.length > 0) {
 		console.error(
@@ -225,7 +221,7 @@ if (!existsSync(unsigned)) {
 	process.exit(1);
 }
 
-// align, then sign with the release key and the rotation file (in that order: signing seals the file)
+// align, then sign with the release key (in that order: signing seals the file)
 const work = join(android, 'app/build/outputs/signing');
 mkdirSync(work, { recursive: true });
 const aligned = join(work, 'aligned.apk');
@@ -235,15 +231,6 @@ run(
 	join(tools, 'apksigner'),
 	[
 		'sign',
-		// the oldest key signs the classic signature (v2), which phones older than Android 9 use
-		'--ks',
-		signing.oldKeystore,
-		'--ks-key-alias',
-		'androiddebugkey',
-		'--ks-pass',
-		'pass:android',
-		// the release key signs v3 with the lineage; Android 9 and up use that one
-		'--next-signer',
 		'--ks',
 		signing.keystore,
 		'--ks-key-alias',
@@ -257,8 +244,6 @@ run(
 		'true',
 		'--v3-signing-enabled',
 		'true',
-		'--lineage',
-		signing.lineage,
 		'--out',
 		signed,
 		aligned
@@ -281,7 +266,7 @@ const fail = (why) => {
 if (verify.status !== 0 || !signer) fail('the signature does not verify.');
 if (!/Verified using v2 scheme[^\n]*: true/.test(report)) fail('it is not signed with scheme v2.');
 if (!/Verified using v3 scheme[^\n]*: true/.test(report))
-	fail('it is not signed with scheme v3 (needed for the key rotation).');
+	fail('it is not signed with scheme v3 (needed to be able to rotate the key later).');
 const badging = spawnSync(join(tools, 'aapt2'), ['dump', 'badging', signed], {
 	encoding: 'utf8'
 }).stdout;

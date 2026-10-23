@@ -80,18 +80,16 @@ describe('the Android download on the website', () => {
 		// the SHA-256 of the release certificate; the same value is in the signing folder's README
 		expect(release.android.signer).toMatch(/^[0-9a-f]{64}$/);
 		expect(release.android.signer).toBe(
-			'bf3533f4e97799858e5d53fc641325312194bde07ae28db64277229dcbd8b564'
+			'c856421a3aaf4f7795bc0457e8384b741765a56e681048983b36b55111122f45'
 		);
 	});
 
 	it('keeps signing keys and passwords out of git, whatever happens', () => {
 		const ignore = read('.gitignore').toString();
-		for (const pattern of ['*.keystore', '*.jks', 'password.txt', 'lineage.bin'])
+		for (const pattern of ['*.keystore', '*.jks', 'password.txt'])
 			expect(ignore).toContain(pattern);
 		const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n');
-		const secrets = tracked.filter((f) =>
-			/\.(keystore|jks|p12|pfx)$|(^|\/)(password\.txt|lineage\.bin)$/.test(f)
-		);
+		const secrets = tracked.filter((f) => /\.(keystore|jks|p12|pfx)$|(^|\/)password\.txt$/.test(f));
 		expect(secrets).toEqual([]);
 	});
 
@@ -101,7 +99,7 @@ describe('the Android download on the website', () => {
 		expect(scripts['apk:debug']).toBe('node scripts/build-apk.mjs --debug');
 		const script = read('scripts/build-apk.mjs').toString();
 		expect(script).toContain('assembleRelease');
-		expect(script).toContain('--lineage');
+		expect(script).toContain('--v3-signing-enabled');
 		expect(script).toContain('application-debuggable');
 	});
 
