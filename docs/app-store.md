@@ -225,12 +225,12 @@ First release on the App Store. Includes your schedule, session timers with gent
 
 | File                                 | Size        | Used for                                                                                                 |
 | ------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------- |
-| `phone-1-today.jpg` … `phone-6-…`    | 1320 × 2868 | Screenshots, **6.9-inch** iPhone class                                                                   |
-| `6.3-inch/phone-1-today.jpg` … `6-…` | 1206 × 2622 | The same screenshots for the **6.3-inch** class (App Store Connect asks for whichever class is required) |
-| `header-3840x1646.jpg`               | 3840 × 1646 | Optional **product page header** (21:9), at the top of the page                                          |
-| `search-1920x1280.jpg`               | 1920 × 1280 | Optional **search results** image (3:2)                                                                  |
+| `phone-1-today.png` … `phone-6-…`    | 1320 × 2868 | Screenshots, **6.9-inch** iPhone class                                                                   |
+| `6.3-inch/phone-1-today.png` … `6-…` | 1206 × 2622 | The same screenshots for the **6.3-inch** class (App Store Connect asks for whichever class is required) |
+| `header-3840x1646.png`               | 3840 × 1646 | Optional **product page header** (21:9), at the top of the page                                          |
+| `search-1920x1280.png`               | 1920 × 1280 | Optional **search results** image (3:2)                                                                  |
 
-Upload up to ten screenshots per class; three to six is plenty. They are taken of the real app with
+They are PNG files without transparency, because App Store Connect does not take JPEG. Upload up to ten screenshots per class; three to six is plenty. They are taken of the real app with
 made-up demo data, so check them over first.
 
 **iPhone Duo:** screenshots for it are optional now. From April 2027 Apple requires them for apps built with

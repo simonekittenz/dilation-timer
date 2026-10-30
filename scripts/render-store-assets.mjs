@@ -10,7 +10,7 @@
 //   feature-graphic.jpg        the wide banner, 1024 x 500
 //   phone-1-today.jpg ...      screenshots, 1170 x 2340 (2:1, the tallest Play allows)
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import puppeteer from 'puppeteer-core';
@@ -232,4 +232,19 @@ if (IOS) {
 }
 
 await browser.close();
+
+// The App Store takes PNG (no transparency) but not JPEG. sips turns the opaque JPEGs into PNGs without alpha.
+if (IOS) {
+	const jpgs = [OUT, join(OUT, '6.3-inch')].flatMap((dir) =>
+		readdirSync(dir)
+			.filter((f) => f.endsWith('.jpg'))
+			.map((f) => join(dir, f))
+	);
+	for (const jpg of jpgs) {
+		execFileSync('sips', ['-s', 'format', 'png', jpg, '--out', jpg.replace(/\.jpg$/, '.png')], {
+			stdio: 'ignore'
+		});
+		unlinkSync(jpg);
+	}
+}
 console.log(`Wrote the store pictures to ${OUT}`);
