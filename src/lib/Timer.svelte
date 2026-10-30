@@ -698,12 +698,10 @@
 			animation: none;
 		}
 	}
+	/* the calm countdown is just big pink numbers; only the overtime one sits in a pill */
 	.countdown {
 		position: relative;
-		padding: 0.3rem 1.4rem;
-		border-radius: 999px;
-		border: 3px solid var(--line);
-		background: var(--accent-soft);
+		padding: 0.1rem 0.4rem;
 		color: var(--accent-strong);
 		font-size: clamp(2.6rem, 14vw, 3.6rem);
 		font-weight: 900;
@@ -711,35 +709,22 @@
 		line-height: 1.1;
 	}
 	.countdown.over {
-		border-color: var(--warn);
+		padding: 0.3rem 1.4rem;
+		border-radius: 999px;
+		border: 3px solid var(--warn);
+		background: var(--accent-soft);
 		color: var(--warn);
 	}
 	.countdown.lit {
-		animation: lightup 0.9s ease-out;
+		animation: clocklit 0.9s ease-out;
 	}
 	.countdown.lit::after {
 		content: '✨';
 		position: absolute;
 		top: -0.4rem;
-		right: -0.2rem;
+		right: -0.9rem;
 		font-size: 1.6rem;
 		animation: sparkle 0.9s ease-out forwards;
-	}
-	@keyframes lightup {
-		0% {
-			transform: scale(1);
-		}
-		25% {
-			transform: scale(1.12);
-			background: var(--surface);
-			border-color: var(--accent);
-			box-shadow:
-				0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent),
-				0 0 28px 10px color-mix(in srgb, var(--accent) 55%, transparent);
-		}
-		100% {
-			transform: scale(1);
-		}
 	}
 	@keyframes sparkle {
 		0% {
