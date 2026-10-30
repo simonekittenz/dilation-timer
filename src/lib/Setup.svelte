@@ -32,7 +32,7 @@
 
 	function no() {
 		store.finishSetup();
-		void goto('/settings');
+		void goto('/settings/about');
 	}
 </script>
 

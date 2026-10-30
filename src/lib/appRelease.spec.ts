@@ -172,6 +172,23 @@ describe('the Android download', () => {
 		);
 	});
 
+	it('has Settings split into pages: a menu, and one page per kind of setting', () => {
+		for (const page of ['about', 'alerts', 'encouragement', 'schedule', 'data'])
+			expect(existsSync(new URL(`src/routes/settings/${page}/+page.svelte`, root))).toBe(true);
+		const menu = read('src/routes/settings/+page.svelte').toString();
+		for (const page of ['about', 'alerts', 'encouragement', 'schedule', 'data'])
+			expect(menu).toContain(`/settings/${page}`);
+		// the little friend sits with the encouragement, the dilators with the facts about you
+		expect(read('src/routes/settings/encouragement/+page.svelte').toString()).toContain(
+			'Your little friend'
+		);
+		expect(read('src/routes/settings/about/+page.svelte').toString()).toContain('Your dilators');
+		// a phase can be pushed back from the schedule, like from the new-dilator message
+		const schedule = read('src/routes/settings/schedule/+page.svelte').toString();
+		expect(schedule).toContain('pushBackPhase');
+		expect(schedule).toContain('Push back 1 week');
+	});
+
 	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
 		const welcome = read('src/routes/welcome/+page.svelte').toString();
 		expect(welcome).toContain('href="https://ko-fi.com/zephyralux"');

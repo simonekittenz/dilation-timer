@@ -73,8 +73,12 @@
 	{#if page.url.pathname !== '/welcome' && !focus}
 		<nav>
 			{#each tabs as t (t.href)}
-				<a href={t.href} aria-current={page.url.pathname === t.href ? 'page' : undefined}
-					><span aria-hidden="true">{t.icon}</span> {t.label}</a
+				<a
+					href={t.href}
+					aria-current={page.url.pathname === t.href ||
+					(t.href !== '/' && page.url.pathname.startsWith(`${t.href}/`))
+						? 'page'
+						: undefined}><span aria-hidden="true">{t.icon}</span> {t.label}</a
 				>
 			{/each}
 		</nav>
