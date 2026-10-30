@@ -1,7 +1,7 @@
 // Makes the pictures the Google Play listing asks for:
 //   npm run dev                      (in one terminal: the screenshots are taken of the running app)
 //   npm run store:assets             (in another; writes to ~/Desktop/Play-Store-assets)
-// Options (environment variables): STORE_URL (default http://localhost:5173), OUT_DIR, CHROME_PATH.
+// Options (environment variables): STORE_URL (default http://localhost:5273), OUT_DIR, CHROME_PATH.
 //
 //   icon-512.png               the app icon, 512 x 512
 //   feature-graphic.jpg        the wide banner, 1024 x 500
@@ -14,7 +14,7 @@ import puppeteer from 'puppeteer-core';
 
 const CHROME =
 	process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const URL_BASE = (process.env.STORE_URL ?? 'http://localhost:5173').replace(/\/$/, '');
+const URL_BASE = (process.env.STORE_URL ?? 'http://localhost:5273').replace(/\/$/, '');
 const OUT = process.env.OUT_DIR ?? join(homedir(), 'Desktop', 'Play-Store-assets');
 const root = new URL('..', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });

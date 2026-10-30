@@ -20,5 +20,7 @@ export default defineConfig({
 			serviceWorker: { register: !native }
 		})
 	],
+	server: { port: 5273 },
+	preview: { port: 4273 },
 	test: { include: ['src/**/*.spec.ts'] }
 });

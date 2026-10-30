@@ -55,7 +55,7 @@ You need Node.js (a recent version) and npm.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev      # http://localhost:5273
 ```
 
 | Command                                   | What it does                                                   |
