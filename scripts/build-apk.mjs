@@ -17,7 +17,14 @@
 // page shows). `npm run apk:publish` then puts the app on GitHub Releases; the app file is never committed.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	readdirSync,
+	writeFileSync
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { decideVersionCode } from './version.mjs';
