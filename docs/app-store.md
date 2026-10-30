@@ -175,38 +175,38 @@ dilation,dilator,timer,aftercare,recovery,routine,schedule,reminder,session,vagi
 ```
 Dilation timer is a cute, calm timer for dilation sessions. It knows the WIH International Hospital schedule, shows what is on for today, counts each dilator down, and gently tells you when it is time to switch.
 
-🎀 YOUR SCHEDULE
-• Enter your surgery date once and the app works out which week you are in.
-• Two ready-made programs: WIH standard and WIH with size 5. Everything in them can be edited: phases, days, dilators and minutes.
-• A rest week first, then morning and evening sessions.
-• A message when a new dilator appears, with the option to take more time.
+YOUR SCHEDULE
+- Enter your surgery date once and the app works out which week you are in.
+- Two ready-made programs: WIH standard and WIH with size 5. Everything in them can be edited: phases, days, dilators and minutes.
+- A rest week first, then morning and evening sessions.
+- A message when a new dilator appears, with the option to take more time.
 
-⏱ SESSIONS THAT LOOK AFTER YOU
-• You start each session yourself. Pause, add or remove a minute, or move on to the next dilator.
-• A soft chime warns you shortly before a timer ends.
-• Time to switch? There is a quiet window to swap dilators. If you have not yet, a gentle reminder repeats. "+ 1 min" gives you a little longer, and "Chill out, I'm on it!" quiets the reminders for a while.
-• After the last dilator the session logs itself. No nagging.
-• Up late? A session after midnight can count as last night's evening session.
+SESSIONS THAT LOOK AFTER YOU
+- You start each session yourself. Pause, add or remove a minute, or move on to the next dilator.
+- A soft chime warns you shortly before a timer ends.
+- Time to switch? There is a quiet window to swap dilators. If you have not yet, a gentle reminder repeats. "+ 1 min" gives you a little longer, and "Chill out, I'm on it!" quiets the reminders for a while.
+- After the last dilator the session logs itself. No nagging.
+- Up late? A session after midnight can count as last night's evening session.
 
-✨ SHORT ON TIME?
+SHORT ON TIME?
 Custom session: pick a length (1 hour, 2 hours, or anything in between) and which dilators to use. Today's routine is stretched or squeezed to fit, in blocks of 5 minutes, and you can change it before you start.
 
-🔔 ALERTS, EVEN WHEN YOUR PHONE IS LOCKED
+ALERTS, EVEN WHEN YOUR PHONE IS LOCKED
 When a timer ends, your phone shows a notification at the right moment, then gentle reminders until you have switched. Daily reminders can nudge you to start a session. While the app is open, music from other apps is turned down for the alarm instead of stopped.
 
-🔥 A STREAK, IF YOU WANT ONE
+A STREAK, IF YOU WANT ONE
 Count how many days in a row you did all your sessions, and cheer when you conquer a new dilator. Rest days never break it, and you can turn it off.
 
-🔊 GENTLE SOUNDS
+GENTLE SOUNDS
 Rounded, old-school tones that never startle. Set the volume, all the way down to off.
 
-📖 HISTORY AND BACKUPS
+HISTORY AND BACKUPS
 Look back at your sessions, and save or restore a backup file whenever you like.
 
-🐰 A LITTLE FRIEND
+A LITTLE FRIEND
 Choose a bunny or a kitty to keep you company.
 
-🔒 PRIVATE BY DESIGN
+PRIVATE BY DESIGN
 No accounts, no ads, no tracking. Everything stays on your phone.
 
 This is a personal timer, not medical advice. Always follow the instructions of your own clinic. Not affiliated with or endorsed by WIH International Hospital.
