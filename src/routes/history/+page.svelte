@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/dialog.svelte.ts';
 	import DilatorName from '#lib/DilatorName.svelte';
 	import Swatch from '#lib/Swatch.svelte';
 	import { SLOT_LABELS } from '#lib/schedule.ts';
@@ -57,7 +58,14 @@
 			</div>
 			<button
 				class="btn ghost small"
-				onclick={() => confirm('Delete this entry?') && store.removeLog(e.id)}
+				onclick={async () =>
+					(await ask({
+						title: 'Delete this entry?',
+						message: 'It will be gone from your history.',
+						confirmLabel: 'Yes, delete it',
+						cancelLabel: 'Keep it',
+						danger: true
+					})) && store.removeLog(e.id)}
 			>
 				Delete
 			</button>

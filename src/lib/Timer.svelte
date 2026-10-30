@@ -5,6 +5,7 @@
 	import SessionOverview from './SessionOverview.svelte';
 	import Swatch from './Swatch.svelte';
 	import { formatClock, formatClockTime } from './dates';
+	import { ask } from './dialog.svelte';
 	import { pickMessage } from './messages';
 	import {
 		ADJUST_MS,
@@ -217,7 +218,14 @@
 				</button>
 				<button
 					class="round small quiet"
-					onclick={() => confirm('Stop this session without logging it?') && store.cancel()}
+					onclick={async () =>
+						(await ask({
+							title: 'Stop this session?',
+							message: "It won't be logged, and the timer will be gone.",
+							confirmLabel: 'Yes, stop it',
+							cancelLabel: 'Keep going',
+							danger: true
+						})) && store.cancel()}
 				>
 					<span class="disc">
 						<svg viewBox="0 0 24 24" aria-hidden="true"

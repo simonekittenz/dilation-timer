@@ -205,6 +205,20 @@ describe('the Android download', () => {
 		expect(sheet).toContain("e.key === 'Escape'");
 	});
 
+	it('asks "are you sure?" with our own pop up, never the browser\'s plain confirm()', () => {
+		for (const file of [
+			'src/lib/Timer.svelte',
+			'src/routes/history/+page.svelte',
+			'src/routes/settings/schedule/+page.svelte',
+			'src/routes/settings/data/+page.svelte'
+		]) {
+			const text = read(file).toString();
+			expect(text).not.toMatch(/confirm\(\s*['"`]/);
+			expect(text).toContain('ask({');
+		}
+		expect(read('src/routes/+layout.svelte').toString()).toContain('<ConfirmDialog />');
+	});
+
 	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
 		const welcome = read('src/routes/welcome/+page.svelte').toString();
 		expect(welcome).toContain('href="https://ko-fi.com/zephyralux"');

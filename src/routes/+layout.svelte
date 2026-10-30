@@ -3,6 +3,7 @@
 	import { browser } from '$app/env';
 	import { goto } from '$app/navigation';
 	import { page, updated } from '$app/state';
+	import ConfirmDialog from '#lib/ConfirmDialog.svelte';
 	import { isNative } from '#lib/platform.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import { updates } from '#lib/updates.svelte.ts';
@@ -65,6 +66,8 @@
 		{ href: '/settings', label: 'Settings', icon: '🎀' }
 	];
 </script>
+
+<ConfirmDialog />
 
 <div class="shell" class:alerting={store.escalated}>
 	<main class:focus class:wide={page.url.pathname === '/'}>

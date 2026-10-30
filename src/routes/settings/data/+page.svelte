@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { backupFileName, createBackup, describeBackup, parseBackup } from '#lib/backup.ts';
+	import { ask } from '#lib/dialog.svelte.ts';
 	import { saveTextFile } from '#lib/files.ts';
 	import { isNative } from '#lib/platform.ts';
 	import { useSettingsForm } from '#lib/settingsForm.svelte.ts';
@@ -32,13 +33,14 @@
 			backupNote = { kind: 'error', text: parsed.error };
 			return;
 		}
-		if (
-			!confirm(
-				`Replace everything on this device with this backup?\n\n${describeBackup(parsed)}\n\nThis can't be undone.`
-			)
-		) {
-			return;
-		}
+		const yes = await ask({
+			title: 'Replace everything with this backup?',
+			message: `${describeBackup(parsed)}\n\nThis can't be undone.`,
+			confirmLabel: 'Yes, restore it',
+			cancelLabel: 'Cancel',
+			danger: true
+		});
+		if (!yes) return;
 		const result = store.restoreBackup(parsed);
 		if (!result.ok) {
 			backupNote = { kind: 'error', text: result.error };

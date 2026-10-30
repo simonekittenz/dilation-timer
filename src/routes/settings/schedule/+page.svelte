@@ -3,6 +3,7 @@
 	import { formatDuration, totalMinutes } from '#lib/customSession.ts';
 	import { addDays, formatDateRange, formatScheduleDate } from '#lib/dates.ts';
 	import { PROGRAMS, wihPhases } from '#lib/defaults.ts';
+	import { ask } from '#lib/dialog.svelte.ts';
 	import { wihDilators } from '#lib/dilators.ts';
 	import {
 		chainPhases,
@@ -243,7 +244,18 @@
 					<button class="pill" onclick={() => (renaming = phase.id)}>Rename</button>
 					<button
 						class="pill"
-						onclick={() => confirm(`Remove "${phase.label}"?`) && draft.phases.splice(pi, 1)}
+						onclick={async () =>
+							(await ask({
+								title: `Remove ${phase.label}?`,
+								message: 'The days it covers will have no routine until you add one.',
+								confirmLabel: 'Yes, remove it',
+								cancelLabel: 'Keep it',
+								danger: true
+							})) &&
+							draft.phases.splice(
+								draft.phases.findIndex((p) => p.id === phase.id),
+								1
+							)}
 						disabled={draft.phases.length === 1}>Remove</button
 					>
 				{/if}
