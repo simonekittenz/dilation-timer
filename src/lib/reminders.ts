@@ -69,16 +69,19 @@ const TITLES: Record<SlotId, string> = {
 /**
  * The reminders to hand to the phone: one for every session in the next `REMINDER_DAYS` days that
  * is still to come, at the time chosen for its part of the day. Rest days get none, and neither does
- * a session that is already done or skipped.
+ * a session that is already done or skipped. While a session is running nothing is planned at all.
  */
 export function planReminders(
 	settings: Settings,
 	log: LogEntry[],
 	now: number,
-	days = REMINDER_DAYS
+	days = REMINDER_DAYS,
+	sessionRunning = false
 ): PlannedReminder[] {
 	const reminders = settings.reminders;
 	if (!reminders?.enabled || (settings.setup ?? 'done') !== 'done') return [];
+	// the plan is made again when the session ends, so only the reminders that were due meanwhile are lost
+	if (sessionRunning) return [];
 	const today = toDateString(new Date(now));
 	const planned: PlannedReminder[] = [];
 	for (let k = 0; k < days; k++) {

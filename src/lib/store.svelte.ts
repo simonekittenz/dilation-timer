@@ -54,10 +54,19 @@ import {
 import { currentMilestone, type Milestone } from './milestones';
 import { introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
-import { isOpen, nextOpenSlot, phaseForDate, SLOT_LABELS, slotsForDate } from './schedule';
+import {
+	isOpen,
+	lateNightSession,
+	nextOpenSlot,
+	phaseForDate,
+	SLOT_LABELS,
+	slotsForDate,
+	type LateNight
+} from './schedule';
 import type {
 	ActiveSession,
 	LogEntry,
+	Phase,
 	ProgramId,
 	Reminders,
 	Settings,
@@ -216,7 +225,9 @@ class Store {
 		const plan = planReminders(
 			$state.snapshot(this.settings),
 			$state.snapshot(this.log),
-			Date.now()
+			Date.now(),
+			undefined,
+			this.active !== null
 		);
 		const quiet = this.settings.volume === 0;
 		// saving happens a lot (every timer change); only bother the phone when the plan is different
@@ -293,6 +304,12 @@ class Store {
 
 	get todaySlots() {
 		return slotsForDate(this.settings, this.today, toTimeString(new Date(this.now)), this.log);
+	}
+
+	/** Shortly after midnight: yesterday's evening session, if it is still open. */
+	get lateNight(): LateNight | null {
+		if ((this.settings.setup ?? 'done') !== 'done') return null;
+		return lateNightSession(this.settings, this.today, toTimeString(new Date(this.now)), this.log);
 	}
 
 	get nextSlot() {
@@ -464,15 +481,24 @@ class Store {
 	}
 
 	start(slot: SlotId | null) {
-		const phase = this.todayPhase;
+		this.begin(this.todayPhase, slot, this.today);
+	}
+
+	/** After midnight: a session that counts as yesterday's evening one, with that day's routine. */
+	startLateNight() {
+		const late = this.lateNight;
+		if (late) this.begin(late.phase, 'evening', late.date);
+	}
+
+	private begin(phase: Phase | undefined, slot: SlotId | null, date: string) {
 		if (this.active || !phase || phase.steps.length === 0) return;
 		unlock();
 		void this.askForAlertPermission();
-		void clearReminderNotifications({ pendingSnooze: true }); // no need to nudge about a session that has begun
+		void clearReminderNotifications({ pendingSnooze: true }); // no reminders while a session runs
 		this.active = startSession(
 			resolveSteps(this.settings.dilators, phase.steps),
 			slot,
-			this.today,
+			date,
 			Date.now()
 		);
 		void keepAwake(true);
@@ -491,6 +517,7 @@ class Store {
 		if (usable.length === 0) return false;
 		unlock();
 		void this.askForAlertPermission();
+		void clearReminderNotifications({ pendingSnooze: true });
 		this.active = {
 			...startSession(resolveSteps(this.settings.dilators, usable), slot, this.today, Date.now()),
 			custom: true

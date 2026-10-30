@@ -1,4 +1,4 @@
-import { dayNumber } from './dates';
+import { addDays, dayNumber } from './dates';
 import type { LogEntry, Phase, Settings, SlotId, SlotStatus, SlotView } from './types';
 
 export const SLOT_LABELS: Record<SlotId, string> = {
@@ -83,6 +83,33 @@ export function slotsForDate(
 		}
 		return { slot, label, status: statusFor(slot, nowTime) };
 	});
+}
+
+/** Until this time of night, yesterday's evening session can still be done as a late-night one. */
+export const LATE_NIGHT_UNTIL = '05:00';
+
+export interface LateNight {
+	/** Yesterday: the date the session is logged on. */
+	date: string;
+	phase: Phase;
+}
+
+/**
+ * Just after midnight, yesterday's evening session if it was never done or skipped. A session
+ * started then can count for it (logged on yesterday's date) instead of for the new day.
+ */
+export function lateNightSession(
+	settings: Settings,
+	today: string,
+	nowTime: string,
+	log: LogEntry[]
+): LateNight | null {
+	if (nowTime >= LATE_NIGHT_UNTIL) return null;
+	const date = addDays(today, -1);
+	const phase = phaseForDate(settings, date);
+	if (!phase || isRestPhase(phase)) return null;
+	const evening = slotsForDate(settings, date, '23:59', log).find((s) => s.slot === 'evening');
+	return evening && isOpen(evening) ? { date, phase } : null;
 }
 
 export function isOpen(s: SlotView): boolean {

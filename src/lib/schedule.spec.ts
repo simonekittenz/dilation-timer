@@ -5,6 +5,7 @@ import { resolveSteps } from './dilators';
 import {
 	daysUntilDilation,
 	isRestPhase,
+	lateNightSession,
 	nextOpenSlot,
 	phaseForDate,
 	phaseProgress,
@@ -105,6 +106,40 @@ describe('schedule', () => {
 	it('never marks the evening or a daily session overdue', () => {
 		const daily = slotsForDate(settings, '2026-01-09', '23:00', []);
 		expect(daily.map((x) => x.status)).toEqual(['due']);
+	});
+
+	describe('late night', () => {
+		const evening = (skipped = false): LogEntry => ({
+			id: 'e',
+			date: '2026-01-15',
+			slot: 'evening',
+			startedAt: 0,
+			finishedAt: 1,
+			skipped,
+			steps: []
+		});
+		const late = (time: string, log: LogEntry[] = [], today = '2026-01-16') =>
+			lateNightSession(settings, today, time, log);
+
+		it("offers yesterday's open evening session after midnight", () => {
+			expect(late('00:30')).toMatchObject({ date: '2026-01-15', phase: { id: 'wih-week-2' } });
+			expect(late('04:59')).not.toBeNull();
+		});
+
+		it('stops offering it from 5:00', () => {
+			expect(late('05:00')).toBeNull();
+			expect(late('13:00')).toBeNull();
+		});
+
+		it('is not offered once the evening was done or skipped', () => {
+			expect(late('01:00', [evening()])).toBeNull();
+			expect(late('01:00', [evening(true)])).toBeNull();
+		});
+
+		it('is not offered after a rest day, or when the schedule has no evening', () => {
+			expect(late('01:00', [], '2026-01-04')).toBeNull();
+			expect(late('01:00', [], '2026-01-10')).toBeNull(); // yesterday was a once-a-day phase
+		});
 	});
 
 	it('tracks done and skipped slots', () => {

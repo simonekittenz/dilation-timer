@@ -37,6 +37,8 @@
 	// the "pushed back" note belongs to this visit: leave Today and it is gone, so Undo can't clash
 	onDestroy(() => store.dismissPushBackNote());
 	const steps = $derived(phase ? resolveSteps(store.settings.dilators, phase.steps) : []);
+	const late = $derived(store.lateNight);
+	const lateSteps = $derived(late ? resolveSteps(store.settings.dilators, late.phase.steps) : []);
 </script>
 
 {#if store.active && !settingUp}
@@ -69,6 +71,26 @@
 	<p class="card reminder-note" role="status">{store.reminderNote}</p>
 {/if}
 
+{#if late && !store.active && !settingUp}
+	<section class="late card" data-testid="late-night">
+		<h2>Still up? 🌙</h2>
+		<p class="muted">
+			Yesterday's evening session is still open. A session now can count as that late-night one.
+		</p>
+		<ol class="steps">
+			{#each lateSteps as st, i (i)}
+				<li>
+					<Swatch color={st.color} size={20} />
+					<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
+				</li>
+			{/each}
+		</ol>
+		<button class="btn" onclick={() => store.startLateNight()}>
+			Start late-night session (yesterday evening)
+		</button>
+	</section>
+{/if}
+
 {#if settingUp}
 	<Setup />
 {:else if store.active}
@@ -99,7 +121,7 @@
 			{/each}
 		</ol>
 		<div class="actions">
-			<button class="btn" onclick={() => store.start(nextSlot?.slot ?? null)}>
+			<button class="btn" class:ghost={!!late} onclick={() => store.start(nextSlot?.slot ?? null)}>
 				{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
 			</button>
 			<a class="btn ghost" href="/custom">✨ Custom session</a>
@@ -146,6 +168,15 @@
 		gap: 0.5rem;
 		text-align: center;
 		padding: 1.5rem 1rem;
+	}
+	.late {
+		display: grid;
+		gap: 0.7rem;
+		justify-items: start;
+		margin-bottom: 1.2rem;
+	}
+	.late .btn {
+		width: 100%;
 	}
 	.routine {
 		display: grid;

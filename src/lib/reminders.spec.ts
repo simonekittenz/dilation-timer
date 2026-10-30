@@ -101,6 +101,12 @@ describe('planReminders', () => {
 		).toEqual([]);
 	});
 
+	it('plans nothing while a session is running', () => {
+		const now = atLocalTime(onDay(15), '07:55');
+		expect(planReminders(settings(), [], now, 1).length).toBeGreaterThan(0);
+		expect(planReminders(settings(), [], now, 1, true)).toEqual([]);
+	});
+
 	it('plans two weeks ahead and skips the rest days in between', () => {
 		const plan = planReminders(settings(), [], early(1)); // day 1 is a rest day; dilation starts on day 8
 		const days = new Set(plan.map((p) => p.date));
