@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { addDays, formatDateRange, formatScheduleDate } from '#lib/dates.ts';
+	import { addDays, formatDateRange } from '#lib/dates.ts';
 	import { PROGRAMS, wihPhases } from '#lib/defaults.ts';
 	import { wihDilators } from '#lib/dilators.ts';
 	import {
@@ -13,6 +13,7 @@
 	import { phaseProgress } from '#lib/schedule.ts';
 	import { useSettingsForm } from '#lib/settingsForm.svelte.ts';
 	import StepsEditor from '#lib/StepsEditor.svelte';
+	import Stepper from '#lib/Stepper.svelte';
 	import type { Phase, ProgramId } from '#lib/types.ts';
 
 	const form = useSettingsForm();
@@ -53,20 +54,6 @@
 	/** Changing where a phase ends moves every later phase with it. */
 	function setEnd(id: string, toDay: number) {
 		draft.phases = resizePhase($state.snapshot(draft.phases), id, toDay);
-	}
-
-	function commitEnd(id: string, input: HTMLInputElement) {
-		const raw = input.value.trim();
-		if (raw === '') {
-			// blank means "keeps going"; nothing after it to push
-			draft.phases = $state
-				.snapshot(draft.phases)
-				.map((p) => (p.id === id ? { ...p, toDay: null } : p));
-			return;
-		}
-		setEnd(id, Number(raw));
-		// show the real value if it was adjusted (e.g. a phase can't end before it starts)
-		input.value = String(draft.phases.find((p) => p.id === id)?.toDay ?? '');
 	}
 
 	/** What the last "push back" did, so it can be undone. Gone when this page is left. */
@@ -163,64 +150,34 @@
 					disabled={draft.phases.length === 1}>Remove</button
 				>
 			</div>
-			<div class="stack">
-				<span class="label small">
-					Day {phase.fromDay}{phase.toDay === null ? ' onwards' : ` – ${phase.toDay}`}
-					{#if phaseLength(phase) !== null}· {phaseLength(phase)} day{phaseLength(phase) === 1
-							? ''
-							: 's'}{/if}
-					{#if hasDate}
-						<span class="hint"
-							>· starts {formatScheduleDate(
-								addDays(draft.startDate, phase.fromDay - 1),
-								Number(draft.startDate.slice(0, 4))
-							)}</span
-						>
-					{/if}
-				</span>
-				{#if phase.toDay !== null}
-					<div class="resize">
-						<div class="row">
-							<button class="pill" onclick={() => setEnd(phase.id, phase.toDay! + 1)}>
-								+ 1 day
-							</button>
-							<button class="pill" onclick={() => setEnd(phase.id, phase.toDay! + 7)}>
-								+ 1 week
-							</button>
-						</div>
-						<label class="inline">
-							Ends day
-							<input
-								type="number"
-								min={phase.fromDay}
-								class="num"
-								placeholder="∞"
-								value={phase.toDay}
-								onchange={(e) => commitEnd(phase.id, e.currentTarget)}
-							/>
-						</label>
-						<div class="row">
-							<button
-								class="pill"
-								onclick={() => setEnd(phase.id, phase.toDay! - 1)}
-								disabled={phaseLength(phase) === 1}
-							>
-								− 1 day
-							</button>
-							<button
-								class="pill"
-								onclick={() => setEnd(phase.id, phase.toDay! - 7)}
-								disabled={(phaseLength(phase) ?? 0) <= 7}
-							>
-								− 1 week
-							</button>
-						</div>
+			{#if phase.toDay !== null}
+				<div class="stack">
+					<div class="row spread">
+						<span class="label small">Ends on day</span>
+						<Stepper
+							value={phase.toDay}
+							min={phase.fromDay}
+							unit=""
+							label="end day"
+							onchange={(n) => setEnd(phase.id, n)}
+						/>
 					</div>
-					<p class="hint">Adding or removing days moves every later phase too.</p>
-				{:else}
-					<p class="hint">This phase keeps going, so there's nothing after it to move.</p>
-				{/if}
-			</div>
+					<div class="row">
+						<button
+							class="pill"
+							onclick={() => setEnd(phase.id, phase.toDay! - 7)}
+							disabled={(phaseLength(phase) ?? 0) <= 7}
+						>
+							− 1 week
+						</button>
+						<button class="pill" onclick={() => setEnd(phase.id, phase.toDay! + 7)}>
+							+ 1 week
+						</button>
+					</div>
+				</div>
+			{:else}
+				<p class="hint">This phase keeps going, so there's nothing after it to move.</p>
+			{/if}
 			{#if progress !== 'past'}
 				<div class="stack">
 					<span class="label small">Not ready yet?</span>
@@ -257,6 +214,7 @@
 					bind:steps={phase.steps}
 					dilators={draft.dilators}
 					keepOne={phase.slots.length > 0}
+					minuteStep={5}
 				/>
 			</div>
 		</div>

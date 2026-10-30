@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { dilatorLabel } from './dilators';
+	import Stepper from './Stepper.svelte';
 	import Swatch from './Swatch.svelte';
 	import type { Dilator, Step } from './types';
 
@@ -31,15 +32,14 @@
 					<option value={d.id}>{dilatorLabel(d)}</option>
 				{/each}
 			</select>
-			<input
-				type="number"
-				min="1"
+			<Stepper
+				value={Number(step.minutes)}
+				min={1}
 				step={minuteStep}
-				class="num"
-				bind:value={step.minutes}
-				aria-label="Minutes"
+				unit="min"
+				label="minutes"
+				onchange={(n) => (step.minutes = n)}
 			/>
-			<span class="muted">min</span>
 			<button
 				class="btn ghost small"
 				onclick={() => steps.splice(si, 1)}
@@ -76,8 +76,5 @@
 	.grow {
 		flex: 1;
 		min-width: 0;
-	}
-	.num {
-		width: 4.5rem;
 	}
 </style>
