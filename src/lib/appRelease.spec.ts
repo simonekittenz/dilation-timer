@@ -159,6 +159,10 @@ describe('the Android download', () => {
 		expect(read('src/routes/+layout.svelte').toString()).toContain(
 			'@media (orientation: landscape) and (max-height: 540px)'
 		);
+		// Today puts the routine and the schedule side by side
+		const today = read('src/routes/+page.svelte').toString();
+		expect(today).toContain('class="today"');
+		expect(today).toContain('class="side"');
 		// both phones turn: the iPhone app lists the sideways orientations and Android never locks it
 		expect(read('ios/App/App/Info.plist').toString()).toContain(
 			'UIInterfaceOrientationLandscapeLeft'

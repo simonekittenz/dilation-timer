@@ -112,26 +112,34 @@
 {:else if intro}
 	<NewDilatorCard />
 {:else if phase}
-	<section class="routine card">
-		<h2>Today's routine 🎀</h2>
-		<ol class="steps">
-			{#each steps as st, i (i)}
-				<li>
-					<Swatch color={st.color} size={20} />
-					<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
-				</li>
-			{/each}
-		</ol>
-		<div class="actions">
-			<button class="btn" class:ghost={!!late} onclick={() => store.start(nextSlot?.slot ?? null)}>
-				{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
-			</button>
-			<a class="btn ghost" href="/custom">✨ Custom session</a>
+	<div class="today">
+		<section class="routine card">
+			<h2>Today's routine 🎀</h2>
+			<ol class="steps">
+				{#each steps as st, i (i)}
+					<li>
+						<Swatch color={st.color} size={20} />
+						<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
+					</li>
+				{/each}
+			</ol>
+			<div class="actions">
+				<button
+					class="btn"
+					class:ghost={!!late}
+					onclick={() => store.start(nextSlot?.slot ?? null)}
+				>
+					{nextSlot ? `Start ${nextSlot.label.toLowerCase()} session` : 'Start an extra session'}
+				</button>
+				<a class="btn ghost" href="/custom">✨ Custom session</a>
+			</div>
+		</section>
+		<div class="side">
+			<h2 class="sub">Schedule ♡</h2>
+			<Schedule />
+			<ReminderPrompt />
 		</div>
-	</section>
-	<h2 class="sub">Schedule ♡</h2>
-	<Schedule />
-	<ReminderPrompt />
+	</div>
 {:else}
 	<p class="card muted">
 		No routine covers today. Check the start date and phases in <a href="/settings">Settings</a>.
@@ -213,6 +221,42 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
+	}
+	/* a phone held sideways: today's routine on the left, the schedule beside it */
+	@media (orientation: landscape) and (max-height: 540px) {
+		header {
+			display: flex;
+			align-items: baseline;
+			flex-wrap: wrap;
+			gap: 0 0.8rem;
+			margin-bottom: 0.6rem;
+		}
+		h1 {
+			font-size: 1.4rem;
+		}
+		.routine {
+			gap: 0.5rem;
+			padding: 0.8rem 1rem;
+		}
+		.routine h2 {
+			font-size: 1.2rem;
+		}
+		.routine .btn {
+			padding: 0.55rem 1rem;
+		}
+		.actions {
+			gap: 0.4rem;
+			margin-top: 0.1rem;
+		}
+		.today {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 1rem;
+			align-items: start;
+		}
+		.routine {
+			margin-bottom: 0;
+		}
 	}
 	.sub {
 		font-size: 1rem;

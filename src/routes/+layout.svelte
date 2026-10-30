@@ -67,7 +67,7 @@
 </script>
 
 <div class="shell" class:alerting={store.escalated}>
-	<main class:focus>
+	<main class:focus class:wide={page.url.pathname === '/'}>
 		{#if !showWelcome}{@render children()}{/if}
 	</main>
 	{#if page.url.pathname !== '/welcome' && !focus}
@@ -98,12 +98,29 @@
 		padding-top: 0.6rem;
 		padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 	}
-	/* a phone held sideways: the session gets the whole width, clear of the notch */
+	/* a phone held sideways: the session gets the whole width, clear of the notch; Today gets two columns,
+	   and the other pages keep a comfortable reading width */
 	@media (orientation: landscape) and (max-height: 540px) {
+		main {
+			width: min(660px, 100%);
+			padding: 0.8rem max(1rem, env(safe-area-inset-right)) 4.6rem
+				max(1rem, env(safe-area-inset-left));
+		}
+		main.wide {
+			width: min(900px, 100%);
+		}
 		main.focus {
 			width: min(980px, 100%);
 			padding: 0.3rem max(1rem, env(safe-area-inset-right))
 				calc(0.5rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+		}
+		nav {
+			bottom: calc(0.4rem + env(safe-area-inset-bottom));
+			padding: 0.25rem;
+		}
+		nav a {
+			padding: 0.35rem 0.8rem;
+			font-size: 0.9rem;
 		}
 	}
 	nav {
