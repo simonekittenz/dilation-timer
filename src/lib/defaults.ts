@@ -138,6 +138,7 @@ export function defaultSettings(today = new Date()): Settings {
 		volume: 100,
 		mascot: 'bunny',
 		celebrations: true,
+		streak: true,
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

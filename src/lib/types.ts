@@ -50,9 +50,10 @@ export type MascotKind = 'bunny' | 'kitty';
  * First-run setup, shown on the Today screen. Saves from before this existed count as `done`.
  *  - ask-program: which ready-made schedule to start from
  *  - ask-date: we don't know the surgery date yet
- *  - confirm: a date was chosen; "does this look right?" is still to be answered
+ *  - ask-streak: a date was chosen; the day streak on/off question is still to be answered
+ *  - confirm: the streak question was answered; "does this look right?" is still to be answered
  */
-export type SetupStage = 'ask-program' | 'ask-date' | 'confirm' | 'done';
+export type SetupStage = 'ask-program' | 'ask-date' | 'ask-streak' | 'confirm' | 'done';
 
 /** The ready-made WIH schedules. Everything in a schedule can still be edited afterwards. */
 export type ProgramId = 'standard' | 'size5';
@@ -76,6 +77,8 @@ export interface Settings {
 	mascot: MascotKind;
 	/** Show a small, dismissible message on each monthly and yearly milestone. Missing means yes. */
 	celebrations?: boolean;
+	/** Show the day streak on Today. Missing means yes. */
+	streak?: boolean;
 	/** Daily reminders to start a session. Missing means never set up. */
 	reminders?: Reminders;
 	dilators: Dilator[];

@@ -1,6 +1,7 @@
 import { dayNumber } from './dates';
 import { isRestPhase, phaseForDay } from './schedule';
-import type { Dilator, Phase, Settings } from './types';
+import { alertStart } from './session';
+import type { ActiveSession, Dilator, LogEntry, Phase, Settings } from './types';
 
 /** How many days into a phase its "new dilator" message is still offered, if it wasn't answered. */
 export const INTRO_FOR_DAYS = 3;
@@ -68,4 +69,42 @@ export function timesPerDay(n: number): string {
 	if (n === 1) return 'once a day';
 	if (n === 2) return 'twice a day';
 	return `${n} times a day`;
+}
+
+/** Dilators count as done when a step ran for at least this much of its planned time. */
+const CONQUERED_SHARE = 0.5;
+
+/**
+ * The dilators this finished session got you through for the first time: ones the schedule brings in
+ * with this session's phase, that were not done in any earlier session. A step you skipped through
+ * (less than half its time) doesn't count. Custom sessions never do.
+ */
+export function conqueredDilators(
+	settings: Settings,
+	log: LogEntry[],
+	session: ActiveSession
+): Dilator[] {
+	if (session.custom || session.phase !== 'finished') return [];
+	const phase = phaseForDay(settings.phases, dayNumber(settings.startDate, session.date));
+	if (!phase) return [];
+	const endedAt = alertStart(session);
+	return newDilatorIds(settings.phases, phase).flatMap((id) => {
+		const dilator = settings.dilators.find((d) => d.id === id);
+		if (!dilator) return [];
+		const doneNow = session.records.some(
+			(r) =>
+				r.label === dilator.name &&
+				((r.endedAt ?? endedAt) - r.startedAt) / 60_000 >= r.plannedMinutes * CONQUERED_SHARE
+		);
+		const doneBefore = log.some(
+			(e) =>
+				!e.skipped &&
+				e.steps.some(
+					(st) =>
+						st.label === dilator.name &&
+						st.actualSeconds / 60 >= st.plannedMinutes * CONQUERED_SHARE
+				)
+		);
+		return doneNow && !doneBefore ? [dilator] : [];
+	});
 }

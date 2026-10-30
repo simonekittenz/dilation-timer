@@ -8,6 +8,7 @@
 	import ReminderPrompt from '#lib/ReminderPrompt.svelte';
 	import Schedule from '#lib/Schedule.svelte';
 	import Setup from '#lib/Setup.svelte';
+	import StreakCard from '#lib/StreakCard.svelte';
 	import { daysUntilDilation, isRestPhase } from '#lib/schedule.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import DilatorName from '#lib/DilatorName.svelte';
@@ -67,6 +68,7 @@
 <UpdateBanner />
 {#if !settingUp && !store.active}<MilestoneCard />{/if}
 {#if !settingUp && !store.active}<PushBackNote />{/if}
+{#if !settingUp && !store.active}<StreakCard />{/if}
 {#if store.reminderNote}
 	<p class="card reminder-note" role="status">{store.reminderNote}</p>
 {/if}

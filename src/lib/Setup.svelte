@@ -74,6 +74,22 @@
 			Continue →
 		</button>
 	</section>
+{:else if stage === 'ask-streak'}
+	<section class="card setup" data-testid="ask-streak">
+		<Mascot size={96} />
+		<h2>Would you like a streak? 🔥</h2>
+		<p class="muted">
+			It counts how many days in a row you did all of your sessions, and shows it on Today. Rest
+			days don't break it. Some people love the little boost, others find it stressful, so it's up
+			to you. You can change this any time in Settings.
+		</p>
+		<div class="buttons">
+			<button class="btn" onclick={() => store.chooseStreak(true)}>Yes, show my streak</button>
+			<button class="btn ghost" onclick={() => store.chooseStreak(false)}>
+				No thanks, keep it calm
+			</button>
+		</div>
+	</section>
 {:else if stage === 'confirm'}
 	<section class="card setup" data-testid="confirm-week">
 		<Mascot size={96} />

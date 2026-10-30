@@ -52,7 +52,7 @@ import {
 	tick
 } from './session';
 import { currentMilestone, type Milestone } from './milestones';
-import { introKey, pendingIntro, type DilatorIntro } from './newDilators';
+import { conqueredDilators, introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
 import {
 	isOpen,
@@ -65,6 +65,7 @@ import {
 } from './schedule';
 import type {
 	ActiveSession,
+	Dilator,
 	LogEntry,
 	Phase,
 	ProgramId,
@@ -461,12 +462,33 @@ class Store {
 			this.save();
 		}
 		const cur = this.active!;
-		if (cur.phase === 'finished' && this.now - alertStart(cur) >= CELEBRATE_MS) {
+		// a newly conquered dilator keeps the end screen up until it is tapped away
+		if (
+			cur.phase === 'finished' &&
+			this.now - alertStart(cur) >= CELEBRATE_MS &&
+			this.conquered.length === 0
+		) {
 			this.complete();
 			return;
 		}
 		if (cur.phase !== 'switch' || !this.escalated) stopAlarm();
 		else startAlarm(`Switch to ${cur.steps[cur.stepIndex + 1].label}`);
+	}
+
+	/** On the end screen: the dilators this session got you through for the first time. */
+	get conquered(): Dilator[] {
+		const s = this.active;
+		if (!s || this.settings.celebrations === false) return [];
+		return conqueredDilators(
+			$state.snapshot(this.settings),
+			$state.snapshot(this.log),
+			$state.snapshot(s)
+		);
+	}
+
+	/** The end screen's "Yay" button, for when it stayed up to celebrate. */
+	acknowledgeFinish() {
+		if (this.active?.phase === 'finished') this.complete();
 	}
 
 	/** The last dilator is done: log the session (ending when the timer ended) and clear it. */
@@ -633,7 +655,17 @@ class Store {
 	/** First run: the surgery date the user just told us. Next comes "does this look right?". */
 	chooseSurgeryDate(date: string) {
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
-		this.updateSettings({ ...$state.snapshot(this.settings), startDate: date, setup: 'confirm' });
+		this.updateSettings({
+			...$state.snapshot(this.settings),
+			startDate: date,
+			setup: 'ask-streak'
+		});
+	}
+
+	/** First run: whether they want the day streak. Next comes "does this look right?". */
+	chooseStreak(on: boolean) {
+		if (this.settings.setup !== 'ask-streak') return;
+		this.updateSettings({ ...$state.snapshot(this.settings), streak: on, setup: 'confirm' });
 	}
 
 	/** First run: they've answered the question (yes, or "no, I'll go and fix it in Settings"). */

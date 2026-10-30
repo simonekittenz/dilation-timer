@@ -43,6 +43,8 @@
 	// each "+ 1 min" press bumps this, which restarts the light-up on the switch countdown
 	let lit = $state(0);
 
+	const conquered = $derived(s.phase === 'finished' ? store.conquered : []);
+
 	const R = 88;
 	const C = 2 * Math.PI * R;
 </script>
@@ -236,8 +238,27 @@
 			<Mascot mood="done" size={120} />
 			<p class="title">All done, you did it! 🎉</p>
 			<p class="big">Take the last one out 🌸</p>
-			{#if bubble}<p class="bubble">{bubble}</p>{/if}
+			{#each conquered as d (d.id)}
+				<div class="conquered" data-testid="conquered">
+					<Swatch color={d.color} size={44} />
+					<div>
+						<p class="won">
+							You conquered <DilatorName label={d.name} nickname={d.nickname} />! 🏆
+						</p>
+						<p class="muted hint">
+							{d.diameterMm ? `${d.diameterMm} mm, ` : ''}the first time you've done it. I'm so
+							proud of you ♡
+						</p>
+					</div>
+				</div>
+			{/each}
+			{#if bubble && conquered.length === 0}<p class="bubble">{bubble}</p>{/if}
 		</div>
+		{#if conquered.length > 0}
+			<div class="pad">
+				<button class="btn huge" onclick={() => store.acknowledgeFinish()}>Yay! ♡</button>
+			</div>
+		{/if}
 	{/if}
 </section>
 
@@ -545,6 +566,40 @@
 	}
 	.hint {
 		font-size: 0.9rem;
+	}
+	.conquered {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		text-align: left;
+		padding: 0.7rem 1rem;
+		border-radius: var(--radius);
+		border: 3px solid var(--accent);
+		background: color-mix(in srgb, var(--accent-soft) 60%, var(--surface));
+		animation: pop 0.6s ease-out;
+	}
+	.won {
+		font-size: 1.15rem;
+		font-weight: 900;
+		color: var(--accent-strong);
+	}
+	@keyframes pop {
+		0% {
+			transform: scale(0.8);
+			opacity: 0;
+		}
+		70% {
+			transform: scale(1.05);
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.conquered {
+			animation: none;
+		}
 	}
 	.countdown {
 		position: relative;

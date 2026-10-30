@@ -73,7 +73,10 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 	const switchWindowMinutes = saved.switchWindowMinutes ?? legacyWindow ?? base.switchWindowMinutes;
 	// anything saved before first-run setup existed is an established user: never ask them
 	const setup =
-		saved.setup === 'ask-program' || saved.setup === 'ask-date' || saved.setup === 'confirm'
+		saved.setup === 'ask-program' ||
+		saved.setup === 'ask-date' ||
+		saved.setup === 'ask-streak' ||
+		saved.setup === 'confirm'
 			? saved.setup
 			: 'done';
 	return {
@@ -84,6 +87,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		messages,
 		mascot,
 		celebrations,
+		streak: saved.streak !== false,
 		reminders: normalizeReminders(saved.reminders),
 		setup,
 		phases

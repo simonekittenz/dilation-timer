@@ -22,6 +22,9 @@ describe('a brand-new install does not assume a surgery date', () => {
 	it('keeps an unfinished setup unfinished across saves and reloads', () => {
 		expect(migrateSettings({ startDate: '2026-01-01', setup: 'confirm' }).setup).toBe('confirm');
 		expect(migrateSettings({ startDate: '2026-01-01', setup: 'ask-date' }).setup).toBe('ask-date');
+		expect(migrateSettings({ startDate: '2026-01-01', setup: 'ask-streak' }).setup).toBe(
+			'ask-streak'
+		);
 		expect(migrateSettings({ startDate: '2026-01-01', setup: 'ask-program' }).setup).toBe(
 			'ask-program'
 		);
@@ -29,7 +32,7 @@ describe('a brand-new install does not assume a surgery date', () => {
 	});
 
 	it('survives the Settings form (autosave must not lose or finish it)', () => {
-		for (const stage of ['ask-program', 'ask-date', 'confirm', 'done'] as const) {
+		for (const stage of ['ask-program', 'ask-date', 'ask-streak', 'confirm', 'done'] as const) {
 			const s = { ...defaultSettings(), setup: stage };
 			expect(buildSettings(structuredClone(s), messagesToText(s.messages))!.setup).toBe(stage);
 		}

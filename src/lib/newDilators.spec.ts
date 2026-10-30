@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from './dates';
 import { WIH_PHASES, WIH_SIZE5_PHASES, defaultSettings } from './defaults';
-import { INTRO_FOR_DAYS, introKey, newDilatorIds, pendingIntro, timesPerDay } from './newDilators';
-import { wihDilators } from './dilators';
-import type { Settings } from './types';
+import {
+	INTRO_FOR_DAYS,
+	conqueredDilators,
+	introKey,
+	newDilatorIds,
+	pendingIntro,
+	timesPerDay
+} from './newDilators';
+import { resolveSteps, wihDilators } from './dilators';
+import { startSession } from './session';
+import type { ActiveSession, LogEntry, Settings } from './types';
 
 const START = '2026-01-01';
 
@@ -172,5 +180,63 @@ describe('timesPerDay', () => {
 		expect(timesPerDay(1)).toBe('once a day');
 		expect(timesPerDay(2)).toBe('twice a day');
 		expect(timesPerDay(3)).toBe('3 times a day');
+	});
+});
+
+describe('conqueredDilators', () => {
+	const MIN = 60_000;
+	const week3 = WIH_PHASES.find((p) => p.id === 'wih-week-3')!;
+
+	/** A finished session of week 3 in which every dilator ran for `share` of its planned time. */
+	function finished(share = 1, date = onDay(22), custom = false): ActiveSession {
+		const steps = resolveSteps(wihDilators(), week3.steps);
+		let t = 1_000_000;
+		const records = steps.map((st) => {
+			const startedAt = t;
+			t += st.minutes * MIN * share;
+			return {
+				label: st.label,
+				plannedMinutes: st.minutes,
+				startedAt,
+				endedAt: t
+			};
+		});
+		return {
+			...startSession(steps, 'morning', date, 1_000_000),
+			...(custom ? { custom: true } : {}),
+			stepIndex: steps.length - 1,
+			phase: 'finished',
+			alertSince: t,
+			records
+		};
+	}
+
+	const logEntry = (label: string, planned: number, actualMin: number): LogEntry => ({
+		id: label + actualMin,
+		date: onDay(21),
+		slot: 'morning',
+		startedAt: 0,
+		finishedAt: 1,
+		steps: [{ label, plannedMinutes: planned, actualSeconds: actualMin * 60 }]
+	});
+
+	it('celebrates the dilator the phase brings in, the first time it is done', () => {
+		expect(conqueredDilators(settings(), [], finished()).map((d) => d.id)).toEqual(['d2']);
+	});
+
+	it('not again once it has been done before', () => {
+		expect(conqueredDilators(settings(), [logEntry('Dilator 2', 50, 50)], finished())).toEqual([]);
+	});
+
+	it('a step that was cut short before does not count as done, nor does one cut short now', () => {
+		const before = [logEntry('Dilator 2', 50, 5)];
+		expect(conqueredDilators(settings(), before, finished()).map((d) => d.id)).toEqual(['d2']);
+		expect(conqueredDilators(settings(), [], finished(0.2))).toEqual([]);
+	});
+
+	it('is nothing for custom sessions, for an unfinished session, or on a day the phase changes nothing', () => {
+		expect(conqueredDilators(settings(), [], finished(1, onDay(22), true))).toEqual([]);
+		expect(conqueredDilators(settings(), [], { ...finished(), phase: 'running' })).toEqual([]);
+		expect(conqueredDilators(settings(), [], finished(1, onDay(29)))).toEqual([]); // week 4
 	});
 });

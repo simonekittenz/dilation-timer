@@ -269,7 +269,7 @@
 		Celebrate milestones
 		<small class="muted">
 			A small, dismissible message on Today for each month of your first year and every anniversary
-			after
+			after, and a cheer on the end screen when you conquer a new dilator
 		</small>
 	</span>
 	<input
@@ -277,6 +277,22 @@
 		checked={draft.celebrations !== false}
 		onchange={(e) => (draft.celebrations = e.currentTarget.checked)}
 		aria-label="Celebrate milestones"
+	/>
+</label>
+
+<label class="card field celebrate">
+	<span>
+		Show my streak
+		<small class="muted">
+			On Today, how many days in a row you did all of your sessions. Rest days don't break it, a
+			skipped session does.
+		</small>
+	</span>
+	<input
+		type="checkbox"
+		checked={draft.streak !== false}
+		onchange={(e) => (draft.streak = e.currentTarget.checked)}
+		aria-label="Show my streak"
 	/>
 </label>
 
