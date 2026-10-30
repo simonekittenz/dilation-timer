@@ -218,7 +218,7 @@
 				I switched ✓
 			</button>
 			{#if escalated}
-				<button class="btn ghost" onclick={() => store.chill()}>Chill out, I'm on it!</button>
+				<button class="btn ghost more" onclick={() => store.chill()}>Chill out, I'm on it!</button>
 			{:else}
 				<button
 					class="btn ghost more"
