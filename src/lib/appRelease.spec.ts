@@ -186,7 +186,9 @@ describe('the Android download', () => {
 		// a phase can be pushed back from the schedule, like from the new-dilator message
 		const schedule = read('src/routes/settings/schedule/+page.svelte').toString();
 		expect(schedule).toContain('pushBackPhase');
-		expect(schedule).toContain('Push back 1 week');
+		expect(schedule).toContain('pushBack(phase, 7)');
+		// and the total time of a session is shown
+		expect(schedule).toContain('Total per session');
 	});
 
 	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
