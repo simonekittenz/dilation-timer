@@ -43,10 +43,19 @@
 
 	// each "+ 1 min" press bumps this, which restarts the light-up on the switch countdown
 	let lit = $state(0);
+	// the same light-up for the clock: each press of -1, +1, Continue, or "I switched" restarts it
+	let clockLit = $state(0);
 
 	const conquered = $derived(s.phase === 'finished' ? store.conquered : []);
 
 	let overviewOpen = $state(false);
+	// when it is time to switch, or the session is done, the overview gets out of the way
+	let lastPhase: string | null = null;
+	$effect(() => {
+		const phase = s.phase;
+		if (lastPhase !== null && phase !== lastPhase && phase !== 'running') overviewOpen = false;
+		lastPhase = phase;
+	});
 
 	const R = 88;
 	const C = 2 * Math.PI * R;
@@ -114,7 +123,9 @@
 				</svg>
 				<div class="inside">
 					<div class="pet"><Mascot size={64} /></div>
-					<p class="clock">{formatClock(left)}</p>
+					{#key clockLit}
+						<p class="clock" class:lit={clockLit > 0}>{formatClock(left)}</p>
+					{/key}
 					<p class="label">
 						{#if paused}Paused{:else}
 							<DilatorName label={current.label} nickname={current.nickname} />
@@ -129,7 +140,10 @@
 			<div class="row">
 				<button
 					class="round"
-					onclick={() => store.addMinutes(-1)}
+					onclick={() => {
+						store.addMinutes(-1);
+						clockLit++;
+					}}
 					disabled={!canShorten}
 					aria-label="Remove one minute"
 				>
@@ -139,7 +153,13 @@
 					<span class="cap">− 1 min</span>
 				</button>
 				{#if paused}
-					<button class="round main" onclick={() => store.resume()}>
+					<button
+						class="round main"
+						onclick={() => {
+							store.resume();
+							clockLit++;
+						}}
+					>
 						<span class="disc">
 							<svg viewBox="0 0 24 24" aria-hidden="true"
 								><path
@@ -167,7 +187,14 @@
 						<span class="cap">Pause</span>
 					</button>
 				{/if}
-				<button class="round" onclick={() => store.addMinutes(1)} aria-label="Add one minute">
+				<button
+					class="round"
+					onclick={() => {
+						store.addMinutes(1);
+						clockLit++;
+					}}
+					aria-label="Add one minute"
+				>
 					<span class="disc">
 						<svg viewBox="0 0 24 24" aria-hidden="true"
 							><path class="line" d="M6 12h12M12 6v12" /></svg
@@ -225,7 +252,10 @@
 				class="btn huge"
 				class:blink={escalated}
 				class:breathe={!escalated}
-				onclick={() => store.confirm()}
+				onclick={() => {
+					store.confirm();
+					clockLit++; // the next dilator's clock lights up as it starts
+				}}
 			>
 				I switched ✓
 			</button>
@@ -442,11 +472,38 @@
 		gap: 0.1rem;
 	}
 	.clock {
+		position: relative;
 		font-size: clamp(2.8rem, 15vw, 4.2rem);
 		font-weight: 900;
 		font-variant-numeric: tabular-nums;
 		line-height: 1;
 		color: var(--accent-strong);
+	}
+	.clock.lit {
+		animation: clocklit 0.9s ease-out;
+	}
+	.clock.lit::after {
+		content: '✨';
+		position: absolute;
+		top: -0.5rem;
+		right: -1.2rem;
+		font-size: 1.6rem;
+		animation: sparkle 0.9s ease-out forwards;
+	}
+	@keyframes clocklit {
+		0% {
+			transform: scale(1);
+		}
+		25% {
+			transform: scale(1.12);
+			color: var(--accent);
+			text-shadow:
+				0 0 14px color-mix(in srgb, var(--accent) 80%, transparent),
+				0 0 34px color-mix(in srgb, var(--accent) 60%, transparent);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 	.label {
 		color: var(--muted);
@@ -691,6 +748,8 @@
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
+		.clock.lit,
+		.clock.lit::after,
 		.countdown.lit,
 		.countdown.lit::after {
 			animation: none;

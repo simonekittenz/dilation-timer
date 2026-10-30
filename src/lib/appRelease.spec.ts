@@ -196,6 +196,10 @@ describe('the Android download', () => {
 		expect(timer).toContain('class="top"');
 		expect(timer).toContain('overviewOpen = true');
 		expect(timer).toContain('<SessionOverview');
+		// it gets out of the way when it is time to switch or the session is done
+		expect(timer).toContain("phase !== 'running') overviewOpen = false");
+		// the clock lights up with the +1 min sparkle on -1, +1, Continue and "I switched"
+		expect(timer.match(/clockLit\+\+/g)?.length).toBeGreaterThanOrEqual(4);
 		const sheet = read('src/lib/SessionOverview.svelte').toString();
 		expect(sheet).toContain('role="dialog"');
 		expect(sheet).toContain("e.key === 'Escape'");
