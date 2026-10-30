@@ -5,10 +5,10 @@
 //                            to ios/build/export/ (no upload).
 //   npm run ios:testflight   the same, then uploaded to App Store Connect, where TestFlight picks it up.
 //   npm run ios:archive -- --unsigned
-//                            a dry run of the archive step without signing (works without an account).
+//                            only makes the archive, without signing (works without an account).
 //
 // Signing needs your Apple Developer Team ID in APPLE_TEAM_ID (developer.apple.com → Membership details).
-// The easiest way to sign is to be signed in to Xcode (Settings → Accounts). To upload without Xcode being
+// Signing happens when the archive is exported. The easiest way to sign is to be signed in to Xcode (Settings → Accounts). To upload without Xcode being
 // signed in (or from a script), make an App Store Connect API key and set ASC_KEY_PATH (the .p8 file),
 // ASC_KEY_ID and ASC_ISSUER_ID. Put them in the environment, or in ~/.dilation-timer-signing/ios.env.
 // See docs/app-store.md.
@@ -99,9 +99,10 @@ if (mode === '--check') {
 }
 
 // ---- archive (and export or upload) ----
+// The archive is built without signing and signed when it is exported, with an Apple Distribution
+// certificate and an App Store profile that Xcode makes by itself. Unlike signing the archive, that needs no
+// registered iPhone, which a brand-new developer account does not have yet.
 const team = process.env.APPLE_TEAM_ID;
-if (!unsigned && !team)
-	fail('set APPLE_TEAM_ID to your Apple Developer Team ID (see docs/app-store.md).');
 const keyArgs =
 	process.env.ASC_KEY_PATH && process.env.ASC_KEY_ID && process.env.ASC_ISSUER_ID
 		? [
@@ -125,10 +126,8 @@ run('xcodebuild', [
 	'-derivedDataPath',
 	join(buildDir, 'derived'),
 	'-quiet',
+	'CODE_SIGNING_ALLOWED=NO',
 	...versions,
-	...(unsigned
-		? ['CODE_SIGNING_ALLOWED=NO']
-		: [`DEVELOPMENT_TEAM=${team}`, '-allowProvisioningUpdates', ...keyArgs]),
 	'archive'
 ]);
 if (!existsSync(archive)) fail('the archive was not made.');
@@ -137,6 +136,7 @@ if (unsigned) {
 	console.log('Dry run only: it is not signed, so it cannot be uploaded or installed.');
 	process.exit(0);
 }
+if (!team) fail('set APPLE_TEAM_ID to your Apple Developer Team ID (see docs/app-store.md).');
 
 const upload = mode === '--upload';
 const exportOptions = join(buildDir, 'ExportOptions.plist');

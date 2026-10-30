@@ -33,14 +33,18 @@ not exist: the first upload uses the current version number (see `appRelease.jso
    The _support URL_ and the _contact email_ you give are public too.
 3. Note your **Team ID**: developer.apple.com → Account → Membership details (ten letters and digits).
 
-## 2. Register the app
+## 2. Create the app in App Store Connect
 
-1. developer.apple.com → Certificates, Identifiers & Profiles → **Identifiers → +** → App IDs → App →
-   description `Dilation timer`, bundle ID **Explicit**: `com.simonekittenz.dilationtimer`. The
-   capabilities can stay as they are (local notifications need none).
-2. [App Store Connect](https://appstoreconnect.apple.com) → **Apps → + → New App**: platform iOS, name
-   `Dilation timer`, primary language English (U.K.), bundle ID from the list, SKU `dilation-timer`,
-   full access.
+You do not need to register the bundle ID by hand: the first signed build does it (Xcode registers it as
+`XC com simonekittenz dilationtimer`). You also do not need an iPhone plugged in: signing happens when the
+build is exported, with a distribution certificate and an App Store profile that Xcode creates, and that
+never needs a registered device.
+
+[App Store Connect](https://appstoreconnect.apple.com) → **Apps → + → New App**: platform iOS, name
+`Dilation timer`, primary language English (U.K.), bundle ID `com.simonekittenz.dilationtimer` from the list
+(run `npm run ios:archive` once first if it is not there yet), SKU `dilation-timer`, full access. If it
+asks you to accept an agreement first, accept it (a banner at the top of App Store Connect). Free apps need
+no tax or bank details.
 
 ## 3. Let the Mac sign and upload
 
@@ -74,7 +78,8 @@ npm run ios:testflight   # builds, signs, uploads
 ```
 
 The first signed run lets Xcode create the distribution certificate and profile by itself
-(`-allowProvisioningUpdates`). After a few minutes of processing at Apple (you get an email) the build
+(`-allowProvisioningUpdates`). Without the app from step 2 in App Store Connect, the upload stops with
+"App record ... not found"; the build itself is fine. After a few minutes of processing at Apple (you get an email) the build
 shows up under **App Store Connect → your app → TestFlight**. If it says "Missing Compliance", the
 encryption question was not picked up; answer **No** (the app uses no encryption of its own).
 
