@@ -83,6 +83,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		...base,
 		...rest,
 		switchWindowMinutes,
+		newDilatorExtraMinutes: Math.max(0, Number(saved.newDilatorExtraMinutes ?? 2) || 0),
 		dilators,
 		messages,
 		mascot,

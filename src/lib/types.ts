@@ -70,6 +70,8 @@ export interface Settings {
 	startDate: string;
 	/** How long you get to switch dilators after a timer ends before the alarm escalates. */
 	switchWindowMinutes: number;
+	/** Extra minutes added to the swap window the first time you use a dilator. Missing means 2. */
+	newDilatorExtraMinutes?: number;
 	/** Where the first-run setup is up to. Missing means done. */
 	setup?: SetupStage;
 	/** Alarm volume, 0 (silent) to 100. */

@@ -52,7 +52,7 @@ import {
 	tick
 } from './session';
 import { currentMilestone, type Milestone } from './milestones';
-import { learnSwitches, usualSwitchMs } from './switchHistory';
+import { isFirstTime, learnSwitches, switchWindowFor, usualSwitchMs } from './switchHistory';
 import { conqueredDilators, introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
 import {
@@ -298,10 +298,24 @@ class Store {
 	 * How long to wait before nudging about the swap to dilator `step` of this session: how long you
 	 * usually take to switch to that dilator, plus the gentle window from Settings.
 	 */
-	switchWindowFor = (step: number): number => {
-		const label = this.active?.steps[step]?.label;
-		return this.configuredWindowMs + (label ? usualSwitchMs(this.switchHistory, label) : 0);
-	};
+	switchWindowFor = (step: number): number =>
+		switchWindowFor(
+			this.switchHistory,
+			this.active?.steps[step]?.label,
+			this.configuredWindowMs,
+			this.firstTimeExtraMs
+		);
+
+	/** Extra time for the first swap to a dilator you have never used. */
+	private get firstTimeExtraMs() {
+		return Math.max(0, this.settings.newDilatorExtraMinutes ?? 2) * 60_000;
+	}
+
+	/** The swap in progress is to a dilator you have never used before. */
+	get swappingToNewDilator(): boolean {
+		const label = this.active?.steps[(this.active?.stepIndex ?? 0) + 1]?.label;
+		return !!label && isFirstTime(this.switchHistory, label) && this.firstTimeExtraMs > 0;
+	}
 
 	/** The same for the swap that is happening (or about to happen) right now. */
 	get switchWindowMs() {

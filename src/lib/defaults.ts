@@ -133,6 +133,7 @@ export function defaultSettings(today = new Date()): Settings {
 	return {
 		startDate: toDateString(today),
 		switchWindowMinutes: 1,
+		newDilatorExtraMinutes: 2,
 		// a brand-new install knows neither the program nor the surgery date: Today asks, instead of assuming
 		setup: 'ask-program',
 		volume: 100,

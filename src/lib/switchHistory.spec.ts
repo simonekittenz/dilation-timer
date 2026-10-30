@@ -4,7 +4,9 @@ import {
 	MAX_SAMPLES,
 	MAX_SAMPLE_MS,
 	describeSwitch,
+	isFirstTime,
 	learnSwitches,
+	switchWindowFor,
 	usualSwitchMs
 } from './switchHistory';
 import type { LogEntry, SessionStep } from './types';
@@ -106,5 +108,48 @@ describe('describeSwitch', () => {
 		expect(describeSwitch(45_000)).toBe('45 s');
 		expect(describeSwitch(120_000)).toBe('2 min');
 		expect(describeSwitch(80_000)).toBe('1 min 20 s');
+	});
+});
+
+describe('the first time with a dilator', () => {
+	const MINUTE = 60_000;
+	const done = (labels: string[], skipped = false): LogEntry => ({
+		id: labels.join(),
+		date: '2026-01-01',
+		slot: 'morning',
+		startedAt: 0,
+		finishedAt: 1,
+		skipped,
+		steps: labels.map((label) => ({ label, plannedMinutes: 10, actualSeconds: 600 }))
+	});
+
+	it('is a dilator that no finished session has had yet', () => {
+		const h = learnSwitches([done(['A', 'B']), done(['C'], true)]);
+		expect(isFirstTime(h, 'B')).toBe(false);
+		expect(isFirstTime(h, 'C')).toBe(true); // that session was skipped
+		expect(isFirstTime(h, 'D')).toBe(true);
+	});
+
+	it('does not need recorded swap times: history from before they were kept counts too', () => {
+		expect(isFirstTime(learnSwitches([done(['A', 'B'])]), 'B')).toBe(false);
+	});
+
+	it('adds the extra time on top of the window, not instead of it', () => {
+		const h = learnSwitches([done(['A', 'B'])]);
+		// B was done before: only the window; D is new: the window and 2 more minutes
+		expect(switchWindowFor(h, 'B', MINUTE, 2 * MINUTE)).toBe(MINUTE);
+		expect(switchWindowFor(h, 'D', MINUTE, 2 * MINUTE)).toBe(3 * MINUTE);
+	});
+
+	it('also adds your usual swap time when there is one for other dilators', () => {
+		const h = learnSwitches([entry({ B: 60, C: 120 })]);
+		// a new dilator uses the average of your swaps (90 s) + window + the first-time extra
+		expect(switchWindowFor(h, 'D', MINUTE, 2 * MINUTE)).toBe(90_000 + 3 * MINUTE);
+	});
+
+	it('is the window alone with no next dilator, or with the extra turned off', () => {
+		const h = learnSwitches([]);
+		expect(switchWindowFor(h, undefined, MINUTE, 2 * MINUTE)).toBe(MINUTE);
+		expect(switchWindowFor(h, 'D', MINUTE, 0)).toBe(MINUTE);
 	});
 });

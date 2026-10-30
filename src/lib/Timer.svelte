@@ -249,7 +249,10 @@
 				<p class="muted hint">Overtime</p>
 				<p class="countdown over">{formatClock(overtime)}</p>
 			{:else}
-				<p class="muted hint">No rush to swap, I'll nudge you louder in</p>
+				<p class="muted hint">
+					{#if store.swappingToNewDilator}A first time with this one, so take extra time ♡ I'll
+						nudge you louder in{:else}No rush to swap, I'll nudge you louder in{/if}
+				</p>
 				{#key lit}
 					<p class="countdown" class:lit={lit > 0}>{formatClock(store.switchWindowLeft)}</p>
 				{/key}

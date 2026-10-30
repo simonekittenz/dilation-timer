@@ -47,6 +47,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 	return {
 		startDate: draft.startDate,
 		switchWindowMinutes: Math.max(0, Number(draft.switchWindowMinutes) || 0),
+		newDilatorExtraMinutes: Math.max(0, Number(draft.newDilatorExtraMinutes ?? 2) || 0),
 		volume: clampVolume(draft.volume),
 		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
 		celebrations: draft.celebrations !== false,

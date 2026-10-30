@@ -40,6 +40,16 @@
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.switchWindowMinutes} />
 	</label>
+	<label class="item">
+		<span class="text">
+			<span class="label">Extra time for a new dilator</span>
+			<span class="hint">
+				The first time you use a dilator I wait this many extra minutes before nudging, because it
+				usually takes a little longer
+			</span>
+		</span>
+		<input type="number" min="0" step="0.5" class="num" bind:value={draft.newDilatorExtraMinutes} />
+	</label>
 	<div class="block" data-testid="usual-switches">
 		<span class="label">Your usual swap times</span>
 		{#if store.usualSwitches.length}

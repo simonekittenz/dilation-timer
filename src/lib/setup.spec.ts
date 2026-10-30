@@ -88,3 +88,24 @@ describe('summarizeWeek: "where are you today?"', () => {
 		expect(summarizeWeek(none, '2026-10-12').state).toBe('beyond');
 	});
 });
+
+describe('the extra time for a new dilator', () => {
+	it('is 2 minutes unless you changed it, in new installs and in older saves', () => {
+		expect(defaultSettings().newDilatorExtraMinutes).toBe(2);
+		expect(migrateSettings({ startDate: '2026-01-01' }).newDilatorExtraMinutes).toBe(2);
+		expect(
+			migrateSettings({ startDate: '2026-01-01', newDilatorExtraMinutes: 0 }).newDilatorExtraMinutes
+		).toBe(0);
+	});
+
+	it('survives the Settings form, and never goes below nothing', () => {
+		const s = { ...defaultSettings(), newDilatorExtraMinutes: 3.5 };
+		expect(
+			buildSettings(structuredClone(s), messagesToText(s.messages))!.newDilatorExtraMinutes
+		).toBe(3.5);
+		const negative = { ...s, newDilatorExtraMinutes: -4 };
+		expect(
+			buildSettings(structuredClone(negative), messagesToText(s.messages))!.newDilatorExtraMinutes
+		).toBe(0);
+	});
+});
