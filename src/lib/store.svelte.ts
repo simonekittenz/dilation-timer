@@ -52,6 +52,7 @@ import {
 	tick
 } from './session';
 import { currentMilestone, type Milestone } from './milestones';
+import { learnSwitches, usualSwitchMs } from './switchHistory';
 import { conqueredDilators, introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
 import {
@@ -285,8 +286,34 @@ class Store {
 		}
 	}
 
-	get switchWindowMs() {
+	/** The swaps in your history, for the average that is added to the Settings window. */
+	private switchHistory = $derived(learnSwitches(this.log));
+
+	/** The Settings window alone. */
+	private get configuredWindowMs() {
 		return Math.max(0, this.settings.switchWindowMinutes) * 60_000;
+	}
+
+	/**
+	 * How long to wait before nudging about the swap to dilator `step` of this session: how long you
+	 * usually take to switch to that dilator, plus the gentle window from Settings.
+	 */
+	switchWindowFor = (step: number): number => {
+		const label = this.active?.steps[step]?.label;
+		return this.configuredWindowMs + (label ? usualSwitchMs(this.switchHistory, label) : 0);
+	};
+
+	/** The same for the swap that is happening (or about to happen) right now. */
+	get switchWindowMs() {
+		return this.active ? this.switchWindowFor(this.active.stepIndex + 1) : this.configuredWindowMs;
+	}
+
+	/** Your usual swap time per dilator, for Settings. */
+	get usualSwitches(): { label: string; ms: number }[] {
+		return [...this.switchHistory.byLabel.keys()].map((label) => ({
+			label,
+			ms: usualSwitchMs(this.switchHistory, label)
+		}));
 	}
 
 	/** True once the switch window after a finished timer has run out. */

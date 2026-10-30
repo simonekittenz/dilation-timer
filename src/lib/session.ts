@@ -3,6 +3,14 @@ import type { ActiveSession, LogEntry, SessionStep, SlotId } from './types';
 export const WARN_MS = 10_000;
 export const ADJUST_MS = 60_000;
 
+/**
+ * The gentle switch window: one number for every swap, or a function that gives the window before each
+ * dilator (so it can depend on how long you usually take to switch to it).
+ */
+export type SwitchWindows = number | ((toStep: number) => number);
+const windowBefore = (windows: SwitchWindows, step: number) =>
+	typeof windows === 'function' ? windows(step) : windows;
+
 export function startSession(
 	steps: SessionStep[],
 	slot: SlotId | null,
@@ -111,19 +119,26 @@ export function chillOut(s: ActiveSession, now: number, switchWindowMs: number):
  * Settings (`switchWindowMs`). While you are waiting to switch, the swap in progress counts only what
  * is left of that window. While paused the estimate moves on with the clock.
  */
-export function estimatedFinish(s: ActiveSession, now: number, switchWindowMs = 0): number | null {
+export function estimatedFinish(
+	s: ActiveSession,
+	now: number,
+	windows: SwitchWindows = 0
+): number | null {
 	if (s.phase === 'finished') return null;
 	const later = s.steps.slice(s.stepIndex + 1);
 	const laterMs = later.reduce((sum, step) => sum + step.minutes * 60_000, 0);
+	// the window before dilator `i`, for each of the swaps still to come
+	const window = (from: number) =>
+		s.steps.slice(from).reduce((sum, _, k) => sum + windowBefore(windows, from + k), 0);
 	let swaps: number;
 	let thisOne: number;
 	if (s.phase === 'running') {
 		thisOne = Math.max(0, remainingMs(s, now));
-		swaps = later.length * switchWindowMs; // one swap before every dilator still to come
+		swaps = window(s.stepIndex + 1); // one swap before every dilator still to come
 	} else {
 		// 'switch': this dilator is done; the swap to the next one is happening now
-		thisOne = Math.max(0, switchWindowLeftMs(s, now, switchWindowMs));
-		swaps = Math.max(0, later.length - 1) * switchWindowMs;
+		thisOne = Math.max(0, switchWindowLeftMs(s, now, windowBefore(windows, s.stepIndex + 1)));
+		swaps = window(s.stepIndex + 2);
 	}
 	return now + thisOne + swaps + laterMs;
 }
@@ -189,6 +204,8 @@ function closeCurrent(s: ActiveSession, now: number) {
 export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 	if (s.phase !== 'switch') return s;
 	const next = s.steps[s.stepIndex + 1];
+	// how long the swap took: from the timer ending to now
+	const switchedAfterMs = Math.max(0, now - alertStart(s));
 	return {
 		...s,
 		phase: 'running',
@@ -208,7 +225,8 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 				color: next.color,
 				plannedMinutes: next.minutes,
 				startedAt: now,
-				endedAt: null
+				endedAt: null,
+				switchedAfterMs
 			}
 		]
 	};
@@ -228,7 +246,10 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 			nickname: r.nickname,
 			color: r.color,
 			plannedMinutes: r.plannedMinutes,
-			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000)
+			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000),
+			...(r.switchedAfterMs !== undefined
+				? { switchSeconds: Math.round(r.switchedAfterMs / 1000) }
+				: {})
 		}))
 	};
 }
@@ -261,7 +282,11 @@ export interface Overview {
  * are done show when they really ran; the one being timed ends when its timer does; the ones after it are
  * planned back to back, with the gentle switch window between them (the same guess as `estimatedFinish`).
  */
-export function sessionOverview(s: ActiveSession, now: number, switchWindowMs = 0): Overview {
+export function sessionOverview(
+	s: ActiveSession,
+	now: number,
+	windows: SwitchWindows = 0
+): Overview {
 	const rows: OverviewRow[] = [];
 	let cursor = now;
 	s.steps.forEach((step, i) => {
@@ -283,7 +308,7 @@ export function sessionOverview(s: ActiveSession, now: number, switchWindowMs = 
 				cursor =
 					s.phase === 'finished'
 						? endAt
-						: now + Math.max(0, switchWindowLeftMs(s, now, switchWindowMs));
+						: now + Math.max(0, switchWindowLeftMs(s, now, windowBefore(windows, s.stepIndex + 1)));
 				return;
 			}
 		} else if (i === s.stepIndex) {
@@ -296,13 +321,13 @@ export function sessionOverview(s: ActiveSession, now: number, switchWindowMs = 
 				endAt,
 				estimated: true
 			});
-			cursor = endAt + switchWindowMs;
+			cursor = endAt + windowBefore(windows, i + 1);
 			return;
 		}
 		const startAt = cursor;
 		const endAt = startAt + step.minutes * 60_000;
 		rows.push({ ...base, minutes: step.minutes, status: 'later', startAt, endAt, estimated: true });
-		cursor = endAt + switchWindowMs;
+		cursor = endAt + windowBefore(windows, i + 1);
 	});
 	const plannedMinutes = Math.round(rows.reduce((sum, r) => sum + r.minutes, 0) * 10) / 10;
 	return {

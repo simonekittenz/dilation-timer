@@ -95,6 +95,8 @@ export interface StepRecord {
 	plannedMinutes: number;
 	startedAt: number;
 	endedAt: number | null;
+	/** How long it took to get to this dilator: from the previous timer ending to "I switched". */
+	switchedAfterMs?: number;
 }
 
 export interface ActiveSession {
@@ -138,6 +140,8 @@ export interface LogEntry {
 		color?: string;
 		plannedMinutes: number;
 		actualSeconds: number;
+		/** Seconds between the previous timer ending and pressing "I switched" to start this one. */
+		switchSeconds?: number;
 	}[];
 }
 

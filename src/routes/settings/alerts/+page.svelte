@@ -2,6 +2,7 @@
 	import { previewSound, setVolume, testSound } from '#lib/alarm.ts';
 	import { isNative, nativePlatform } from '#lib/platform.ts';
 	import ReminderTimes from '#lib/ReminderTimes.svelte';
+	import { describeSwitch } from '#lib/switchHistory.ts';
 	import { defaultReminders, slotsInSchedule } from '#lib/reminders.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import type { Reminders } from '#lib/types.ts';
@@ -33,12 +34,31 @@
 		<span class="text">
 			<span class="label">Gentle switch window</span>
 			<span class="hint">
-				Minutes of quiet time to swap to the next dilator after a timer ends, before the alarm
-				starts blinking and beeping
+				Extra minutes of quiet time on top of how long you usually take to swap to that dilator,
+				before the alarm starts blinking and beeping
 			</span>
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.switchWindowMinutes} />
 	</label>
+	<div class="block" data-testid="usual-switches">
+		<span class="label">Your usual swap times</span>
+		{#if store.usualSwitches.length}
+			<p class="hint">
+				I time how long you take to switch, and wait that long (plus the window above) before
+				nudging you.
+			</p>
+			<ul class="usual">
+				{#each store.usualSwitches as u (u.label)}
+					<li><span>{u.label}</span><strong>{describeSwitch(u.ms)}</strong></li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="hint">
+				I'll learn how long you take to switch to each dilator, and wait that long (plus the window
+				above) before nudging you. Until then only the window above counts.
+			</p>
+		{/if}
+	</div>
 
 	<div class="block">
 		<div class="item-head">

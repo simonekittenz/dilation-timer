@@ -9,7 +9,7 @@
 	let { onclose }: { onclose: () => void } = $props();
 
 	const s = $derived(store.active!);
-	const overview = $derived(sessionOverview(s, store.now, store.switchWindowMs));
+	const overview = $derived(sessionOverview(s, store.now, store.switchWindowFor));
 	const left = $derived(remainingMs(s, store.now));
 	const range = (from: number, to: number, estimated: boolean) =>
 		`${estimated ? '~' : ''}${formatClockTime(from)} – ${formatClockTime(to)}`;
