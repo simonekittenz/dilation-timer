@@ -463,3 +463,41 @@
 .settings .row.spread {
 	justify-content: space-between;
 }
+
+.settings .sections > * + * {
+	padding-top: 0.9rem;
+	border-top: 1px solid var(--line);
+}
+.settings .sect {
+	display: grid;
+	gap: 0.6rem;
+}
+.settings .sect.row {
+	display: flex;
+}
+.settings .field-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+.settings .field-row select {
+	max-width: 62%;
+}
+.settings .total {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.55rem 0.9rem;
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--muted);
+}
+.settings .total strong {
+	font-size: 1.05rem;
+	font-weight: 900;
+	color: var(--accent-strong);
+}

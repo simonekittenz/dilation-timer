@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { formatDuration, totalMinutes } from '#lib/customSession.ts';
 	import { addDays, formatDateRange } from '#lib/dates.ts';
 	import { PROGRAMS, wihPhases } from '#lib/defaults.ts';
 	import { wihDilators } from '#lib/dilators.ts';
@@ -92,6 +93,13 @@
 	const isPast = (phase: Phase) => hasDate && phaseProgress(draft.phases, phase, day) === 'past';
 	const pastCount = $derived(draft.phases.filter(isPast).length);
 
+	/** Which phase's name is being edited. The name is not shown as a field until you ask to rename. */
+	let renaming = $state<string | null>(null);
+	function focusAndSelect(node: HTMLInputElement) {
+		node.focus();
+		node.select();
+	}
+
 	let choosingProgram = $state(false);
 
 	/** Replaces the whole schedule (and dilators and messages) with a ready-made WIH program. */
@@ -137,27 +145,36 @@
 					{#if phaseLength(phase) !== null}· {phaseLength(phase)} day{phaseLength(phase) === 1
 							? ''
 							: 's'}{/if}
-					· {Math.round(phase.steps.reduce((sum, st) => sum + st.minutes, 0) * 10) / 10} min
+					· {formatDuration(totalMinutes(phase.steps))}
 				</span>
 			</span>
 		</summary>
-		<div class="body">
-			<div class="row">
-				<input class="grow" bind:value={phase.label} aria-label="Phase name" />
-				<button
-					class="pill"
-					onclick={() => confirm(`Remove "${phase.label}"?`) && draft.phases.splice(pi, 1)}
-					disabled={draft.phases.length === 1}>Remove</button
+		<div class="body sections">
+			<label class="field-row">
+				<span class="label small">Sessions per day</span>
+				<select
+					value={phase.slots.length > 1 ? 'two' : phase.slots.length === 1 ? 'one' : 'none'}
+					onchange={(e) =>
+						(phase.slots =
+							e.currentTarget.value === 'two'
+								? ['morning', 'evening']
+								: e.currentTarget.value === 'one'
+									? ['daily']
+									: [])}
 				>
-			</div>
+					<option value="none">None (rest days)</option>
+					<option value="one">Once a day</option>
+					<option value="two">Morning &amp; evening</option>
+				</select>
+			</label>
+
 			{#if phase.toDay !== null}
-				<div class="stack">
-					<div class="row spread">
+				<div class="sect">
+					<div class="field-row">
 						<span class="label small">Ends on day</span>
 						<Stepper
 							value={phase.toDay}
 							min={phase.fromDay}
-							unit=""
 							label="end day"
 							onchange={(n) => setEnd(phase.id, n)}
 						/>
@@ -178,37 +195,8 @@
 			{:else}
 				<p class="hint">This phase keeps going, so there's nothing after it to move.</p>
 			{/if}
-			{#if progress !== 'past'}
-				<div class="stack">
-					<span class="label small">Not ready yet?</span>
-					<div class="row">
-						<button class="pill" onclick={() => pushBack(phase, 1)}>Push back 1 day</button>
-						<button class="pill" onclick={() => pushBack(phase, 7)}>Push back 1 week</button>
-					</div>
-					<p class="hint">
-						This phase and every phase after it start later. The phase before it carries on until
-						then.
-					</p>
-				</div>
-			{/if}
-			<label class="stack">
-				<span class="label small">Sessions per day</span>
-				<select
-					value={phase.slots.length > 1 ? 'two' : phase.slots.length === 1 ? 'one' : 'none'}
-					onchange={(e) =>
-						(phase.slots =
-							e.currentTarget.value === 'two'
-								? ['morning', 'evening']
-								: e.currentTarget.value === 'one'
-									? ['daily']
-									: [])}
-				>
-					<option value="none">None (rest days)</option>
-					<option value="one">Once a day</option>
-					<option value="two">Morning &amp; evening</option>
-				</select>
-			</label>
-			<div class="stack">
+
+			<div class="sect">
 				<span class="label small">Dilators, in order</span>
 				<StepsEditor
 					bind:steps={phase.steps}
@@ -216,6 +204,43 @@
 					keepOne={phase.slots.length > 0}
 					minuteStep={5}
 				/>
+				<div class="total" data-testid="phase-total">
+					<span>Total per session</span>
+					<strong>{formatDuration(totalMinutes(phase.steps))}</strong>
+				</div>
+			</div>
+
+			{#if progress !== 'past'}
+				<div class="sect">
+					<div class="field-row">
+						<span class="label small">Not ready yet?</span>
+						<div class="row">
+							<button class="pill" onclick={() => pushBack(phase, 1)}>Push back 1 day</button>
+							<button class="pill" onclick={() => pushBack(phase, 7)}>1 week</button>
+						</div>
+					</div>
+					<p class="hint">This phase and every one after it start later.</p>
+				</div>
+			{/if}
+
+			<div class="sect row">
+				{#if renaming === phase.id}
+					<input
+						class="grow"
+						bind:value={phase.label}
+						aria-label="Phase name"
+						use:focusAndSelect
+						onblur={() => (renaming = null)}
+						onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+					/>
+				{:else}
+					<button class="pill" onclick={() => (renaming = phase.id)}>Rename</button>
+					<button
+						class="pill"
+						onclick={() => confirm(`Remove "${phase.label}"?`) && draft.phases.splice(pi, 1)}
+						disabled={draft.phases.length === 1}>Remove</button
+					>
+				{/if}
 			</div>
 		</div>
 	</details>
