@@ -103,10 +103,12 @@ page sleeps or the app is closed and reopened.
 ## Releasing
 
 - **Website:** push to `main`; Vercel builds and deploys it.
-- **Android app:** `npm run apk` builds the release app, signs it, checks it, and puts it in
-  `static/downloads/` together with `src/lib/appRelease.json`. Commit both and push. The version goes up
-  once per release (the script works out whether the current one is already published), and installed
-  apps then offer the update themselves.
+- **Android app:** published as a [GitHub release](https://github.com/simonekittenz/dilation-timer/releases),
+  never committed. `npm run apk` builds the release app, signs it and checks it, and updates
+  `src/lib/appRelease.json` and the version in `android/app/build.gradle`. Commit those two and push,
+  then `npm run apk:publish` creates the release with the app file attached. The version goes up once
+  per release (the script works out whether the current one is already published). Installed apps then
+  offer the update themselves once the website has deployed.
 - **Google Play:** `npm run aab` builds the bundle to upload, signed with a separate upload key. The
   account steps, form answers and listing text are in [`docs/play-store.md`](docs/play-store.md). The
   privacy policy the listing needs is the app's own `/privacy` page.

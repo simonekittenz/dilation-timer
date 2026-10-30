@@ -81,8 +81,9 @@ Things that tripped us up, so they don't again:
 ## Android (give it to a friend, free)
 
 Send her the download link from the website (see "Offering the Android app on the website" below), or
-the file `static/downloads/Dilation-timer.apk` itself (WhatsApp, Telegram, Drive, email, USB; AirDrop does
-not work). That file is the release-signed app that `npm run apk` makes.
+the file itself from the newest [GitHub release](https://github.com/simonekittenz/dilation-timer/releases/latest)
+(WhatsApp, Telegram, Drive, email, USB; AirDrop does not work). That file is the release-signed app that
+`npm run apk` makes.
 
 On her phone: tap the file. Android asks to allow _Install unknown apps_ for the app she opened it
 from. Allow it, then **Install**. If Play Protect says it does not recognise the app, tap
@@ -183,13 +184,22 @@ Android/iOS app never sees it, and Settings has a link back to it.
 To publish a new version of the Android app:
 
 ```bash
-npm run apk          # builds the app and copies it to static/downloads/Dilation-timer.apk
-git add -A && git commit -m "New Android app build" && git push   # Vercel then serves the new file
+npm run apk          # builds and signs the app, and updates src/lib/appRelease.json + build.gradle
+git add -A && git commit -m "Release 1.9: ..." && git push
+npm run apk:publish  # creates the GitHub release (tag v1.9) with the app file attached
 ```
 
-`npm run apk` also writes `src/lib/appRelease.json` (version, size, date, SHA-256) which the start page
-shows, and a test checks that the file and that information agree. Do this after any change to the
-web app that you want the Android app to have.
+The app file is **never committed**: it lives only as an asset of the release, so the repository stays
+small. `npm run apk:publish` refuses to run unless the built file is exactly the one `appRelease.json`
+describes, the commit is already pushed (the tag goes on it), and that version has no release yet. The
+release notes are the commit titles since the previous release, so write them for users.
+
+The website links to the newest release: `/downloads/Dilation-timer.apk` forwards (see `vercel.json`) to
+`https://github.com/simonekittenz/dilation-timer/releases/latest/download/Dilation-timer.apk`. That
+address is what earlier shared links, the start page and the apps' "Download" button all use, so none
+of them changes when a new version comes out. `appRelease.json` (version, size, date, SHA-256) is
+still shown on the start page, and a test checks it agrees with `build.gradle`. Do this after any change
+to the web app that you want the Android app to have.
 
 ### Versions and update notices
 
@@ -207,8 +217,8 @@ to, at most every 30 minutes) it asks `https://dilation-timer.vercel.app/release
 "New version available" card on Today (never during a session) with a Download button, and Settings
 mentions it next to the version line at the bottom. "Later" hides that version; a still newer one
 shows it again. Offline, a bad answer, or an answer that links anywhere but our own `/downloads/`
-folder is ignored. The web version and iPhone never check: the website updates itself, and iPhone
-has no downloadable file.
+address is ignored (that address forwards to GitHub, which is the only place the file lives). The web
+version and iPhone never check: the website updates itself, and iPhone has no downloadable file.
 
 So after publishing, **installed apps only learn about it once the website is deployed**, and the
 first app that has this check is the first one that can announce the next. Updating over the old app
@@ -220,10 +230,10 @@ Things to know:
   that has the signing folder. A debug build for testing is `npm run apk:debug`; it is never
   published; it is the same app signed with the same keys but with debugging on, so it installs over
   the release build and the release over it, with no uninstall in between.
-- Every build adds about 6 MB to the git history, so publish when something worth sharing changed.
-  (GitHub Releases would avoid that if it ever matters.)
+- Up to and including 1.8 the app file was committed to git (`static/downloads/`), so the history still
+  carries those few copies (about 5 MB each). Since then it only exists as a release asset.
 - The web app's offline cache skips `/downloads/` and `/sounds/`, and the app's own build removes
-  `build/downloads`, so the file is never downloaded by accident or packed inside itself.
+  `build/downloads`, a leftover from when the file was part of the website.
 
 ## Moving your data from the web app to the app
 

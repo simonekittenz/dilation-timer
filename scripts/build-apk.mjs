@@ -1,4 +1,4 @@
-// Builds the Android app and publishes it on the website, so the download can't go stale:
+// Builds and signs the Android app (publishing it on GitHub Releases is `npm run apk:publish`):
 //   npm run apk             builds the app. The version goes up by one only if the current version
 //                           is already published (on origin/main); otherwise it is reused.
 //   npm run apk -- --keep   never changes the version
@@ -13,18 +13,11 @@
 // The version number is what installed apps compare against the website to offer an update.
 // It needs the Android SDK and a JDK 21 (found by itself) and the release signing key, which lives
 // OUTSIDE this folder (see docs/native-apps.md, "Signing").
-// Result: static/downloads/Dilation-timer.apk + src/lib/appRelease.json (what the welcome page shows).
+// Result: the signed app in android/app/build/outputs/signing/ + src/lib/appRelease.json (what the welcome
+// page shows). `npm run apk:publish` then puts the app on GitHub Releases; the app file is never committed.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import {
-	copyFileSync,
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	readdirSync,
-	statSync,
-	writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { decideVersionCode } from './version.mjs';
@@ -284,18 +277,14 @@ if (debugBuild) {
 	process.exit(0);
 }
 
-const outDir = join(root, 'static/downloads');
-mkdirSync(outDir, { recursive: true });
-copyFileSync(signed, join(outDir, APK_NAME));
-
-const bytes = readFileSync(join(outDir, APK_NAME));
+const bytes = readFileSync(signed);
 const release = {
 	android: {
 		...(JSON.parse(readFileSync(releaseFile, 'utf8')).android ?? {}),
 		file: `/downloads/${APK_NAME}`,
 		version: versionName,
 		versionCode,
-		sizeBytes: statSync(join(outDir, APK_NAME)).size,
+		sizeBytes: bytes.length,
 		sha256: createHash('sha256').update(bytes).digest('hex'),
 		signer,
 		builtAt: new Date().toISOString()
@@ -303,6 +292,7 @@ const release = {
 };
 writeFileSync(releaseFile, JSON.stringify(release, null, '\t') + '\n');
 console.log(
-	`\nPublished ${APK_NAME} (${(release.android.sizeBytes / 1e6).toFixed(1)} MB, v${versionName}) and src/lib/appRelease.json`
+	`\nBuilt ${APK_NAME} (${(release.android.sizeBytes / 1e6).toFixed(1)} MB, v${versionName}): ${signed}`
 );
-console.log('Commit both, then deploy the website.');
+console.log('Next: commit src/lib/appRelease.json and android/app/build.gradle, push, then');
+console.log('      npm run apk:publish   (puts the file on GitHub Releases)');

@@ -1,39 +1,37 @@
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import release from './appRelease.json';
 
-// The website offers the Android app as a download. These tests keep the file and the information
-// the start page shows about it honest, and keep the app from ever containing a copy of itself.
+// The Android app is published as a GitHub release. The website only links to it, and publishes the
+// version information the installed apps compare against. These tests keep those honest, and keep the
+// app file out of git for good.
 const root = new URL('../../', import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root));
-const apkPath = `static${release.android.file}`;
+const LATEST =
+	'https://github.com/simonekittenz/dilation-timer/releases/latest/download/Dilation-timer.apk';
 
-describe('the Android download on the website', () => {
-	it('is where the start page says it is', () => {
+describe('the Android download', () => {
+	it('is a GitHub release asset that the old website link forwards to', () => {
 		expect(release.android.file).toBe('/downloads/Dilation-timer.apk');
-		expect(existsSync(new URL(apkPath, root))).toBe(true);
+		const vercel = JSON.parse(read('vercel.json').toString());
+		expect(vercel.redirects).toEqual([
+			{ source: release.android.file, destination: LATEST, permanent: false }
+		]);
 	});
 
-	it('is a real app file, and exactly the one the page describes', () => {
-		const bytes = read(apkPath);
-		expect(bytes.subarray(0, 4).toString('latin1')).toBe('PK\u0003\u0004'); // an APK is a zip
-		expect(statSync(new URL(apkPath, root)).size).toBe(release.android.sizeBytes);
-		expect(createHash('sha256').update(bytes).digest('hex')).toBe(release.android.sha256);
+	it('is not committed to git, and there is no copy in the website', () => {
+		const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n');
+		expect(tracked.filter((f) => /\.(apk|aab)$/.test(f))).toEqual([]);
+		expect(existsSync(new URL('static/downloads', root))).toBe(false);
+		expect(read('.gitignore').toString()).not.toContain('downloads');
+	});
+
+	it('describes the file well enough to check it', () => {
+		expect(release.android.sha256).toMatch(/^[0-9a-f]{64}$/);
+		expect(release.android.sizeBytes).toBeGreaterThan(1_000_000);
 		expect(Number.isNaN(new Date(release.android.builtAt).getTime())).toBe(false);
 		expect(release.android.version).toMatch(/^\d+\.\d+/);
-	});
-
-	it('is the same app id the stores and the phone expect', () => {
-		// names inside the zip are stored as plain text
-		const text = read(apkPath).toString('latin1');
-		expect(text).toContain('AndroidManifest.xml');
-		expect(text).toContain('assets/public/sounds/ping.wav');
-	});
-
-	it('does not contain a copy of any earlier download (it would double in size every build)', () => {
-		expect(read(apkPath).toString('latin1')).not.toContain('assets/public/downloads');
 	});
 
 	it('is kept out of the app build and out of the web app offline cache', () => {
@@ -41,16 +39,6 @@ describe('the Android download on the website', () => {
 			'rm -rf build/downloads'
 		);
 		expect(read('src/service-worker/index.ts').toString()).toContain("'/downloads/'");
-	});
-
-	it('is served as a download with the right file type', () => {
-		const vercel = JSON.parse(read('vercel.json').toString());
-		const rule = vercel.headers.find((h: { source: string }) => h.source === release.android.file);
-		const headers = Object.fromEntries(
-			rule.headers.map((h: { key: string; value: string }) => [h.key, h.value])
-		);
-		expect(headers['Content-Type']).toBe('application/vnd.android.package-archive');
-		expect(headers['Content-Disposition']).toContain('attachment');
 	});
 
 	it('has a version the installed apps can compare, and it matches the app that was built', () => {
@@ -93,6 +81,17 @@ describe('the Android download on the website', () => {
 		expect(secrets).toEqual([]);
 	});
 
+	it('is published with one command, only from a pushed commit and the exact file that was built', () => {
+		expect(JSON.parse(read('package.json').toString()).scripts['apk:publish']).toBe(
+			'node scripts/publish-apk.mjs'
+		);
+		const script = read('scripts/publish-apk.mjs').toString();
+		expect(script).toContain("'release',\n\t\t'create'");
+		expect(script).toContain('sha256'); // the file must be the one appRelease.json describes
+		expect(script).toContain('--is-ancestor'); // the commit being tagged must be on GitHub
+		expect(read('scripts/build-apk.mjs').toString()).not.toContain('static/downloads');
+	});
+
 	it('has a debug build for testing that is kept apart from the published one', () => {
 		const scripts = JSON.parse(read('package.json').toString()).scripts;
 		expect(scripts.apk).toBe('node scripts/build-apk.mjs');
@@ -122,10 +121,10 @@ describe('the Android download on the website', () => {
 		expect(script).toContain('bundleRelease');
 		expect(script).toContain('jarsigner'); // bundles are signed with the upload key
 		expect(script).toContain("VITE_PLAY: aabBuild ? '1' : '0'");
-		// the bundle goes to the build folder only, never into the website's downloads
+		// the bundle goes to the build folder only, never published as the Android download
 		expect(
 			script.slice(script.indexOf('if (aabBuild) {'), script.indexOf('process.exit(0);'))
-		).not.toContain('static/downloads');
+		).not.toContain('writeFileSync(releaseFile');
 		expect(read('src/lib/updates.svelte.ts').toString()).toContain("VITE_PLAY === '1'");
 	});
 
