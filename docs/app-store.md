@@ -220,10 +220,22 @@ First release on the App Store. Includes your schedule, session timers with gent
 
 ### Pictures
 
-`npm run store:assets:ios` (with `npm run dev` running) makes `phone-1-today.jpg` … `phone-6-history.jpg` in
-`~/Desktop/App-Store-assets`, 1320 × 2868 pixels: the **6.9-inch iPhone** size, which App Store Connect
-scales down for the smaller ones. Upload up to ten; three to six is plenty. They are taken of the real
-app with made-up demo data, so check them over first.
+`npm run store:assets:ios` (with `npm run dev` running; set `STORE_URL` if it is not on port 5273) writes to
+`~/Desktop/App-Store-assets`:
+
+| File                                 | Size        | Used for                                                                                                 |
+| ------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------- |
+| `phone-1-today.jpg` … `phone-6-…`    | 1320 × 2868 | Screenshots, **6.9-inch** iPhone class                                                                   |
+| `6.3-inch/phone-1-today.jpg` … `6-…` | 1206 × 2622 | The same screenshots for the **6.3-inch** class (App Store Connect asks for whichever class is required) |
+| `header-3840x1646.jpg`               | 3840 × 1646 | Optional **product page header** (21:9), at the top of the page                                          |
+| `search-1920x1280.jpg`               | 1920 × 1280 | Optional **search results** image (3:2)                                                                  |
+
+Upload up to ten screenshots per class; three to six is plenty. They are taken of the real app with
+made-up demo data, so check them over first.
+
+**iPhone Duo:** screenshots for it are optional now. From April 2027 Apple requires them for apps built with
+the iOS 27.1 SDK, which this one is, so the first update after that needs a set at 1398 × 2034 (outer
+display) and/or 2007 × 2853 (inner display).
 
 ### Submitting
 
