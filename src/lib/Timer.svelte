@@ -40,6 +40,9 @@
 		return null;
 	});
 
+	// each "+ 1 min" press bumps this, which restarts the light-up on the switch countdown
+	let lit = $state(0);
+
 	const R = 88;
 	const C = 2 * Math.PI * R;
 </script>
@@ -193,13 +196,15 @@
 				<strong><DilatorName label={next?.label ?? ''} nickname={next?.nickname} /></strong>
 			</p>
 			{#if next?.diameterMm}<p class="muted hint">{next.diameterMm} mm</p>{/if}
-			<p class="muted hint">
-				{#if escalated}
-					Overtime {formatClock(overtime)}
-				{:else}
-					No rush to swap, I'll nudge you louder in {formatClock(store.switchWindowLeft)}
-				{/if}
-			</p>
+			{#if escalated}
+				<p class="muted hint">Overtime</p>
+				<p class="countdown over">{formatClock(overtime)}</p>
+			{:else}
+				<p class="muted hint">No rush to swap, I'll nudge you louder in</p>
+				{#key lit}
+					<p class="countdown" class:lit={lit > 0}>{formatClock(store.switchWindowLeft)}</p>
+				{/key}
+			{/if}
 		</div>
 		<div class="pad">
 			<button
@@ -214,8 +219,11 @@
 				<button class="btn ghost" onclick={() => store.chill()}>Chill out, I'm on it!</button>
 			{:else}
 				<button
-					class="btn ghost small"
-					onclick={() => store.addSwitchMinute()}
+					class="btn ghost more"
+					onclick={() => {
+						store.addSwitchMinute();
+						lit++;
+					}}
 					aria-label="Add one minute before the louder nudge"
 				>
 					+ 1 min
@@ -538,10 +546,78 @@
 	.hint {
 		font-size: 0.9rem;
 	}
+	.countdown {
+		position: relative;
+		padding: 0.3rem 1.4rem;
+		border-radius: 999px;
+		border: 3px solid var(--line);
+		background: var(--accent-soft);
+		color: var(--accent-strong);
+		font-size: clamp(2.6rem, 14vw, 3.6rem);
+		font-weight: 900;
+		font-variant-numeric: tabular-nums;
+		line-height: 1.1;
+	}
+	.countdown.over {
+		border-color: var(--warn);
+		color: var(--warn);
+	}
+	.countdown.lit {
+		animation: lightup 0.9s ease-out;
+	}
+	.countdown.lit::after {
+		content: '✨';
+		position: absolute;
+		top: -0.4rem;
+		right: -0.2rem;
+		font-size: 1.6rem;
+		animation: sparkle 0.9s ease-out forwards;
+	}
+	@keyframes lightup {
+		0% {
+			transform: scale(1);
+		}
+		25% {
+			transform: scale(1.12);
+			background: var(--surface);
+			border-color: var(--accent);
+			box-shadow:
+				0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent),
+				0 0 28px 10px color-mix(in srgb, var(--accent) 55%, transparent);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+	@keyframes sparkle {
+		0% {
+			opacity: 0;
+			transform: translateY(0) scale(0.4);
+		}
+		30% {
+			opacity: 1;
+			transform: translateY(-0.4rem) scale(1.2);
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-1.2rem) scale(0.8);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.countdown.lit,
+		.countdown.lit::after {
+			animation: none;
+		}
+	}
 	.huge {
 		width: 100%;
 		padding: 1.5rem 1rem;
 		font-size: 1.6rem;
+	}
+	.more {
+		width: 100%;
+		padding: 1.1rem 1rem;
+		font-size: 1.25rem;
 	}
 	.breathe {
 		animation: breathe 3.5s ease-in-out infinite;
