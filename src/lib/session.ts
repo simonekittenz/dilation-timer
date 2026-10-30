@@ -232,3 +232,83 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 		}))
 	};
 }
+
+export type OverviewStatus = 'done' | 'now' | 'later';
+
+export interface OverviewRow {
+	label: string;
+	nickname?: string;
+	color: string;
+	/** Planned length, including any minutes added or taken off the dilator being timed. */
+	minutes: number;
+	status: OverviewStatus;
+	startAt: number;
+	endAt: number;
+	/** The times come from a guess (the dilator hasn't started, or hasn't ended yet), not from the clock. */
+	estimated: boolean;
+}
+
+export interface Overview {
+	rows: OverviewRow[];
+	startedAt: number;
+	/** When the session should be done, or null once it is. */
+	finishAt: number | null;
+	plannedMinutes: number;
+}
+
+/**
+ * The whole session at a glance: every dilator with its length and its start and end time. Dilators that
+ * are done show when they really ran; the one being timed ends when its timer does; the ones after it are
+ * planned back to back, with the gentle switch window between them (the same guess as `estimatedFinish`).
+ */
+export function sessionOverview(s: ActiveSession, now: number, switchWindowMs = 0): Overview {
+	const rows: OverviewRow[] = [];
+	let cursor = now;
+	s.steps.forEach((step, i) => {
+		const record = s.records[i];
+		const base = { label: step.label, nickname: step.nickname, color: step.color };
+		if (i < s.stepIndex || s.phase !== 'running') {
+			if (i <= s.stepIndex) {
+				// finished dilators: when they really ran (the last one ended when its timer did)
+				const startAt = record?.startedAt ?? now;
+				const endAt = record?.endedAt ?? (i === s.stepIndex ? alertStart(s) : startAt);
+				rows.push({
+					...base,
+					minutes: step.minutes + (i === s.stepIndex ? (s.adjustMs ?? 0) / 60_000 : 0),
+					status: 'done',
+					startAt,
+					endAt,
+					estimated: false
+				});
+				cursor =
+					s.phase === 'finished'
+						? endAt
+						: now + Math.max(0, switchWindowLeftMs(s, now, switchWindowMs));
+				return;
+			}
+		} else if (i === s.stepIndex) {
+			const endAt = now + Math.max(0, remainingMs(s, now));
+			rows.push({
+				...base,
+				minutes: stepDurationMs(s) / 60_000,
+				status: 'now',
+				startAt: record?.startedAt ?? s.stepStartedAt,
+				endAt,
+				estimated: true
+			});
+			cursor = endAt + switchWindowMs;
+			return;
+		}
+		const startAt = cursor;
+		const endAt = startAt + step.minutes * 60_000;
+		rows.push({ ...base, minutes: step.minutes, status: 'later', startAt, endAt, estimated: true });
+		cursor = endAt + switchWindowMs;
+	});
+	const plannedMinutes = Math.round(rows.reduce((sum, r) => sum + r.minutes, 0) * 10) / 10;
+	return {
+		rows,
+		startedAt: s.startedAt,
+		finishAt: s.phase === 'finished' ? null : (rows.at(-1)?.endAt ?? null),
+		plannedMinutes
+	};
+}

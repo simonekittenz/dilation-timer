@@ -191,6 +191,16 @@ describe('the Android download', () => {
 		expect(schedule).toContain('Total per session');
 	});
 
+	it('opens a session overview when the dilator chips at the top are tapped', () => {
+		const timer = read('src/lib/Timer.svelte').toString();
+		expect(timer).toContain('class="top"');
+		expect(timer).toContain('overviewOpen = true');
+		expect(timer).toContain('<SessionOverview');
+		const sheet = read('src/lib/SessionOverview.svelte').toString();
+		expect(sheet).toContain('role="dialog"');
+		expect(sheet).toContain("e.key === 'Escape'");
+	});
+
 	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
 		const welcome = read('src/routes/welcome/+page.svelte').toString();
 		expect(welcome).toContain('href="https://ko-fi.com/zephyralux"');

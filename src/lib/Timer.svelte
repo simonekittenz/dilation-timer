@@ -2,6 +2,7 @@
 	import Mascot from './Mascot.svelte';
 	import MascotEars from './MascotEars.svelte';
 	import DilatorName from './DilatorName.svelte';
+	import SessionOverview from './SessionOverview.svelte';
 	import Swatch from './Swatch.svelte';
 	import { formatClock, formatClockTime } from './dates';
 	import { pickMessage } from './messages';
@@ -45,6 +46,8 @@
 
 	const conquered = $derived(s.phase === 'finished' ? store.conquered : []);
 
+	let overviewOpen = $state(false);
+
 	const R = 88;
 	const C = 2 * Math.PI * R;
 </script>
@@ -58,14 +61,23 @@
 		<p class="soundhint">🔇 Tap anywhere to turn the alarm sound on</p>
 	{/if}
 
-	<!-- one row: which dilator you are on, and when the session should be done -->
-	<div class="top" class:solo={finish === null}>
-		<ol class="steps" aria-label="Dilators" class:many={s.steps.length > 4}>
+	<!-- one row: which dilator you are on, and when the session should be done. Tap it for the overview. -->
+	<button
+		type="button"
+		class="top"
+		class:solo={finish === null}
+		onclick={() => (overviewOpen = true)}
+		aria-haspopup="dialog"
+		aria-label="Show the session overview"
+	>
+		<span class="steps" role="list" aria-label="Dilators" class:many={s.steps.length > 4}>
 			{#each s.steps as step, i (i)}
 				{@const done = i < s.stepIndex || s.phase === 'finished'}
 				{@const now = i === s.stepIndex && s.phase !== 'finished'}
 				{@const name = step.nickname ? `${step.label} (${step.nickname})` : step.label}
-				<li
+				<span
+					class="chip"
+					role="listitem"
 					class:done
 					class:current={now}
 					title={name}
@@ -76,15 +88,15 @@
 							size={14}
 						/>{/if}
 					{#if now}<span class="pos">{i + 1}/{s.steps.length}</span>{/if}
-				</li>
+				</span>
 			{/each}
-		</ol>
+		</span>
 		{#if finish !== null}
-			<p class="eta" data-testid="eta" title="When the session should be done">
+			<span class="eta" data-testid="eta" title="When the session should be done">
 				ETA <strong>{formatClockTime(finish)}</strong>
-			</p>
+			</span>
 		{/if}
-	</div>
+	</button>
 
 	{#if s.phase === 'running'}
 		<div class="stage">
@@ -262,6 +274,10 @@
 	{/if}
 </section>
 
+{#if overviewOpen}
+	<SessionOverview onclose={() => (overviewOpen = false)} />
+{/if}
+
 <style>
 	.timer {
 		display: flex;
@@ -293,6 +309,22 @@
 		justify-content: space-between;
 		gap: 0.5rem;
 		width: 100%;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: inherit;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.top:active {
+		opacity: 0.7;
+	}
+	.top:focus-visible {
+		outline: 3px solid var(--accent);
+		outline-offset: 4px;
+		border-radius: 999px;
 	}
 	.top.solo {
 		justify-content: center;
@@ -340,7 +372,7 @@
 		margin: 0;
 		padding: 0;
 	}
-	.steps li {
+	.steps .chip {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -358,7 +390,7 @@
 	.steps.many {
 		gap: 0.2rem;
 	}
-	.steps.many li {
+	.steps.many .chip {
 		min-width: 1.5rem;
 		height: 1.6rem;
 		padding: 0 0.2rem;
@@ -367,12 +399,12 @@
 	.steps.many .pos {
 		display: none;
 	}
-	.steps li.done {
+	.steps .chip.done {
 		background: var(--ok);
 		color: #fff;
 		border-color: var(--ok);
 	}
-	.steps li.current {
+	.steps .chip.current {
 		border-color: var(--accent);
 		background: var(--accent-soft);
 		color: var(--ink);
