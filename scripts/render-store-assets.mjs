@@ -1,6 +1,8 @@
 // Makes the pictures the Google Play listing asks for:
 //   npm run dev                      (in one terminal: the screenshots are taken of the running app)
 //   npm run store:assets             (in another; writes to ~/Desktop/Play-Store-assets)
+//   npm run store:assets:ios         the same screenshots at the size the App Store asks for (1320 x 2868, the
+//                                    6.9-inch iPhone), written to ~/Desktop/App-Store-assets; no icon or banner
 // Options (environment variables): STORE_URL (default http://localhost:5273), OUT_DIR, CHROME_PATH.
 //
 //   icon-512.png               the app icon, 512 x 512
@@ -15,18 +17,21 @@ import puppeteer from 'puppeteer-core';
 const CHROME =
 	process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const URL_BASE = (process.env.STORE_URL ?? 'http://localhost:5273').replace(/\/$/, '');
-const OUT = process.env.OUT_DIR ?? join(homedir(), 'Desktop', 'Play-Store-assets');
+const IOS = process.env.STORE_PLATFORM === 'ios';
+const OUT =
+	process.env.OUT_DIR ?? join(homedir(), 'Desktop', IOS ? 'App-Store-assets' : 'Play-Store-assets');
 const root = new URL('..', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
 
 // ---- the icon: the 1024 px launcher icon, shrunk (Play wants 512 x 512) ----
-execFileSync(
-	'sips',
-	['-z', '512', '512', join(root, 'assets/icon-only.png'), '--out', join(OUT, 'icon-512.png')],
-	{
-		stdio: 'ignore'
-	}
-);
+if (!IOS)
+	execFileSync(
+		'sips',
+		['-z', '512', '512', join(root, 'assets/icon-only.png'), '--out', join(OUT, 'icon-512.png')],
+		{
+			stdio: 'ignore'
+		}
+	);
 
 const browser = await puppeteer.launch({
 	executablePath: CHROME,
@@ -35,7 +40,7 @@ const browser = await puppeteer.launch({
 });
 
 // ---- the feature graphic ----
-{
+if (!IOS) {
 	const bunny = readFileSync(join(root, 'static/icon.svg'), 'utf8')
 		.replace(/<\?xml[^>]*>/, '')
 		.replace(/<svg[^>]*>|<\/svg>/g, '')
@@ -136,15 +141,20 @@ const HISTORY = [1, 2, 3].flatMap((back) => [
 
 async function shot(name, { state, path = '/', steps = async () => {} }) {
 	const page = await browser.newPage();
-	// 440 x 880 css pixels at 2.66x = 1170 x 2340, the tallest shape (2:1) Google Play accepts
-	await page.setViewport({ width: 440, height: 880, deviceScaleFactor: 1170 / 440 });
+	// Google Play: 440 x 880 css pixels at 2.66x = 1170 x 2340, the tallest shape (2:1) it accepts.
+	// App Store: 440 x 956 at 3x = 1320 x 2868, the 6.9-inch iPhone.
+	await page.setViewport(
+		IOS
+			? { width: 440, height: 956, deviceScaleFactor: 3 }
+			: { width: 440, height: 880, deviceScaleFactor: 1170 / 440 }
+	);
 	await page.evaluateOnNewDocument((blob) => {
 		localStorage.setItem('dilation-timer:welcome', 'web');
 		localStorage.setItem('dilation-timer:v1', blob);
 	}, JSON.stringify(state));
 	await page.goto(URL_BASE + path, { waitUntil: 'networkidle0' });
 	// a tap, like a real person's, so the web page doesn't show its "tap to turn the sound on" note
-	// (the Android app never shows it)
+	// (the apps never show it)
 	await page.mouse.click(5, 5);
 	await new Promise((r) => setTimeout(r, 600));
 	await steps(page);

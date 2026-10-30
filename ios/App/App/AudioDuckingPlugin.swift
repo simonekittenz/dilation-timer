@@ -1,5 +1,6 @@
 import Capacitor
 import AVFoundation
+import UIKit
 
 /// Plays the alarm sounds from files bundled with the web app and, while they play, makes other
 /// apps' audio (Spotify, podcasts...) quieter instead of pausing it. When the alarm ends the other
@@ -14,7 +15,8 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "play", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "loop", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "keepAwake", returnType: CAPPluginReturnPromise)
     ]
 
     private var player: AVAudioPlayer?
@@ -44,12 +46,14 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func loop(_ call: CAPPluginCall) {
         guard let request = request(from: call) else { return }
         let interval = max(0.5, Double(call.getInt("intervalMs") ?? 2500) / 1000.0)
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             self.cancelLoop()
             do {
                 try self.start(request)
                 self.loopTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-                    _ = try? self?.start(request)
+                    guard let self = self else { return }
+                    _ = try? self.start(request)
                 }
                 call.resolve()
             } catch {
@@ -64,6 +68,15 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
             self.player?.stop()
             self.player = nil
             self.endDucking()
+            call.resolve()
+        }
+    }
+
+    /// Keeps the screen from locking itself while a session is running.
+    @objc func keepAwake(_ call: CAPPluginCall) {
+        let on = call.getBool("on") ?? false
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = on
             call.resolve()
         }
     }

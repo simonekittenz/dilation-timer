@@ -52,7 +52,11 @@ You need a Mac, Xcode (free from the Mac App Store, big download), and a USB cab
    **Trust**. Then open the app.
 
 With a free Apple ID the app **stops opening after 7 days**. Plug in and press ▶ again to renew it
-(your data is kept). A paid developer account ($99/year) lasts a year and allows TestFlight.
+(your data is kept). A paid developer account ($99/year) lasts a year and allows TestFlight; the steps for
+that, and for the App Store, are in [`app-store.md`](app-store.md).
+
+`npm run ios:check` builds the app for the iOS simulator without any account, which is the quickest way to
+see that a change did not break it.
 
 ## Android: first-time setup notes
 
@@ -130,7 +134,7 @@ the apps hand the job to the phone's alarm clock instead (`@capacitor/local-noti
 
 Verified on an Android 15 virtual phone with the screen off and Doze forced on: the alert arrived within
 2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
-the app cleared them. **Not yet tried on a real phone or on iPhone.** Some makers (Samsung, Xiaomi,
+the app cleared them. **Not yet tried on a real phone or on a real iPhone** (the iPhone app has only run in the simulator). Some makers (Samsung, Xiaomi,
 Oppo) kill background apps harder than stock Android; if alerts are late there, turn off battery
 optimisation for the app. iPhone uses the same code with its normal notification sound.
 

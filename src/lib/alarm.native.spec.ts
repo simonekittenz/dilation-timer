@@ -52,7 +52,8 @@ function fakePlugin() {
 	return {
 		play: vi.fn<AudioDuckingPlugin['play']>(async () => {}),
 		loop: vi.fn<AudioDuckingPlugin['loop']>(async () => {}),
-		stop: vi.fn<AudioDuckingPlugin['stop']>(async () => {})
+		stop: vi.fn<AudioDuckingPlugin['stop']>(async () => {}),
+		keepAwake: vi.fn<AudioDuckingPlugin['keepAwake']>(async () => {})
 	};
 }
 
@@ -240,5 +241,50 @@ describe('alarm inside the iOS/Android app (native plugin)', () => {
 		alarm.ping();
 		await settle();
 		expect(plugin.play).toHaveBeenCalled();
+	});
+});
+
+describe('keeping the screen on in the iPhone app', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	const onPlatform = (platform: string) =>
+		vi.stubGlobal('window', {
+			Capacitor: { getPlatform: () => platform, isNativePlatform: () => platform !== 'web' }
+		});
+
+	it('asks the native plugin on iPhone, and leaves the web wake lock alone', async () => {
+		onPlatform('ios');
+		const request = vi.fn();
+		vi.stubGlobal('navigator', { wakeLock: { request } });
+		const plugin = fakePlugin();
+		const { alarm } = await load(plugin);
+		await alarm.keepAwake(true);
+		await alarm.keepAwake(false);
+		expect(plugin.keepAwake.mock.calls).toEqual([[{ on: true }], [{ on: false }]]);
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it('uses the web wake lock on Android, whose plugin has no such method', async () => {
+		onPlatform('android');
+		const release = vi.fn();
+		const request = vi.fn(async () => ({ addEventListener() {}, release }));
+		vi.stubGlobal('navigator', { wakeLock: { request } });
+		const plugin = fakePlugin();
+		const { alarm } = await load(plugin);
+		await alarm.keepAwake(true);
+		expect(plugin.keepAwake).not.toHaveBeenCalled();
+		expect(request).toHaveBeenCalledWith('screen');
+	});
+
+	it('falls back to the web wake lock if the iPhone plugin is too old, without losing the alarm', async () => {
+		onPlatform('ios');
+		const request = vi.fn(async () => ({ addEventListener() {}, release() {} }));
+		vi.stubGlobal('navigator', { wakeLock: { request } });
+		const plugin = fakePlugin();
+		plugin.keepAwake.mockRejectedValue({ code: 'UNIMPLEMENTED' });
+		const { alarm, native } = await load(plugin);
+		await alarm.keepAwake(true);
+		expect(request).toHaveBeenCalledWith('screen');
+		expect(native.nativeAudioAvailable()).toBe(true);
 	});
 });

@@ -1,4 +1,10 @@
-import { loopNative, nativeAudioAvailable, playNative, stopNative } from './nativeAudio';
+import {
+	keepAwakeNative,
+	loopNative,
+	nativeAudioAvailable,
+	playNative,
+	stopNative
+} from './nativeAudio';
 import {
 	ALARM_INTERVAL_MS,
 	CELEBRATE_TIMES,
@@ -223,6 +229,7 @@ export function stopAlarm() {
 }
 
 export async function keepAwake(on: boolean) {
+	if (await keepAwakeNative(on)) return;
 	try {
 		if (on && !wakeLock && 'wakeLock' in navigator) {
 			wakeLock = await navigator.wakeLock.request('screen');

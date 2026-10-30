@@ -8,7 +8,7 @@ to switch to the next one.
 
 **Use it:** <https://dilation-timer.vercel.app> (in the browser, or added to your home screen)
 **Android app:** download it from the start page at the same address.
-**iPhone app:** not in the App Store; it's built from this repo with Xcode (see [`docs/native-apps.md`](docs/native-apps.md)).
+**iPhone app:** not in the App Store yet. It builds and starts in the iOS simulator, and the steps to put it on TestFlight and the App Store are in [`docs/app-store.md`](docs/app-store.md). Until then it can be built from this repo with Xcode (see [`docs/native-apps.md`](docs/native-apps.md)).
 
 ## What it does
 
@@ -58,19 +58,22 @@ npm install
 npm run dev      # http://localhost:5273
 ```
 
-| Command                                   | What it does                                                   |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| `npm test`                                | Unit tests (Vitest)                                            |
-| `npm run check`                           | Type and Svelte checks                                         |
-| `npm run format` / `npm run format:check` | Prettier                                                       |
-| `npm run build`                           | Production build of the website into `build/`                  |
-| `npm run sounds:render`                   | Re-make the alarm WAV files after changing `src/lib/sounds.ts` |
-| `npm run icons`                           | Re-make the app icons and launch screens                       |
-| `npm run android` / `npm run ios`         | Build for the app and open Android Studio / Xcode              |
-| `npm run apk`                             | Build, sign and publish the Android app (see below)            |
-| `npm run aab`                             | The Google Play version of the app (see below)                 |
-| `npm run store:assets`                    | Pictures for the Play listing (icon, banner, screenshots)      |
-| `npm run apk:debug`                       | A debuggable test build of the Android app, for emulators      |
+| Command                                   | What it does                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------ |
+| `npm test`                                | Unit tests (Vitest)                                                |
+| `npm run check`                           | Type and Svelte checks                                             |
+| `npm run format` / `npm run format:check` | Prettier                                                           |
+| `npm run build`                           | Production build of the website into `build/`                      |
+| `npm run sounds:render`                   | Re-make the alarm WAV files after changing `src/lib/sounds.ts`     |
+| `npm run icons`                           | Re-make the app icons and launch screens                           |
+| `npm run android` / `npm run ios`         | Build for the app and open Android Studio / Xcode                  |
+| `npm run ios:check`                       | Build the iPhone app for the simulator and look inside it          |
+| `npm run ios:testflight`                  | Sign the iPhone app and upload it to TestFlight (needs an account) |
+| `npm run apk`                             | Build, sign and publish the Android app (see below)                |
+| `npm run aab`                             | The Google Play version of the app (see below)                     |
+| `npm run store:assets`                    | Pictures for the Play listing (icon, banner, screenshots)          |
+| `npm run store:assets:ios`                | Screenshots for the App Store listing                              |
+| `npm run apk:debug`                       | A debuggable test build of the Android app, for emulators          |
 
 ## How it's built
 
@@ -121,5 +124,5 @@ screen-off findings) is in [`docs/native-apps.md`](docs/native-apps.md).
 
 ## Good to know
 
-- The iPhone app's code has only been syntax-checked. It has never been built or run on a phone.
+- The iPhone app builds and starts in the iOS simulator (`npm run ios:check`), but it has never been run on a real iPhone. Checklist in [`docs/app-store.md`](docs/app-store.md#what-to-try-on-a-real-iphone).
 - No licence has been chosen for this project yet.

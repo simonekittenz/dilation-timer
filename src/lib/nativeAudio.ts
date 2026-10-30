@@ -1,4 +1,4 @@
-import { isNative } from './platform';
+import { isNative, nativePlatform } from './platform';
 import type { SoundName } from './sounds';
 
 /**
@@ -12,6 +12,8 @@ export interface AudioDuckingPlugin {
 	/** Plays a sound now and again every `intervalMs` until stop(). */
 	loop(options: { sound: SoundName; volume: number; intervalMs: number }): Promise<void>;
 	stop(): Promise<void>;
+	/** iPhone only: keeps the screen from locking itself while a session runs. */
+	keepAwake(options: { on: boolean }): Promise<void>;
 }
 
 let injected: AudioDuckingPlugin | null | undefined;
@@ -71,3 +73,19 @@ export const loopNative = (sound: SoundName, volume: number, intervalMs: number)
 	call((p) => p.loop({ sound, volume, intervalMs }));
 
 export const stopNative = () => call((p) => p.stop());
+
+/**
+ * Keeps the screen on through the iPhone app's own plugin. The web view's wake lock only exists on newer
+ * iPhones, and this works on all of them. Android's plugin has no such method, so this is iPhone only
+ * and a failure here never turns the alarm plugin off. false means "use the web wake lock instead".
+ */
+export async function keepAwakeNative(on: boolean): Promise<boolean> {
+	if (nativePlatform() !== 'ios' || !nativeAudioAvailable()) return false;
+	try {
+		const { plugin } = await getPlugin();
+		await plugin.keepAwake({ on });
+		return true;
+	} catch {
+		return false;
+	}
+}

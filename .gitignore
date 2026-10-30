@@ -8,3 +8,6 @@ build
 *.keystore
 *.jks
 password.txt
+
+# iOS build output
+ios/build
