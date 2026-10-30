@@ -760,6 +760,101 @@
 			font-size: clamp(2.4rem, 13vw, 3.4rem);
 		}
 	}
+	/* A phone held sideways has plenty of width and very little height: the controls move beside the clock
+	   instead of under it, and the extras (bunny, chatter) make room, so a session never needs scrolling. */
+	@media (orientation: landscape) and (max-height: 540px) {
+		.timer {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-areas: 'hint hint' 'top top' 'stage pad';
+			align-items: center;
+			column-gap: 1.5rem;
+			row-gap: 0;
+			min-height: calc(100dvh - 2.4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+			padding: 0.6rem 1.2rem 0.7rem;
+			border-radius: 28px;
+		}
+		.soundhint {
+			grid-area: hint;
+			margin-bottom: 0.4rem;
+		}
+		.top {
+			grid-area: top;
+			margin-bottom: 0.3rem;
+		}
+		.stage {
+			grid-area: stage;
+			gap: 0.5rem;
+		}
+		.pad {
+			grid-area: pad;
+			gap: 0.6rem;
+		}
+		.pet,
+		.stage :global(.mascot) {
+			display: none;
+		}
+		.ring {
+			width: min(44vw, 64dvh, 300px);
+		}
+		.clock {
+			font-size: clamp(2.2rem, 12dvh, 3.6rem);
+		}
+		.row {
+			gap: 1.2rem;
+			padding-bottom: 1.3rem;
+		}
+		.row.second {
+			gap: 2.6rem;
+		}
+		.round {
+			height: 4.4rem;
+		}
+		.round.main .disc {
+			width: 4.4rem;
+			height: 4.4rem;
+		}
+		.disc {
+			width: 3.1rem;
+			height: 3.1rem;
+		}
+		.round.small {
+			height: 2.9rem;
+		}
+		.round.small .disc {
+			width: 2.9rem;
+			height: 2.9rem;
+		}
+		.title {
+			font-size: 1.05rem;
+		}
+		.big {
+			font-size: 1.2rem;
+		}
+		.hint {
+			font-size: 0.8rem;
+		}
+		.countdown {
+			padding: 0.1rem 1rem;
+			font-size: clamp(2rem, 11dvh, 2.8rem);
+		}
+		.huge {
+			padding: 0.9rem 1rem;
+			font-size: 1.35rem;
+		}
+		.more {
+			padding: 0.7rem 1rem;
+			font-size: 1.05rem;
+		}
+		.conquered {
+			padding: 0.4rem 0.8rem;
+		}
+	}
+	@media (orientation: landscape) and (max-height: 430px) {
+		.bubble {
+			display: none;
+		}
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.breathe,
 		.timer.alert {

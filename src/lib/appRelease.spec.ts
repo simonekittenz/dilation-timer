@@ -152,6 +152,22 @@ describe('the Android download', () => {
 		expect(strip).not.toContain('flex-wrap');
 	});
 
+	it('has a sideways layout for a phone held in landscape, so a session never needs scrolling', () => {
+		const timer = read('src/lib/Timer.svelte').toString();
+		expect(timer).toContain('@media (orientation: landscape) and (max-height: 540px)');
+		expect(timer).toContain("grid-template-areas: 'hint hint' 'top top' 'stage pad'");
+		expect(read('src/routes/+layout.svelte').toString()).toContain(
+			'@media (orientation: landscape) and (max-height: 540px)'
+		);
+		// both phones turn: the iPhone app lists the sideways orientations and Android never locks it
+		expect(read('ios/App/App/Info.plist').toString()).toContain(
+			'UIInterfaceOrientationLandscapeLeft'
+		);
+		expect(read('android/app/src/main/AndroidManifest.xml').toString()).not.toContain(
+			'screenOrientation'
+		);
+	});
+
 	it('has a Ko-fi support note on the website start page only, with a safe link', () => {
 		const welcome = read('src/routes/welcome/+page.svelte').toString();
 		expect(welcome).toContain('href="https://ko-fi.com/zephyralux"');

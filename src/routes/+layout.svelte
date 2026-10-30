@@ -98,6 +98,14 @@
 		padding-top: 0.6rem;
 		padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 	}
+	/* a phone held sideways: the session gets the whole width, clear of the notch */
+	@media (orientation: landscape) and (max-height: 540px) {
+		main.focus {
+			width: min(980px, 100%);
+			padding: 0.3rem max(1rem, env(safe-area-inset-right))
+				calc(0.5rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+		}
+	}
 	nav {
 		position: fixed;
 		left: 50%;

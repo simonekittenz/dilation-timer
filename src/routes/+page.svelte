@@ -156,6 +156,12 @@
 		font-size: 0.85rem;
 		font-weight: 800;
 	}
+	@media (orientation: landscape) and (max-height: 540px) {
+		.session-meta {
+			margin-bottom: 0.25rem;
+			font-size: 0.75rem;
+		}
+	}
 	h1 {
 		font-size: 1.7rem;
 		font-weight: 900;
