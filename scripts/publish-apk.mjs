@@ -3,7 +3,8 @@
 // Run it after committing and pushing the version bump (src/lib/appRelease.json and
 // android/app/build.gradle): the release's tag is made on that commit.
 // The website's download link (/downloads/Dilation-timer.apk) redirects to the newest release, and the
-// installed apps learn about it from /release.json, which is published with the site (appRelease.json).
+// installed apps ask GitHub for the newest release (apps before 1.9 ask the website's /release.json, which
+// is appRelease.json published with the site).
 // Needs the GitHub CLI (`gh`), logged in.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -88,6 +89,8 @@ const result = spawnSync(
 );
 if (result.status !== 0) fail('gh could not create the release.');
 console.log(
-	`\nPublished ${tag}. The website's download link and the apps' update notice follow it`
+	`\nPublished ${tag}. Installed apps (1.9 and newer) will offer it right away; the website's`
 );
-console.log('once the website has been deployed (the push you just did).');
+console.log(
+	'download link follows it, and apps before 1.9 hear about it once the site has deployed.'
+);

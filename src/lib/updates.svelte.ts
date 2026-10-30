@@ -1,28 +1,28 @@
 import { watchAppState } from './notifications';
 import { nativePlatform } from './platform';
-import { fetchLatest, isNewer, type LatestRelease } from './update';
-import { APP_VERSION_CODE } from './version';
+import { compareVersions, fetchLatest, isNewer, type LatestRelease } from './update';
+import { APP_VERSION } from './version';
 
-const DISMISSED_KEY = 'dilation-timer:update-dismissed';
+const DISMISSED_KEY = 'dilation-timer:update-dismissed-version';
 /** Don't ask the website more often than this when the app is merely switched back to. */
 const MIN_GAP_MS = 30 * 60_000;
 
 /** The Android app noticing that a newer version has been published. The web version updates itself. */
 class Updates {
 	latest = $state<LatestRelease | null>(null);
-	dismissedCode = $state(0);
+	dismissedVersion = $state('');
 	private lastChecked = 0;
 	private started = false;
 
 	/** There is a newer app, and it is the kind of app that can be updated by downloading. */
 	get available(): LatestRelease | null {
-		return this.latest && isNewer(APP_VERSION_CODE, this.latest.versionCode) ? this.latest : null;
+		return this.latest && isNewer(APP_VERSION, this.latest.version) ? this.latest : null;
 	}
 
 	/** Available and not yet put off with "Later". */
 	get showBanner(): boolean {
 		const a = this.available;
-		return !!a && a.versionCode > this.dismissedCode;
+		return !!a && compareVersions(a.version, this.dismissedVersion || '0') > 0;
 	}
 
 	start() {
@@ -31,7 +31,8 @@ class Updates {
 		if (this.started || nativePlatform() !== 'android') return;
 		this.started = true;
 		try {
-			this.dismissedCode = Number(localStorage.getItem(DISMISSED_KEY)) || 0;
+			const saved = localStorage.getItem(DISMISSED_KEY) ?? '';
+			this.dismissedVersion = /^\d+(\.\d+)+$/.test(saved) ? saved : '';
 		} catch {
 			// private mode: banner just comes back next time
 		}
@@ -50,9 +51,9 @@ class Updates {
 	dismiss() {
 		const a = this.available;
 		if (!a) return;
-		this.dismissedCode = a.versionCode;
+		this.dismissedVersion = a.version;
 		try {
-			localStorage.setItem(DISMISSED_KEY, String(a.versionCode));
+			localStorage.setItem(DISMISSED_KEY, a.version);
 		} catch {
 			// ignore
 		}

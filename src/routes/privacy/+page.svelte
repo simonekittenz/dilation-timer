@@ -48,9 +48,10 @@
 			the Google Play version.
 		</li>
 		<li>
-			<strong>The Android app</strong>, when downloaded from the website, asks the website whether a
-			newer version exists. This is an ordinary request that sends none of your information. The
-			version from Google Play makes no requests at all, because Google Play does the updating.
+			<strong>The Android app</strong>, when downloaded from the website, asks GitHub (or, if that
+			fails, the website) whether a newer version exists. This is an ordinary request that sends
+			none of your information. The version from Google Play makes no requests at all, because
+			Google Play does the updating.
 		</li>
 	</ul>
 </section>

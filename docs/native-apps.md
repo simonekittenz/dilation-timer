@@ -212,17 +212,24 @@ of test builds before a push share one version. `appRelease.json` and `build.gra
 be safe.
 
 The installed Android app carries its own version number. When it opens (and when it is switched back
-to, at most every 30 minutes) it asks `https://dilation-timer.vercel.app/release.json`, which is just
-`appRelease.json` published with the site. If the website has a higher version code it shows a
-"New version available" card on Today (never during a session) with a Download button, and Settings
-mentions it next to the version line at the bottom. "Later" hides that version; a still newer one
-shows it again. Offline, a bad answer, or an answer that links anywhere but our own `/downloads/`
-address is ignored (that address forwards to GitHub, which is the only place the file lives). The web
+to, at most every 30 minutes) it asks GitHub for the newest release
+(`https://api.github.com/repos/simonekittenz/dilation-timer/releases/latest`; the tag `v1.9` is the
+version, and the release must have an asset named `Dilation-timer.apk`). If that is newer than the
+installed version it shows a "New version available" card on Today (never during a session) with a
+Download button, and Settings mentions it next to the version line at the bottom. "Later" hides that
+version; a still newer one shows it again. Versions are compared number by number (1.10 is newer than
+1.9).
+
+If GitHub can't be used (offline, an unexpected answer, or its limit of 60 requests an hour per
+address), the app asks `https://dilation-timer.vercel.app/release.json` instead, which is just
+`appRelease.json` published with the site. Offline, a bad answer, or a link that isn't the app file of
+this project's own releases (or our `/downloads/` address, which forwards there) is ignored. The web
 version and iPhone never check: the website updates itself, and iPhone has no downloadable file.
 
-So after publishing, **installed apps only learn about it once the website is deployed**, and the
-first app that has this check is the first one that can announce the next. Updating over the old app
-keeps its data when it is signed with the same key (see below).
+So a new version is announced **as soon as `npm run apk:publish` has created the release**, with no
+website deploy needed. Apps older than 1.9 only know the website's `/release.json`, so they learn about
+a release once the website has deployed the new `appRelease.json`: keep committing it. Updating over
+the old app keeps its data when it is signed with the same key (see below).
 
 Things to know:
 

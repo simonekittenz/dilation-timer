@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// updates.svelte.ts is the Android app asking the website whether a newer version exists. The
+// updates.svelte.ts is the Android app asking GitHub whether a newer version exists. The
 // Google Play build of the app must never do that: Play updates it, and the notice would point
 // at a downloadable file that Play users have no use for.
 describe('the self-update check', () => {
@@ -21,13 +21,13 @@ describe('the self-update check', () => {
 		vi.unstubAllEnvs();
 	});
 
-	it('asks the website in the normal Android app', async () => {
+	it('asks GitHub in the normal Android app', async () => {
 		vi.stubEnv('VITE_PLAY', '0');
 		const { updates } = await import('./updates.svelte');
 		updates.start();
 		await Promise.resolve();
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
-		expect(String(fetchSpy.mock.calls[0][0])).toContain('/release.json');
+		expect(String(fetchSpy.mock.calls[0][0])).toContain('api.github.com/repos/simonekittenz');
 	});
 
 	it('never asks, and never shows a notice, in the Google Play build', async () => {
