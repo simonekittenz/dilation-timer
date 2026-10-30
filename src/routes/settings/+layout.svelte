@@ -20,10 +20,10 @@
 
 <div class="settings">
 	<div class="head">
-		<div>
-			{#if section}<a class="back" href="/settings">‹ Settings</a>{/if}
-			<h1>{TITLES[section] ?? 'Settings'}</h1>
-		</div>
+		{#if section}
+			<a class="back-btn" href="/settings" aria-label="Back to Settings">‹</a>
+		{/if}
+		<h1>{TITLES[section] ?? 'Settings'}</h1>
 		<p class="status {form.status}" role="status" aria-live="polite">
 			{#if form.status === 'saved'}
 				Saved ✓

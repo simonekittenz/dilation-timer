@@ -32,46 +32,43 @@
 			aria-label="Surgery date (Day 1)"
 		/>
 	</label>
-	<details>
-		<summary>
-			<span class="summary-text">
-				<span class="label">Your dilators</span>
-				<span class="hint meta">{draft.dilators.length} in your kit</span>
-			</span>
-		</summary>
-		<div class="body">
-			<p class="hint">Set these up once. Phases below just pick a dilator and a time.</p>
-			{#each draft.dilators as d, di (d.id)}
-				<div class="row dilator">
-					<input type="color" class="color" bind:value={d.color} aria-label="{d.name} color" />
-					<input class="grow" bind:value={d.name} aria-label="Dilator name" />
-					<input
-						type="number"
-						min="1"
-						class="num"
-						placeholder="mm"
-						bind:value={d.diameterMm}
-						aria-label="Diameter in mm"
-					/>
-					<span class="hint">mm</span>
-					<button
-						class="pill"
-						onclick={() => draft.dilators.splice(di, 1)}
-						disabled={inUse.has(d.id)}
-						title={inUse.has(d.id) ? 'Used in a phase' : 'Remove'}
-						aria-label="Remove {d.name}">✕</button
-					>
-					<input
-						class="nickname"
-						bind:value={d.nickname}
-						placeholder="Nickname (optional), e.g. Sunny"
-						aria-label="{d.name} nickname"
-					/>
-				</div>
-			{/each}
-			<div class="actions-row">
-				<button class="pill" onclick={addDilator}>+ Add dilator</button>
+	<div class="block">
+		<span class="label">Your dilators</span>
+		<p class="hint">Set these up once. Phases in your schedule just pick a dilator and a time.</p>
+	</div>
+	{#each draft.dilators as d, di (d.id)}
+		<div class="block dilator">
+			<div class="row">
+				<input type="color" class="color" bind:value={d.color} aria-label="{d.name} color" />
+				<input class="grow" bind:value={d.name} aria-label="Dilator name" />
+				<button
+					class="pill"
+					onclick={() => draft.dilators.splice(di, 1)}
+					disabled={inUse.has(d.id)}
+					title={inUse.has(d.id) ? 'Used in a phase' : 'Remove'}
+					aria-label="Remove {d.name}">✕</button
+				>
+			</div>
+			<div class="row">
+				<input
+					class="grow"
+					bind:value={d.nickname}
+					placeholder="Nickname (optional), e.g. Sunny"
+					aria-label="{d.name} nickname"
+				/>
+				<input
+					type="number"
+					min="1"
+					class="num"
+					placeholder="mm"
+					bind:value={d.diameterMm}
+					aria-label="Diameter in mm"
+				/>
+				<span class="hint">mm</span>
 			</div>
 		</div>
-	</details>
+	{/each}
+	<div class="block actions-row">
+		<button class="pill strong" onclick={addDilator}>+ Add dilator</button>
+	</div>
 </div>

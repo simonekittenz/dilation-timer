@@ -23,27 +23,25 @@
 			href: '/settings/about',
 			icon: '🌸',
 			title: 'About you',
-			hint: `Surgery date · ${draft.dilators.length} dilators`
+			hint: `Surgery date and ${draft.dilators.length} dilators`
 		},
 		{
 			href: '/settings/alerts',
 			icon: '🔔',
 			title: 'Sessions & alerts',
-			hint: isNative()
-				? 'Switch window, sound, alerts and reminders'
-				: 'Switch window, alarm sound and reminders'
+			hint: isNative() ? 'Sound, alerts and reminders' : 'Switch window, sound, reminders'
 		},
 		{
 			href: '/settings/encouragement',
 			icon: '💌',
 			title: 'Encouragement',
-			hint: 'Your little friend, milestones, streak and messages'
+			hint: 'Your friend, milestones, streak'
 		},
 		{
 			href: '/settings/schedule',
 			icon: '🗓️',
 			title: 'Your schedule',
-			hint: `${draft.phases.length} phases · push back, add or load a program`
+			hint: `${draft.phases.length} phases, push back, edit`
 		},
 		{
 			href: '/settings/data',
@@ -64,8 +62,10 @@
 	{:else if day < 1}
 		<h2>Starts in {1 - day} day{1 - day === 1 ? '' : 's'}</h2>
 	{:else if currentPhase}
-		<h2>Day {day} · {currentPhase.label}</h2>
-		<a class="pill" href="/settings/schedule#current-phase">See this phase →</a>
+		<div class="here-row">
+			<h2>Day {day} · {currentPhase.label}</h2>
+			<a class="pill" href="/settings/schedule#current-phase">See phase →</a>
+		</div>
 	{:else}
 		<h2>Day {day} · no phase covers today</h2>
 	{/if}
