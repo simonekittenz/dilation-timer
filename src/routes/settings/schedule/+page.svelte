@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { formatDuration, totalMinutes } from '#lib/customSession.ts';
-	import { addDays, formatDateRange } from '#lib/dates.ts';
+	import { addDays, formatDateRange, formatScheduleDate } from '#lib/dates.ts';
 	import { PROGRAMS, wihPhases } from '#lib/defaults.ts';
 	import { wihDilators } from '#lib/dilators.ts';
 	import {
@@ -171,10 +171,16 @@
 			{#if phase.toDay !== null}
 				<div class="sect">
 					<div class="field-row">
-						<span class="label small">Ends on day</span>
+						<span class="label small">Ends on</span>
 						<Stepper
 							value={phase.toDay}
 							min={phase.fromDay}
+							display={hasDate
+								? formatScheduleDate(
+										addDays(draft.startDate, phase.toDay - 1),
+										Number(draft.startDate.slice(0, 4))
+									)
+								: `Day ${phase.toDay}`}
 							label="end day"
 							onchange={(n) => setEnd(phase.id, n)}
 						/>

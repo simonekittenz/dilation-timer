@@ -8,6 +8,7 @@
 		max = Infinity,
 		step = 1,
 		unit = '',
+		display,
 		label
 	}: {
 		value: number;
@@ -17,6 +18,8 @@
 		/** How far − and + go. With a step of 5, 7 goes to 10 and 10 goes to 5, so values land on the grid. */
 		step?: number;
 		unit?: string;
+		/** Text to show instead of the number (for instance a date), when the number means little on its own. */
+		display?: string;
 		label: string;
 	} = $props();
 
@@ -45,18 +48,22 @@
 		onclick={() => bump(-1)}
 		disabled={Number(value) <= min}>−</button
 	>
-	<label class="val">
-		<input
-			class="field"
-			type="number"
-			inputmode="decimal"
-			{min}
-			{value}
-			aria-label={label}
-			onchange={(e) => typed(e.currentTarget)}
-		/>
-		{#if unit}<span class="unit">{unit}</span>{/if}
-	</label>
+	{#if display !== undefined}
+		<span class="val shown" aria-label={label}>{display}</span>
+	{:else}
+		<label class="val">
+			<input
+				class="field"
+				type="number"
+				inputmode="decimal"
+				{min}
+				{value}
+				aria-label={label}
+				onchange={(e) => typed(e.currentTarget)}
+			/>
+			{#if unit}<span class="unit">{unit}</span>{/if}
+		</label>
+	{/if}
 	<button
 		type="button"
 		class="step"
@@ -100,6 +107,12 @@
 		justify-content: center;
 		gap: 0.2rem;
 		min-width: 3.6rem;
+	}
+	.val.shown {
+		min-width: 5.6rem;
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--ink);
 	}
 	.stepper .field {
 		width: 2.6rem;
