@@ -595,7 +595,7 @@ class Store {
 		unlock();
 		const now = Date.now();
 		if (this.active.phase === 'switch') {
-			this.active = confirmSwitch(this.active, now);
+			this.active = confirmSwitch(this.active, now, this.switchWindowMs);
 		}
 		this.save();
 		this.step();

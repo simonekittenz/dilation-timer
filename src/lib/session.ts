@@ -200,12 +200,24 @@ function closeCurrent(s: ActiveSession, now: number) {
 	return s.records.map((r, i) => (i === s.stepIndex ? { ...r, endedAt: now } : r));
 }
 
-/** "I switched the dilator" — closes the current step and starts the next timer. */
-export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
+/**
+ * "I switched the dilator" — closes the current step and starts the next timer.
+ * Pass the switch window that was in force to leave out swaps that only happened after the nudge: that
+ * time is how long it took to react, not how long the swap takes.
+ */
+export function confirmSwitch(
+	s: ActiveSession,
+	now: number,
+	switchWindowMs?: number
+): ActiveSession {
 	if (s.phase !== 'switch') return s;
 	const next = s.steps[s.stepIndex + 1];
 	// how long the swap took: from the timer ending to now
-	const switchedAfterMs = Math.max(0, now - alertStart(s));
+	// "Chill out" only exists once the nudge has happened, so it counts as nudged even though it moves the time
+	const nudged =
+		switchWindowMs !== undefined &&
+		(s.quietUntil != null || now >= escalateAt({ ...s, quietUntil: null }, switchWindowMs));
+	const switchedAfterMs = nudged ? undefined : Math.max(0, now - alertStart(s));
 	return {
 		...s,
 		phase: 'running',
@@ -226,7 +238,7 @@ export function confirmSwitch(s: ActiveSession, now: number): ActiveSession {
 				plannedMinutes: next.minutes,
 				startedAt: now,
 				endedAt: null,
-				switchedAfterMs
+				...(switchedAfterMs !== undefined ? { switchedAfterMs } : {})
 			}
 		]
 	};
