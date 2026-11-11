@@ -32,7 +32,7 @@
 
 	function no() {
 		store.finishSetup();
-		void goto('/settings/about');
+		void goto('/settings/schedule');
 	}
 </script>
 
@@ -130,7 +130,7 @@
 
 		<div class="buttons">
 			<button class="btn" onclick={yes}>Yes, that looks right ✓</button>
-			<button class="btn ghost" onclick={no}>No, take me to Settings</button>
+			<button class="btn ghost" onclick={no}>No, take me to my schedule</button>
 		</div>
 	</section>
 {/if}
