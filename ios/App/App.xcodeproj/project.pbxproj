@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6D0A12000000000000000011 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000001 /* SessionActivityAttributes.swift */; };
+		6D0A12000000000000000012 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000001 /* SessionActivityAttributes.swift */; };
+		6D0A12000000000000000013 /* SessionWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000002 /* SessionWidgetBundle.swift */; };
+		6D0A12000000000000000014 /* SessionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000003 /* SessionLiveActivity.swift */; };
+		6D0A12000000000000000015 /* SessionNoticePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000005 /* SessionNoticePlugin.swift */; };
+		6D0A12000000000000000016 /* SessionWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000006 /* SessionWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
@@ -21,7 +27,37 @@
 		6D0A11E52FEA00010072D4A2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6D0A11E42FEA00010072D4A2 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		6D0A12000000000000000043 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6D0A12000000000000000031;
+			remoteInfo = SessionWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6D0A12000000000000000041 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6D0A12000000000000000016 /* SessionWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		6D0A12000000000000000001 /* SessionActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionActivityAttributes.swift; sourceTree = "<group>"; };
+		6D0A12000000000000000002 /* SessionWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWidgetBundle.swift; sourceTree = "<group>"; };
+		6D0A12000000000000000003 /* SessionLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLiveActivity.swift; sourceTree = "<group>"; };
+		6D0A12000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6D0A12000000000000000005 /* SessionNoticePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNoticePlugin.swift; sourceTree = "<group>"; };
+		6D0A12000000000000000006 /* SessionWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SessionWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -47,6 +83,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6D0A12000000000000000033 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -55,6 +98,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				6D0A12000000000000000021 /* Shared */,
+				6D0A12000000000000000022 /* SessionWidget */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				6D0A12000000000000000006 /* SessionWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,6 +119,7 @@
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				6D0A11E02FEA00010072D4A1 /* MyViewController.swift */,
 				6D0A11E22FEA00010072D4A2 /* AudioDuckingPlugin.swift */,
+				6D0A12000000000000000005 /* SessionNoticePlugin.swift */,
 				6D0A11E42FEA00010072D4A2 /* PrivacyInfo.xcprivacy */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -86,6 +133,24 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		6D0A12000000000000000021 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				6D0A12000000000000000001 /* SessionActivityAttributes.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		6D0A12000000000000000022 /* SessionWidget */ = {
+			isa = PBXGroup;
+			children = (
+				6D0A12000000000000000002 /* SessionWidgetBundle.swift */,
+				6D0A12000000000000000003 /* SessionLiveActivity.swift */,
+				6D0A12000000000000000004 /* Info.plist */,
+			);
+			path = SessionWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -96,10 +161,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				6D0A12000000000000000041 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				6D0A12000000000000000042 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -108,6 +175,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		6D0A12000000000000000031 /* SessionWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6D0A12000000000000000035 /* Build configuration list for PBXNativeTarget "SessionWidget" */;
+			buildPhases = (
+				6D0A12000000000000000032 /* Sources */,
+				6D0A12000000000000000033 /* Frameworks */,
+				6D0A12000000000000000034 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SessionWidget;
+			productName = SessionWidget;
+			productReference = 6D0A12000000000000000006 /* SessionWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -121,6 +205,10 @@
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
+						ProvisioningStyle = Automatic;
+					};
+					6D0A12000000000000000031 = {
+						CreatedOnToolsVersion = 14.1;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -142,6 +230,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				6D0A12000000000000000031 /* SessionWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -161,6 +250,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6D0A12000000000000000034 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -172,10 +268,30 @@
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				6D0A11E12FEA00010072D4A1 /* MyViewController.swift in Sources */,
 				6D0A11E32FEA00010072D4A2 /* AudioDuckingPlugin.swift in Sources */,
+				6D0A12000000000000000015 /* SessionNoticePlugin.swift in Sources */,
+				6D0A12000000000000000011 /* SessionActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6D0A12000000000000000032 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6D0A12000000000000000013 /* SessionWidgetBundle.swift in Sources */,
+				6D0A12000000000000000014 /* SessionLiveActivity.swift in Sources */,
+				6D0A12000000000000000012 /* SessionActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6D0A12000000000000000042 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6D0A12000000000000000031 /* SessionWidget */;
+			targetProxy = 6D0A12000000000000000043 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -352,6 +468,56 @@
 			};
 			name = Release;
 		};
+		6D0A12000000000000000036 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H6HG3FX4XQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SessionWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.simonekittenz.dilationtimer.SessionWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		6D0A12000000000000000037 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H6HG3FX4XQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SessionWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.simonekittenz.dilationtimer.SessionWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -369,6 +535,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6D0A12000000000000000035 /* Build configuration list for PBXNativeTarget "SessionWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6D0A12000000000000000036 /* Debug */,
+				6D0A12000000000000000037 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

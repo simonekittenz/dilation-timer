@@ -52,6 +52,7 @@ import {
 	switchWindowLeftMs,
 	tick
 } from './session';
+import { nativePlatform } from './platform';
 import { hideSessionNotice, planSessionNotice, showSessionNotice } from './sessionNotice';
 import { currentMilestone, type Milestone } from './milestones';
 import { isFirstTime, learnSwitches, switchWindowFor, usualSwitchMs } from './switchHistory';
@@ -411,6 +412,7 @@ class Store {
 		void this.startLockedScreenAlerts();
 		void this.startReminders();
 		if (this.active && this.active.phase !== 'finished') void keepAwake(true);
+		this.syncLiveNotice(); // also clears a Live Activity left over from before the app was last closed
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
 			if (this.active && this.active.phase !== 'finished' && document.visibilityState === 'visible')
@@ -430,18 +432,21 @@ class Store {
 		await watchAppState((isActive) => {
 			setAppActive(isActive);
 			if (isActive) {
-				void hideSessionNotice();
+				if (nativePlatform() === 'android') void hideSessionNotice();
+				this.syncLiveNotice();
 				void disarmAlerts();
 				void clearReminderNotifications({ pendingSnooze: false });
 				this.syncRemindersSoon(); // a new day may have started while the app was away
 				this.step();
 			} else {
 				this.step();
-				void showSessionNotice(
-					this.settings.lockScreenTimer === false
-						? null
-						: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now())
-				);
+				if (nativePlatform() === 'android') {
+					void showSessionNotice(
+						this.settings.lockScreenTimer === false
+							? null
+							: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now())
+					);
+				}
 				void armAlerts(
 					planBackgroundAlerts(
 						this.active ? $state.snapshot(this.active) : null,
@@ -486,6 +491,29 @@ class Store {
 		localStorage.setItem(KEY, JSON.stringify(data));
 		this.hasSavedData = true;
 		this.syncRemindersSoon();
+		this.syncLiveNotice();
+	}
+
+	/** What the iPhone's Live Activity last showed (null: not sent yet since the app started). */
+	private lastLiveNotice: string | null = null;
+
+	/**
+	 * iPhone: keeps the Live Activity in step with the session. iOS only lets an app start one while it is
+	 * in front, so this runs on every change, and the phone ticks the clock itself once the app is away.
+	 * (Android puts its notice up when the app goes to the background instead, see startLockedScreenAlerts.)
+	 */
+	private syncLiveNotice() {
+		if (nativePlatform() !== 'ios') return;
+		const notice =
+			this.settings.lockScreenTimer === false
+				? null
+				: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now());
+		const key = notice
+			? JSON.stringify([notice.title, notice.text, notice.clock, notice.at, notice.afterTitle])
+			: '';
+		if (key === this.lastLiveNotice) return;
+		this.lastLiveNotice = key;
+		void showSessionNotice(notice);
 	}
 
 	private step() {

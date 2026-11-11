@@ -110,6 +110,11 @@ The iPhone app uses the same code as Android, but it has **never been on a real 
    anything.
 8. Nothing here should mention Android or a download: the app never shows the website's start page.
 
+The app carries a small second target, the **SessionWidget** extension for the Live Activity. Its App ID
+(`com.simonekittenz.dilationtimer.SessionWidget`) and profile are created by the first signed export, so
+that run may take a little longer and will add the App ID to your Apple account. Nothing extra is needed in
+App Store Connect. Also try: start a session, lock the phone, and check the timer on the lock screen.
+
 Known differences from Android: an iPhone has no notification channels, so alerts and reminders use the
 normal notification sound (the loud alarm sound only plays while the app is open), and iOS keeps at most 64
 waiting notifications, which the app stays well under (a test checks it). Alerts do not break through a

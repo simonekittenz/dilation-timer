@@ -33,6 +33,8 @@ describe('what the lock screen timer says', () => {
 		});
 		// when the timer ends the alert for it takes over: this one must not stay behind it
 		expect(n.expiresInMs).toBe(8 * MIN + 500);
+		// the iPhone cannot update it once the app is away, so it carries the words for after the countdown
+		expect(n).toMatchObject({ afterTitle: 'Time to switch ♡', afterText: 'Swap to #3 “Bun”' });
 	});
 
 	it('follows added and removed minutes', () => {
@@ -46,7 +48,9 @@ describe('what the lock screen timer says', () => {
 		s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
 		expect(planSessionNotice(s, 31 * MIN)).toMatchObject({
 			title: '#4 · 3 of 3',
-			text: 'The last one'
+			text: 'The last one',
+			afterTitle: 'All done! 🎉',
+			afterText: 'Take the last one out'
 		});
 	});
 

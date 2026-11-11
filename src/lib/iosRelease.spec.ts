@@ -15,7 +15,10 @@ describe('the iPhone app files', () => {
 		expect(read('capacitor.config.ts')).toContain("appId: 'com.simonekittenz.dilationtimer'");
 		const ids = [...project.matchAll(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/g)].map((m) => m[1]);
 		expect(ids.length).toBeGreaterThan(0);
-		expect(new Set(ids)).toEqual(new Set(['com.simonekittenz.dilationtimer']));
+		// the lock screen extension has to be named after the app: the app's id, then a suffix
+		expect(new Set(ids)).toEqual(
+			new Set(['com.simonekittenz.dilationtimer', 'com.simonekittenz.dilationtimer.SessionWidget'])
+		);
 	});
 
 	it('says it uses no special encryption, so uploads skip the export-compliance question', () => {
@@ -60,5 +63,68 @@ describe('the iPhone app files', () => {
 
 	it('does not check for updates on iPhone (App Store and TestFlight do that)', () => {
 		expect(read('src/lib/updates.svelte.ts')).toContain("nativePlatform() !== 'android'");
+	});
+});
+
+describe('the Live Activity on the lock screen', () => {
+	const widgetInfo = read('ios/App/SessionWidget/Info.plist');
+	const plugin = read('ios/App/App/SessionNoticePlugin.swift');
+	const shared = read('ios/App/Shared/SessionActivityAttributes.swift');
+	const js = read('src/lib/sessionNotice.ts');
+
+	it('is switched on in the app, and the extension is a widget extension', () => {
+		expect(info).toMatch(/<key>NSSupportsLiveActivities<\/key>\s*<true\/>/);
+		expect(widgetInfo).toContain('com.apple.widgetkit-extension');
+		expect(widgetInfo).toContain('$(MARKETING_VERSION)');
+		expect(widgetInfo).toContain('$(CURRENT_PROJECT_VERSION)');
+	});
+
+	it('is part of the project: built, and put inside the app so it is uploaded with it', () => {
+		expect(project).toContain('productType = "com.apple.product-type.app-extension"');
+		expect(project).toContain('name = "Embed Foundation Extensions"');
+		expect(project).toContain('SessionWidget.appex in Embed Foundation Extensions');
+		expect(project).toContain('PBXTargetDependency');
+		// Live Activities need iOS 16.2; the app itself still runs on iOS 15
+		expect(project).toContain('IPHONEOS_DEPLOYMENT_TARGET = 16.2;');
+		expect(project).toContain('IPHONEOS_DEPLOYMENT_TARGET = 15.0;');
+	});
+
+	it('shares one description of the activity between the app and the extension', () => {
+		// one "build file" line per target that compiles it
+		const inSources = (file: string) =>
+			[...project.matchAll(new RegExp(`${file} in Sources \\*/ = \\{isa = PBXBuildFile`, 'g'))]
+				.length;
+		expect(inSources('SessionActivityAttributes.swift')).toBe(2); // app and extension
+		expect(inSources('SessionNoticePlugin.swift')).toBe(1);
+		expect(inSources('SessionLiveActivity.swift')).toBe(1);
+		expect(shared).toContain('ActivityAttributes');
+	});
+
+	it('uses the same plugin name, methods and fields as the JavaScript (and the Android plugin)', () => {
+		expect(js).toContain("registerPlugin<SessionNoticePlugin>('SessionNotice')");
+		expect(plugin).toContain('public let jsName = "SessionNotice"');
+		for (const m of ['show', 'hide']) {
+			expect(plugin).toContain(`CAPPluginMethod(name: "${m}"`);
+			expect(plugin).toContain(`@objc func ${m}(_ call: CAPPluginCall)`);
+		}
+		for (const field of [
+			'title',
+			'text',
+			'clock',
+			'at',
+			'afterTitle',
+			'afterText',
+			'expiresInMs'
+		]) {
+			expect(plugin, field).toContain(`"${field}"`);
+			expect(shared + plugin, field).toContain(field);
+		}
+	});
+
+	it('is registered in the view controller and does nothing on older iPhones', () => {
+		expect(read('ios/App/App/MyViewController.swift')).toContain(
+			'registerPluginInstance(SessionNoticePlugin())'
+		);
+		expect(plugin).toContain('#available(iOS 16.2, *)');
 	});
 });

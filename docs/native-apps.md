@@ -148,6 +148,32 @@ just show the notification. A switch under Settings → Sessions & alerts turns 
 emulator (it appears when the app is left, ticks, and hands over to the alert); **the Android 16 chip is not
 checked yet** (needs an Android 16 phone or emulator image).
 
+### The timer on the lock screen (iPhone)
+
+On the iPhone the same idea is a **Live Activity**: the session's timer on the lock screen and in the
+Dynamic Island (iPhone 14 Pro and newer), with the clock ticking by itself. iOS 16.2 and newer; older
+iPhones simply don't get it. It is made of three parts:
+
+- `ios/App/SessionWidget/`: a **widget extension** (its own target, bundle id
+  `com.simonekittenz.dilationtimer.SessionWidget`) that draws the lock screen card and the Dynamic Island.
+- `ios/App/Shared/SessionActivityAttributes.swift`: the data the app hands to it, compiled into both the app
+  and the extension. Everything in it is an absolute time, so the phone can keep the clock running.
+- `ios/App/App/SessionNoticePlugin.swift`: starts, updates and ends the activity. It has the same plugin name
+  and methods as the Android one, so `src/lib/sessionNotice.ts` serves both.
+
+iOS only lets an app **start** a Live Activity while it is in front, so unlike Android the app keeps it up to
+date all through the session (every change goes through `Store.save()` -> `syncLiveNotice()`), and the phone
+ticks the clock once the app is away. The app cannot change what it shows while it is asleep, so a countdown
+carries the words for after it (`afterTitle`/`afterText`) and iOS swaps them in when the activity goes stale at
+the timer's end ("Time to switch"). It stays up until the app is opened again, which takes it down; iOS also
+ends one by itself after several hours at most. The "Time to switch" alert is still the local notification.
+
+The extension needs its own App ID and profile. They are made on the first signed export by
+`-allowProvisioningUpdates`, like the app's own. The Settings switch "Timer on the lock screen" turns it off,
+and so can the person in iOS Settings. Checked in the simulator: the activity starts, the extension is
+loaded and draws it without a crash. **Not seen on a real iPhone yet** (the lock screen and Dynamic Island
+look).
+
 Verified on an Android 15 virtual phone with the screen off and Doze forced on: the alert arrived within
 2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
 the app cleared them. **Not yet tried on a real phone or on a real iPhone** (the iPhone app has only run in the simulator). Some makers (Samsung, Xiaomi,

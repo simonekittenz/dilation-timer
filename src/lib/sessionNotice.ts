@@ -5,9 +5,11 @@ import { alertStart, isLastStep, plannedEnd, remainingMs } from './session';
 import type { ActiveSession } from './types';
 
 /**
- * The running session's timer on the lock screen (Android: an ongoing notification, and on Android 16 a
- * Live Update). It is put up when the app goes to the background and taken down when it comes back, so
- * it only ever exists during a session. Android keeps its clock ticking by itself.
+ * The running session's timer on the lock screen. Android: an ongoing notification (on Android 16 a Live
+ * Update), put up when the app goes to the background and taken down when it comes back. iPhone: a Live
+ * Activity (lock screen and Dynamic Island), which iOS only lets the app start while it is in front, so
+ * it is kept up to date all through the session instead. Either way it only exists during a session, and
+ * the phone keeps its clock ticking by itself.
  */
 export interface SessionNotice {
 	title: string;
@@ -18,6 +20,9 @@ export interface SessionNotice {
 	at: number;
 	/** Takes itself down after this long, so it can never be left behind. */
 	expiresInMs: number;
+	/** iPhone: what to say instead once a countdown has run out, since nothing can update it by then. */
+	afterTitle?: string;
+	afterText?: string;
 }
 
 /** A notice for a session that is paused or waiting is taken down by itself after this long. */
@@ -71,7 +76,9 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 		clock: 'down',
 		at: end,
 		// when the timer ends the alert for it takes over, so this one goes
-		expiresInMs: end - now + PAST_END_MS
+		expiresInMs: end - now + PAST_END_MS,
+		afterTitle: next ? 'Time to switch ♡' : 'All done! 🎉',
+		afterText: next ? `Swap to ${who(next)}` : 'Take the last one out'
 	};
 }
 
@@ -92,9 +99,9 @@ export function setSessionNoticeForTests(p: SessionNoticePlugin | null | undefin
 	queue = Promise.resolve();
 }
 
-/** Only the Android app has this plugin. */
+/** The Android app (a notification) and the iPhone app (a Live Activity) have this plugin. */
 export function sessionNoticeAvailable(): boolean {
-	return injected === undefined ? nativePlatform() === 'android' : injected !== null;
+	return injected === undefined ? ['android', 'ios'].includes(nativePlatform()) : injected !== null;
 }
 
 // A Capacitor plugin answers to every property name, `then` included, so it is only ever passed around

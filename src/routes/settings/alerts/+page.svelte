@@ -50,13 +50,17 @@
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.newDilatorExtraMinutes} />
 	</label>
-	{#if nativePlatform() === 'android'}
+	{#if isNative()}
 		<label class="item">
 			<span class="text">
 				<span class="label">Timer on the lock screen</span>
 				<span class="hint">
-					While a session runs and you've left the app or locked your phone, keep its timer where
-					you can see it. On Android 16 it also shows as a chip at the top
+					{#if nativePlatform() === 'ios'}
+						While a session runs, keep its timer on your lock screen and in the Dynamic Island
+					{:else}
+						While a session runs and you've left the app or locked your phone, keep its timer where
+						you can see it. On Android 16 it also shows as a chip at the top
+					{/if}
 				</span>
 			</span>
 			<input
