@@ -54,6 +54,16 @@ describe('migrate', () => {
 		expect(migrateSettings({ volume: 60 }).volume).toBe(60);
 	});
 
+	it('keeps the smart timer on unless it was switched off, and keeps good own values only', () => {
+		expect(migrateSettings({ startDate: '2026-01-01' }).smartTimer).toBe(true);
+		expect(migrateSettings({ smartTimer: false }).smartTimer).toBe(false);
+		const kept = migrateSettings({
+			swapOverrides: { A: { ms: 90_000, since: 5 }, B: { ms: 0, since: 5 } }
+		}).swapOverrides;
+		expect(kept).toEqual({ A: { ms: 90_000, since: 5 } });
+		expect(migrateSettings({ startDate: '2026-01-01' }).swapOverrides).toEqual({});
+	});
+
 	it('uses the start screen unless it was switched off', () => {
 		expect(migrateSettings({ startDate: '2026-01-01' }).startScreen).toBe(true);
 		expect(migrateSettings({ startScreen: false }).startScreen).toBe(false);

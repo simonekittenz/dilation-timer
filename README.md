@@ -29,6 +29,12 @@ to switch to the next one.
 - **A timer on your lock screen.** While a session runs, the apps keep its timer where you can see it
   without opening the app: an ongoing notification on Android (a Live Update chip on Android 16) and a Live
   Activity with the Dynamic Island on iPhone. Settings can turn it off.
+- **A smart timer.** The nudge waits as long as you usually take to swap to that dilator (never less than
+  the gentle window), worked out per dilator from your own history: the swap that three out of four were
+  quicker than, leaving out first swaps and ones you forgot. Settings → Sessions & alerts → Smart timer
+  shows what it is doing for each dilator and why, lets you set your own swap time for one (it starts
+  from that, ignores the history before the day you set it, and learns from the swaps after), and has a
+  switch to turn it off.
 - **The last dilator needs no nagging.** A fanfare plays and the "all done" screen stays up until you tap
   it away. It shows the session in numbers (time with the dilators, how long you took to be Ready, each
   swap) and kind notes when you were quicker than usual. **More statistics** (also at the top of History)

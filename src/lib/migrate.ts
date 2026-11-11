@@ -1,6 +1,7 @@
 import { defaultSettings } from './defaults';
 import { PALETTE } from './dilators';
 import { normalizeReminders } from './reminders';
+import { cleanOverrides } from './switchHistory';
 import type { Dilator, LogEntry, Phase, Settings, SlotId } from './types';
 
 const TIME = /^(\d{1,2}):\d{2}$/;
@@ -90,6 +91,8 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		celebrations,
 		streak: saved.streak !== false,
 		lockScreenTimer: saved.lockScreenTimer !== false,
+		smartTimer: saved.smartTimer !== false,
+		swapOverrides: cleanOverrides(saved.swapOverrides),
 		startScreen: saved.startScreen !== false,
 		showStartTimer: saved.showStartTimer !== false,
 		reminders: normalizeReminders(saved.reminders),

@@ -16,6 +16,16 @@ describe('buildSettings', () => {
 		expect(out.messages).toEqual(draft.messages);
 	});
 
+	it('keeps the smart timer choice and the swap times you set', () => {
+		const { draft, text } = fresh();
+		expect(buildSettings(draft, text)!.smartTimer).toBe(true);
+		draft.smartTimer = false;
+		draft.swapOverrides = { '#3': { ms: 240_000, since: 7 } };
+		const out = buildSettings(draft, text)!;
+		expect(out.smartTimer).toBe(false);
+		expect(out.swapOverrides).toEqual({ '#3': { ms: 240_000, since: 7 } });
+	});
+
 	it('keeps the choice about the start screen', () => {
 		const { draft, text } = fresh();
 		expect(buildSettings(draft, text)!.startScreen).toBe(true);

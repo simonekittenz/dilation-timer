@@ -10,7 +10,7 @@
 	} from '#lib/deviceHelp.ts';
 	import { isNative, nativePlatform } from '#lib/platform.ts';
 	import ReminderTimes from '#lib/ReminderTimes.svelte';
-	import { describeSwitch } from '#lib/switchHistory.ts';
+	import { describeSwitch, type SmartRow } from '#lib/switchHistory.ts';
 	import { defaultReminders, slotsInSchedule } from '#lib/reminders.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import type { Reminders } from '#lib/types.ts';
@@ -33,6 +33,29 @@
 		document.addEventListener('visibilitychange', again);
 		return () => document.removeEventListener('visibilitychange', again);
 	});
+
+	// Smart timer: what is typed for each dilator's own value (minutes), until it is used
+	let typed = $state<Record<string, string>>({});
+	const minutesOf = (ms: number) => String(Math.round((ms / 60000) * 10) / 10);
+	const shownMinutes = (row: SmartRow) =>
+		typed[row.label] ?? (row.usualMs !== null ? minutesOf(row.usualMs) : '');
+	const day = (ms: number) =>
+		new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+	function useMyValue(row: SmartRow) {
+		const minutes = Number(String(shownMinutes(row)).replace(',', '.'));
+		if (!Number.isFinite(minutes) || minutes <= 0) return;
+		draft.swapOverrides = {
+			...(draft.swapOverrides ?? {}),
+			[row.label]: { ms: Math.round(minutes * 60000), since: Date.now() }
+		};
+		delete typed[row.label];
+	}
+	function backToLearning(row: SmartRow) {
+		const next = { ...(draft.swapOverrides ?? {}) };
+		delete next[row.label];
+		draft.swapOverrides = next;
+		delete typed[row.label];
+	}
 
 	const form = useSettingsForm();
 	const draft = form.draft;
@@ -132,27 +155,96 @@
 			/>
 		</label>
 	{/if}
-	<div class="block" data-testid="usual-switches">
-		<span class="label">Your usual swap times</span>
-		{#if store.usualSwitches.length}
+	<div class="block" data-testid="smart-timer">
+		<div class="item-head">
+			<span class="label">Smart timer</span>
+			<input
+				type="checkbox"
+				class="toggle"
+				checked={draft.smartTimer !== false}
+				onchange={(e) => (draft.smartTimer = e.currentTarget.checked)}
+				aria-label="Smart timer"
+			/>
+		</div>
+		{#if draft.smartTimer === false}
 			<p class="hint">
-				I time how long you take to switch and nudge you when that time is up, never sooner than the
-				window above. Swaps where you forgot to press the button don't count.
+				Off. I nudge you after the gentle switch window above, for every dilator, whatever your
+				swaps have been like.
 			</p>
-			<ul class="usual">
-				{#each store.usualSwitches as u (u.label)}
-					<li>
-						<span>{u.label}</span><strong
-							>{describeSwitch(u.ms)} · nudge after {describeSwitch(u.nudgeMs)}</strong
-						>
+		{:else}
+			<p class="hint">
+				I time how long you take to swap to each dilator, and nudge you when that time is up, never
+				sooner than the window above. Swaps where you only pressed the button after the nudge,
+				without asking for more time, don't count: that's most likely forgetting. The first swap to
+				a dilator doesn't count either, since that one is slow on purpose.
+			</p>
+			<ul class="smart">
+				{#each store.smartTimerRows as row (row.label)}
+					<li data-testid="smart-row">
+						<div class="top">
+							<span class="name">{row.label}</span>
+							<strong>nudge after {describeSwitch(row.nudgeMs)}</strong>
+						</div>
+						<p class="hint">
+							{#if row.state === 'learned'}
+								Learned from your last {Math.min(row.samples, 10)} swaps: you usually take {describeSwitch(
+									row.usualMs ?? 0
+								)}.
+							{:else if row.state === 'set'}
+								You set {describeSwitch(row.override?.ms ?? 0)} on {day(row.override?.since ?? 0)}.
+								Swaps from before then are ignored. {row.samples} of {row.needed} swaps since, then I
+								learn from them.
+							{:else if row.state === 'set-learned'}
+								Started from your {describeSwitch(row.override?.ms ?? 0)} (set {day(
+									row.override?.since ?? 0
+								)}), and now learned from the {row.samples} swaps since: you usually take {describeSwitch(
+									row.usualMs ?? 0
+								)}.
+							{:else if row.fromAll}
+								{row.samples} of {row.needed} swaps so far. Until then I use what you take over all dilators,
+								{describeSwitch(row.usualMs ?? 0)}.
+							{:else}
+								{row.samples} of {row.needed} swaps so far. Until then I nudge after the window only.
+							{/if}
+							{#if row.forgotten > 0 && row.state !== 'set'}
+								{row.forgotten} where you forgot to press were left out.
+							{/if}
+						</p>
+						{#if row.recent.length}
+							<p class="hint">
+								Latest swaps: {row.recent.map((ms) => describeSwitch(ms)).join(' · ')}
+							</p>
+						{/if}
+						<details class="own">
+							<summary>{row.override ? 'Change my own swap time' : 'Set my own swap time'}</summary>
+							<div class="edit">
+								<label>
+									<span class="hint">You usually take</span>
+									<input
+										type="number"
+										min="0.5"
+										step="0.5"
+										class="num"
+										value={shownMinutes(row)}
+										oninput={(e) => (typed[row.label] = e.currentTarget.value)}
+										aria-label={`Usual swap time for ${row.label}, in minutes`}
+									/>
+									<span class="hint">min</span>
+								</label>
+								<button class="pill strong" onclick={() => useMyValue(row)}>Use this</button>
+								{#if row.override}
+									<button class="pill" onclick={() => backToLearning(row)}>Back to learning</button>
+								{/if}
+							</div>
+							<p class="hint">
+								I start from your value and ignore the swaps from before now. New swaps are still
+								learned from: once there are {row.needed} of them they take over. I still never nudge
+								sooner than the window above.
+							</p>
+						</details>
 					</li>
 				{/each}
 			</ul>
-		{:else}
-			<p class="hint">
-				After a few sessions I'll learn how long you take to switch to each dilator and nudge you
-				when that time is up. Until then only the window above counts.
-			</p>
 		{/if}
 	</div>
 

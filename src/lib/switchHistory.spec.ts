@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { confirmSwitch, estimatedFinish, finish, startSession, tick } from './session';
 import {
+	cleanOverrides,
+	smartRows,
 	MAX_SAMPLE_MS,
 	MAX_RISE_MS,
 	MIN_SAMPLES,
@@ -329,5 +331,173 @@ describe('the first time with a dilator', () => {
 		expect(switchWindowFor(h, 'B', MIN, 2 * MIN)).toBe(5 * MIN);
 		expect(switchWindowFor(h, 'D', MIN, 2 * MIN)).toBe(7 * MIN);
 		expect(switchWindowFor(learnSwitches([]), 'D', MIN, 2 * MIN)).toBe(3 * MIN);
+	});
+});
+
+describe('your own swap time for a dilator', () => {
+	const DAY = 86_400_000;
+	/** A session on a given day, taking these many seconds to swap to B. */
+	const day = (n: number, seconds: number | Swap): LogEntry => ({
+		...entry({ B: seconds }),
+		startedAt: n * DAY
+	});
+	const history = (swaps: (number | Swap)[], overrides = {}, firstDay = 1) =>
+		learnSwitches(
+			[
+				...swaps.map((x, i) => day(firstDay + swaps.length - i, x)),
+				{ ...before('B'), startedAt: 0 }
+			],
+			overrides
+		);
+	// oldest swap first: 100 s ... in the order the arguments are written
+	const learn = (swaps: (number | Swap)[], overrides = {}) =>
+		learnSwitches(
+			[...swaps.map((x, i) => day(i + 2, x)).reverse(), { ...before('B'), startedAt: 0 }],
+			overrides
+		);
+
+	it('is used straight away, even with no history at all', () => {
+		const h = learnSwitches([], { B: { ms: 6 * 60_000, since: 10 * DAY } });
+		expect(usualSwitchMs(h, 'B')).toBe(6 * 60_000);
+		expect(switchWindowFor(h, 'B', 60_000, 0)).toBe(6 * 60_000);
+	});
+
+	it('replaces what the history said, and ignores the swaps from before it was set', () => {
+		const swaps = [300, 300, 300, 300]; // days 2..5: a slow stretch
+		expect(usualSwitchMs(learn(swaps), 'B')).toBe(300_000);
+		const h = learn(swaps, { B: { ms: 120_000, since: 6 * DAY } });
+		expect(usualSwitchMs(h, 'B')).toBe(120_000);
+		expect(h.details.get('B')).toMatchObject({ samples: 0, override: { ms: 120_000 } });
+	});
+
+	it('keeps learning from the swaps after it, and they take over once there are enough', () => {
+		const overrides = { B: { ms: 120_000, since: 5 * DAY } };
+		// days 2-4 are before; days 5+ are after (the override was set at the start of day 5)
+		const two = learn([300, 300, 300, 90, 90], overrides); // two since
+		expect(usualSwitchMs(two, 'B')).toBe(120_000); // not enough yet
+		expect(two.details.get('B')!.samples).toBe(2);
+		const three = learn([300, 300, 300, 90, 90, 90], overrides);
+		expect(usualSwitchMs(three, 'B')).toBe(90_000); // the swaps since took over, and it can come down at once
+		expect(three.details.get('B')!.samples).toBe(3);
+	});
+
+	it('still only creeps up a few minutes per swap from your value', () => {
+		const overrides = { B: { ms: 60_000, since: 1 * DAY } };
+		const h = learn([1200, 1200, 1200], overrides); // 20 minutes each
+		// the plain 75th percentile would be 20 min; from a start of 1 min it can only rise by MAX_RISE_MS
+		expect(usualSwitchMs(h, 'B')).toBe(60_000 + 5 * 60_000);
+	});
+
+	it('leaves only the other dilators in the all-dilator figure for the swaps it ignores', () => {
+		const a = (n: number, seconds: number): LogEntry => ({
+			...entry({ A: seconds }),
+			startedAt: n * DAY
+		});
+		const log = [
+			...[5, 4, 3, 2]
+				.map((n) => a(n, 600))
+				.reverse()
+				.reverse(),
+			{ ...before('A', 'B'), startedAt: 0 }
+		];
+		const plain = learnSwitches(log);
+		const ignoring = learnSwitches(log, { A: { ms: 60_000, since: 100 * DAY } });
+		expect(plain.typicalAll).toBe(600_000);
+		expect(ignoring.typicalAll).toBeNull(); // every swap of A was before the override
+	});
+
+	it('counts the swaps left out as forgotten, but only the ones in the period being learned from', () => {
+		const forgot = { seconds: 900, nudged: true };
+		const h = learn([100, forgot, 100, forgot, 100]);
+		expect(h.details.get('B')).toMatchObject({ samples: 3, forgotten: 2 });
+		const since = learn([forgot, 100, forgot, 100, 100, 100], {
+			B: { ms: 90_000, since: 4 * DAY }
+		});
+		expect(since.details.get('B')).toMatchObject({ samples: 3, forgotten: 1 });
+	});
+
+	it('is dropped by Back to learning: the history counts again', () => {
+		const swaps = [300, 300, 300];
+		expect(usualSwitchMs(learn(swaps, {}), 'B')).toBe(300_000);
+	});
+});
+
+describe('what the smart timer shows for each dilator', () => {
+	const DAY = 86_400_000;
+	const day = (n: number, seconds: number | Swap): LogEntry => ({
+		...entry({ B: seconds }),
+		startedAt: n * DAY
+	});
+	const log = (swaps: (number | Swap)[]) => [
+		...swaps.map((x, i) => day(i + 2, x)).reverse(),
+		{ ...before('B', 'C'), startedAt: 0 }
+	];
+
+	it('is waiting while there are too few swaps, and says what is used meanwhile', () => {
+		const h = learnSwitches(log([200, 200]));
+		const [b, c] = smartRows(h, ['B', 'C'], 60_000);
+		expect(b).toMatchObject({
+			state: 'waiting',
+			samples: 2,
+			needed: 3,
+			usualMs: null,
+			nudgeMs: 60_000
+		});
+		expect(c).toMatchObject({ state: 'waiting', samples: 0 });
+	});
+
+	it('uses the all-dilator figure for a dilator with none of its own, and says so', () => {
+		const h = learnSwitches(log([200, 200, 200]));
+		const [, c] = smartRows(h, ['B', 'C'], 60_000);
+		expect(c).toMatchObject({
+			state: 'waiting',
+			fromAll: true,
+			usualMs: 200_000,
+			nudgeMs: 200_000
+		});
+	});
+
+	it('is learned from enough swaps, with the latest ones to look at', () => {
+		const [b] = smartRows(learnSwitches(log([100, 200, 300, 400, 500, 600, 700])), ['B'], 60_000);
+		expect(b.state).toBe('learned');
+		expect(b.recent).toEqual([300_000, 400_000, 500_000, 600_000, 700_000]);
+		expect(b.nudgeMs).toBeGreaterThan(300_000);
+	});
+
+	it('is set by you, then learned again once enough swaps came after it', () => {
+		const overrides = { B: { ms: 240_000, since: 3 * DAY } };
+		const [set] = smartRows(learnSwitches(log([100, 100, 100]), overrides), ['B'], 60_000);
+		expect(set).toMatchObject({ state: 'set', samples: 2, usualMs: 240_000, nudgeMs: 240_000 }); // days 3 and 4
+		expect(set.override).toEqual(overrides.B);
+		const [learned] = smartRows(
+			learnSwitches(log([100, 100, 100, 100, 100]), overrides),
+			['B'],
+			60_000
+		);
+		expect(learned.state).toBe('set-learned');
+	});
+
+	it('does nothing smart when switched off: the window alone, plus the extra for a new dilator', () => {
+		const h = learnSwitches(log([300, 300, 300, 300]));
+		expect(switchWindowFor(h, 'B', 60_000, 120_000, true)).toBe(300_000);
+		expect(switchWindowFor(h, 'B', 60_000, 120_000, false)).toBe(60_000);
+		expect(switchWindowFor(h, 'NEW', 60_000, 120_000, false)).toBe(180_000);
+	});
+});
+
+describe('saved overrides', () => {
+	it('keeps good ones and drops damaged ones', () => {
+		expect(
+			cleanOverrides({
+				A: { ms: 90_000, since: 5 },
+				B: { ms: -1, since: 5 },
+				C: { ms: 'x', since: 5 },
+				D: { ms: 60_000 },
+				E: null,
+				F: { ms: 4 * 3600_000, since: 1 }
+			})
+		).toEqual({ A: { ms: 90_000, since: 5 }, F: { ms: MAX_SAMPLE_MS, since: 1 } });
+		expect(cleanOverrides(undefined)).toEqual({});
+		expect(cleanOverrides('nope')).toEqual({});
 	});
 });

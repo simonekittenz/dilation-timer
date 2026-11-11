@@ -239,3 +239,19 @@ describe('starting a session with or without the start screen', () => {
 		expect(clockRow).toBeGreaterThan(guard);
 	});
 });
+
+describe('the smart timer in Settings', () => {
+	const alerts = readFileSync(
+		new URL('../routes/settings/alerts/+page.svelte', import.meta.url),
+		'utf8'
+	);
+
+	it('has an on/off switch, a row per dilator with the reason, and a place to set your own value', () => {
+		expect(alerts).toContain('data-testid="smart-timer"');
+		expect(alerts).toContain('draft.smartTimer');
+		expect(alerts).toContain('store.smartTimerRows');
+		expect(alerts).toContain('draft.swapOverrides');
+		expect(alerts).toContain('Back to learning');
+		expect(alerts).toContain('ignore the swaps from before now');
+	});
+});

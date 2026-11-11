@@ -1,4 +1,5 @@
 import { parseMessages } from './messages';
+import { cleanOverrides } from './switchHistory';
 import type { Phase, Settings } from './types';
 
 export interface MessageText {
@@ -53,6 +54,8 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		celebrations: draft.celebrations !== false,
 		streak: draft.streak !== false,
 		lockScreenTimer: draft.lockScreenTimer !== false,
+		smartTimer: draft.smartTimer !== false,
+		swapOverrides: cleanOverrides(draft.swapOverrides),
 		startScreen: draft.startScreen !== false,
 		showStartTimer: draft.showStartTimer !== false,
 		reminders: draft.reminders,

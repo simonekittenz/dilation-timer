@@ -83,6 +83,10 @@ export interface Settings {
 	streak?: boolean;
 	/** Android app: keep the running session's timer on the lock screen. Missing means yes. */
 	lockScreenTimer?: boolean;
+	/** Adapt the nudge to how long you usually take to swap. Missing means yes; off nudges after the window only. */
+	smartTimer?: boolean;
+	/** Swap times you set yourself, by dilator name (see `SwapOverride`). */
+	swapOverrides?: Record<string, { ms: number; since: number }>;
 	/** Start sessions on the "Let's get started" screen, with the first timer waiting for Go. Missing means yes. */
 	startScreen?: boolean;
 	/** Show the clock (with Pause and Reset) on the start screen. It is timed either way. Missing means yes. */

@@ -16,13 +16,56 @@ const FLYER_EXTRA_MS = 2 * 60_000;
 /** Only this many of the latest swaps are replayed, which is plenty and keeps it quick. */
 const REPLAYED_SAMPLES = 30;
 
+/**
+ * A swap time you set yourself for a dilator. It is where the nudge starts from, and the swaps before
+ * `since` (a timestamp: when you set it) are ignored for that dilator. Swaps after it are learned from as
+ * usual, so once there are enough of them the learned time takes over from your value.
+ */
+export interface SwapOverride {
+	ms: number;
+	since: number;
+}
+export type SwapOverrides = Record<string, SwapOverride>;
+
+/** Keeps only sensible overrides (a swap time above zero and a date), e.g. from an old or damaged save. */
+export function cleanOverrides(raw: unknown): SwapOverrides {
+	const out: SwapOverrides = {};
+	if (!raw || typeof raw !== 'object') return out;
+	for (const [label, value] of Object.entries(raw as Record<string, unknown>)) {
+		const v = value as { ms?: unknown; since?: unknown } | null;
+		if (
+			v &&
+			typeof v.ms === 'number' &&
+			Number.isFinite(v.ms) &&
+			v.ms > 0 &&
+			typeof v.since === 'number' &&
+			Number.isFinite(v.since)
+		) {
+			out[label] = { ms: Math.round(Math.min(v.ms, MAX_SAMPLE_MS)), since: v.since };
+		}
+	}
+	return out;
+}
+
+/** What the learning looks at for one dilator. */
+export interface LabelDetail {
+	/** Swaps being learned from (the ones before your own value, if you set one, are left out). */
+	samples: number;
+	/** The latest of them, oldest first. */
+	recent: number[];
+	/** Swaps left out because you only made them after the nudge without asking for time. */
+	forgotten: number;
+	override?: SwapOverride;
+}
+
 export interface SwitchHistory {
-	/** Your typical swap time (ms) to each dilator, once it has enough swaps to say. */
+	/** Your typical swap time (ms) to each dilator, once it has enough swaps to say (or you set one). */
 	typical: Map<string, number>;
 	/** The same for all dilators together, once there are enough swaps. */
 	typicalAll: number | null;
 	/** Every dilator that has been done in a session before. */
 	seen: Set<string>;
+	details: Map<string, LabelDetail>;
 }
 
 /** Linear spot between the neighbours; `sorted` is not empty. */
@@ -43,11 +86,12 @@ function typicalOf(samples: number[]): number {
 
 /**
  * The typical time after replaying swaps oldest first, or null with too few. It follows the recent swaps
- * but only creeps up a little per swap, so a bad patch cannot push the nudge back by a lot.
+ * but only creeps up a little per swap, so a bad patch cannot push the nudge back by a lot. A `seed` (your
+ * own value) is where it starts from, and what it stays at until there are enough swaps.
  */
-function replay(samples: number[]): number | null {
+function replay(samples: number[], seed: number | null = null): number | null {
 	const recent = samples.slice(-REPLAYED_SAMPLES);
-	let typical: number | null = null;
+	let typical: number | null = seed;
 	for (let n = MIN_SAMPLES; n <= recent.length; n++) {
 		const target = typicalOf(recent.slice(Math.max(0, n - MAX_SAMPLES), n));
 		typical = typical === null ? target : Math.min(target, typical + MAX_RISE_MS);
@@ -60,11 +104,13 @@ function replay(samples: number[]): number | null {
  * none. Left out of what is learned:
  * - the first swap to a dilator: it is slow on purpose and says little about the usual swap;
  * - swaps you only made after the nudge without asking for time (no "+1 min", no "Chill out"): that is
- *   most likely forgetting, not swapping. If you asked for time you were busy swapping, so it counts.
+ *   most likely forgetting, not swapping. If you asked for time you were busy swapping, so it counts;
+ * - for a dilator where you set your own value: everything from before you set it.
  */
-export function learnSwitches(log: LogEntry[]): SwitchHistory {
+export function learnSwitches(log: LogEntry[], overrides: SwapOverrides = {}): SwitchHistory {
 	const all: number[] = [];
 	const perLabel = new Map<string, number[]>();
+	const forgotten = new Map<string, number>();
 	const seen = new Set<string>();
 	// oldest first, so the first time with a dilator is found before the later ones
 	for (let i = log.length - 1; i >= 0; i--) {
@@ -76,7 +122,12 @@ export function learnSwitches(log: LogEntry[]): SwitchHistory {
 			const seconds = step.switchSeconds;
 			if (first || typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0)
 				continue;
-			if (step.switchNudged && !step.switchAskedMore) continue;
+			const own = overrides[step.label];
+			if (own && entry.startedAt < own.since) continue;
+			if (step.switchNudged && !step.switchAskedMore) {
+				forgotten.set(step.label, (forgotten.get(step.label) ?? 0) + 1);
+				continue;
+			}
 			const ms = Math.min(seconds * 1000, MAX_SAMPLE_MS);
 			all.push(ms);
 			const mine = perLabel.get(step.label) ?? [];
@@ -85,11 +136,21 @@ export function learnSwitches(log: LogEntry[]): SwitchHistory {
 		}
 	}
 	const typical = new Map<string, number>();
-	for (const [label, xs] of perLabel) {
-		const t = replay(xs);
+	const details = new Map<string, LabelDetail>();
+	const labels = new Set([...perLabel.keys(), ...forgotten.keys(), ...Object.keys(overrides)]);
+	for (const label of labels) {
+		const xs = perLabel.get(label) ?? [];
+		const own = overrides[label];
+		const t = replay(xs, own ? own.ms : null);
 		if (t !== null) typical.set(label, t);
+		details.set(label, {
+			samples: xs.length,
+			recent: xs.slice(-5),
+			forgotten: forgotten.get(label) ?? 0,
+			...(own ? { override: own } : {})
+		});
 	}
-	return { typical, typicalAll: replay(all), seen };
+	return { typical, typicalAll: replay(all), seen, details };
 }
 
 /**
@@ -121,11 +182,64 @@ export function switchWindowFor(
 	history: SwitchHistory,
 	label: string | undefined,
 	windowMs: number,
-	firstTimeExtraMs: number
+	firstTimeExtraMs: number,
+	smart = true
 ): number {
 	if (!label) return windowMs;
-	return (
-		Math.max(windowMs, usualSwitchMs(history, label)) +
-		(isFirstTime(history, label) ? firstTimeExtraMs : 0)
-	);
+	const usual = smart ? usualSwitchMs(history, label) : 0;
+	return Math.max(windowMs, usual) + (isFirstTime(history, label) ? firstTimeExtraMs : 0);
+}
+
+/**
+ * Where a dilator stands, for Settings:
+ * - waiting: too few swaps to say yet, so the all-dilator figure or just the window is used;
+ * - learned: enough swaps, and the time comes from them;
+ * - set: you set a value and there are not yet enough swaps since, so your value is used;
+ * - set-learned: you set a value, and the swaps since have taken over from it.
+ */
+export type SwapState = 'waiting' | 'learned' | 'set' | 'set-learned';
+
+export interface SmartRow {
+	label: string;
+	state: SwapState;
+	/** The usual swap time in use, or null when only the window applies. */
+	usualMs: number | null;
+	/** Your usual time is not this dilator's own: it comes from all your dilators together. */
+	fromAll: boolean;
+	/** When I nudge after the swap to it (never sooner than the window). */
+	nudgeMs: number;
+	samples: number;
+	/** How many swaps it needs before it trusts its own. */
+	needed: number;
+	recent: number[];
+	forgotten: number;
+	override?: SwapOverride;
+}
+
+export function smartRows(history: SwitchHistory, labels: string[], windowMs: number): SmartRow[] {
+	return labels.map((label) => {
+		const d = history.details.get(label);
+		const samples = d?.samples ?? 0;
+		const own = history.typical.get(label);
+		const state: SwapState = d?.override
+			? samples >= MIN_SAMPLES
+				? 'set-learned'
+				: 'set'
+			: samples >= MIN_SAMPLES && own !== undefined
+				? 'learned'
+				: 'waiting';
+		const usualMs = own ?? history.typicalAll;
+		return {
+			label,
+			state,
+			usualMs,
+			fromAll: own === undefined && history.typicalAll !== null,
+			nudgeMs: switchWindowFor(history, label, windowMs, 0),
+			samples,
+			needed: MIN_SAMPLES,
+			recent: d?.recent ?? [],
+			forgotten: d?.forgotten ?? 0,
+			...(d?.override ? { override: d.override } : {})
+		};
+	});
 }

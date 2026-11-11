@@ -55,7 +55,7 @@ import {
 import { nativePlatform } from './platform';
 import { hideSessionNotice, planSessionNotice, showSessionNotice } from './sessionNotice';
 import { currentMilestone, type Milestone } from './milestones';
-import { isFirstTime, learnSwitches, switchWindowFor, usualSwitchMs } from './switchHistory';
+import { isFirstTime, learnSwitches, smartRows, switchWindowFor } from './switchHistory';
 import { conqueredDilators, introKey, pendingIntro, type DilatorIntro } from './newDilators';
 import { pushBackPhase } from './phases';
 import {
@@ -292,7 +292,12 @@ class Store {
 	}
 
 	/** The swaps in your history, for your usual swap time per dilator. */
-	private switchHistory = $derived(learnSwitches(this.log));
+	private switchHistory = $derived(learnSwitches(this.log, this.settings.swapOverrides ?? {}));
+
+	/** The smart timer is on: nudges adapt to your usual swap times. */
+	get smartTimerOn() {
+		return this.settings.smartTimer !== false;
+	}
 
 	/** The Settings window alone. */
 	private get configuredWindowMs() {
@@ -308,7 +313,8 @@ class Store {
 			this.switchHistory,
 			this.active?.steps[step]?.label,
 			this.configuredWindowMs,
-			this.firstTimeExtraMs
+			this.firstTimeExtraMs,
+			this.smartTimerOn
 		);
 
 	/** Extra time for the first swap to a dilator you have never used. */
@@ -327,13 +333,13 @@ class Store {
 		return this.active ? this.switchWindowFor(this.active.stepIndex + 1) : this.configuredWindowMs;
 	}
 
-	/** Your usual swap time per dilator, and when I nudge you about it, for Settings. */
-	get usualSwitches(): { label: string; ms: number; nudgeMs: number }[] {
-		return [...this.switchHistory.typical.keys()].map((label) => ({
-			label,
-			ms: usualSwitchMs(this.switchHistory, label),
-			nudgeMs: switchWindowFor(this.switchHistory, label, this.configuredWindowMs, 0)
-		}));
+	/** What the smart timer does for each dilator, for Settings. */
+	get smartTimerRows() {
+		return smartRows(
+			this.switchHistory,
+			this.settings.dilators.map((d) => d.name),
+			this.configuredWindowMs
+		);
 	}
 
 	/** True once the switch window after a finished timer has run out. */

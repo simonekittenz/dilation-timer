@@ -564,3 +564,49 @@
 	display: grid;
 	gap: 0.35rem;
 }
+
+.settings .smart {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.9rem;
+}
+.settings .smart li {
+	display: grid;
+	gap: 0.25rem;
+	padding-top: 0.8rem;
+	border-top: 1px solid var(--line);
+}
+.settings .smart .top {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1rem;
+}
+.settings .smart .name {
+	font-weight: 800;
+}
+.settings .smart .top strong {
+	font-size: 0.9rem;
+	color: var(--accent-strong);
+	font-variant-numeric: tabular-nums;
+}
+.settings .smart .own summary {
+	padding: 0.2rem 0;
+	font-size: 0.85rem;
+	font-weight: 800;
+	color: var(--accent-strong);
+}
+.settings .smart .edit {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.7rem;
+	margin: 0.4rem 0;
+}
+.settings .smart .edit label {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
