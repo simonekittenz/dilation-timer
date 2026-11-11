@@ -1,5 +1,13 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import { previewSound, setVolume, testSound } from '#lib/alarm.ts';
+	import {
+		batteryAdvice,
+		getDeviceInfo,
+		makerGroup,
+		openAppSettings,
+		type DeviceInfo
+	} from '#lib/deviceHelp.ts';
 	import { isNative, nativePlatform } from '#lib/platform.ts';
 	import ReminderTimes from '#lib/ReminderTimes.svelte';
 	import { describeSwitch } from '#lib/switchHistory.ts';
@@ -7,6 +15,24 @@
 	import { store } from '#lib/store.svelte.ts';
 	import type { Reminders } from '#lib/types.ts';
 	import { useSettingsForm } from '#lib/settingsForm.svelte.ts';
+
+	// Android: is the phone limiting this app's battery use? (Looked at again when you come back from the settings.)
+	let device = $state<DeviceInfo | null>(null);
+	const advice = $derived(batteryAdvice(makerGroup(device?.manufacturer ?? '')));
+	async function checkDevice(scrollToIt = false) {
+		device = await getDeviceInfo();
+		// arriving from the note on Today: go straight to this part (only the first time)
+		await tick();
+		if (scrollToIt && location.hash === '#battery') {
+			document.getElementById('battery')?.scrollIntoView();
+		}
+	}
+	onMount(() => {
+		void checkDevice(true);
+		const again = () => document.visibilityState === 'visible' && void checkDevice();
+		document.addEventListener('visibilitychange', again);
+		return () => document.removeEventListener('visibilitychange', again);
+	});
 
 	const form = useSettingsForm();
 	const draft = form.draft;
@@ -200,6 +226,35 @@
 				</p>
 			{/if}
 		</div>
+		{#if device}
+			<div class="block" id="battery" data-testid="battery-help">
+				<div class="item-head">
+					<span class="label">Battery and alerts</span>
+					{#if !device.unrestricted}
+						<button class="pill strong" onclick={() => openAppSettings()}>Open app settings</button>
+					{/if}
+				</div>
+				{#if device.unrestricted}
+					<p class="hint ok">
+						Your phone isn't limiting Dilation timer's battery use ✓ Alerts can reach you while it's
+						locked.
+					</p>
+				{:else}
+					<p class="hint">
+						{advice.who === 'some phones' ? 'Some phones' : advice.who} put apps to sleep to save battery.
+						Then the alarm may not ring, and alerts can arrive late or not at all while your phone is
+						locked or the app is in the background. To fix that:
+					</p>
+					<ol class="hint steps">
+						{#each advice.steps as step (step)}<li>{step}</li>{/each}
+					</ol>
+					<p class="hint">
+						The wording differs a little between phones. When you come back here, this note updates
+						by itself.
+					</p>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 
 	<div class="block" id="reminders">

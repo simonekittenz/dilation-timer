@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { dayNumber, formatCompactDate } from '#lib/dates.ts';
+	import BatteryHint from '#lib/BatteryHint.svelte';
 	import Mascot from '#lib/Mascot.svelte';
 	import MilestoneCard from '#lib/MilestoneCard.svelte';
 	import NewDilatorCard from '#lib/NewDilatorCard.svelte';
@@ -138,6 +139,7 @@
 			<h2 class="sub">Schedule ♡</h2>
 			<Schedule />
 			<ReminderPrompt />
+			<BatteryHint />
 		</div>
 	</div>
 {:else}

@@ -557,3 +557,10 @@
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;
 }
+
+.settings .steps {
+	margin: 0;
+	padding-left: 1.3rem;
+	display: grid;
+	gap: 0.35rem;
+}

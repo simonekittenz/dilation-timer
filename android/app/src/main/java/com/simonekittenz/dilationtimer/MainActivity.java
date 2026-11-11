@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         // our own plugin, registered before the bridge starts
         registerPlugin(AudioDuckingPlugin.class);
         registerPlugin(SessionNoticePlugin.class);
+        registerPlugin(DeviceHelpPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
