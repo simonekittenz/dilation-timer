@@ -247,7 +247,9 @@
 			</p>
 			{#if first.diameterMm}<p class="muted hint">{first.diameterMm} mm</p>{/if}
 			<p class="muted hint">No rush, the timer starts when you press Ready.</p>
-			<p class="countdown" data-testid="start-clock">{formatClock(store.now - s.startedAt)}</p>
+			<p class="waited" data-testid="start-clock" aria-label="Time since you started">
+				{formatClock(store.now - s.startedAt)}
+			</p>
 		</div>
 		<div class="pad">
 			<button
@@ -737,6 +739,14 @@
 		.conquered {
 			animation: none;
 		}
+	}
+	/* the quiet clock on the start screen: there only to be noted, so it stays small and soft */
+	.waited {
+		color: var(--muted);
+		font-size: 1rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		opacity: 0.8;
 	}
 	/* the calm countdown is just big pink numbers; only the overtime one sits in a pill */
 	.countdown {
