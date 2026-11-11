@@ -3,6 +3,7 @@
 	import DilatorName from '#lib/DilatorName.svelte';
 	import Swatch from '#lib/Swatch.svelte';
 	import { SLOT_LABELS } from '#lib/schedule.ts';
+	import { holdSeconds } from '#lib/stats.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import { describeSwitch } from '#lib/switchHistory.ts';
 
@@ -57,7 +58,7 @@
 							<span
 								><Swatch color={st.color ?? '#ff9ccb'} size={14} />
 								<DilatorName label={st.label} nickname={st.nickname} />
-								{mins(st.actualSeconds)}</span
+								{mins(holdSeconds(e.steps, i))}</span
 							>
 						{/each}
 					</p>

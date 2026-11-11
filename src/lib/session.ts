@@ -312,6 +312,10 @@ export interface OverviewRow {
 	endAt: number;
 	/** The times come from a guess (the dilator hasn't started, or hasn't ended yet), not from the clock. */
 	estimated: boolean;
+	/** How long the swap to this dilator took (every dilator after the first), once it is done. */
+	swapSeconds?: number;
+	/** The first dilator only: how long it took from starting the session to pressing Ready. */
+	readySeconds?: number;
 }
 
 export interface Overview {
@@ -336,12 +340,24 @@ export function sessionOverview(
 	let cursor = now;
 	s.steps.forEach((step, i) => {
 		const record = s.records[i];
-		const base = { label: step.label, nickname: step.nickname, color: step.color };
+		const swapMs = record?.switchedAfterMs;
+		const base = {
+			label: step.label,
+			nickname: step.nickname,
+			color: step.color,
+			...(i > 0 && swapMs !== undefined ? { swapSeconds: Math.round(swapMs / 1000) } : {}),
+			...(i === 0 && record?.readyAfterMs !== undefined
+				? { readySeconds: Math.round(record.readyAfterMs / 1000) }
+				: {})
+		};
 		if (i < s.stepIndex || (s.phase !== 'running' && s.phase !== 'start')) {
 			if (i <= s.stepIndex) {
 				// finished dilators: when they really ran (the last one ended when its timer did)
 				const startAt = record?.startedAt ?? now;
-				const endAt = record?.endedAt ?? (i === s.stepIndex ? alertStart(s) : startAt);
+				// it ended when its timer did: the swap to the next one is shown on that one, not here
+				const swapAfter = s.records[i + 1]?.switchedAfterMs ?? 0;
+				const ended = record?.endedAt ?? (i === s.stepIndex ? alertStart(s) : startAt);
+				const endAt = Math.max(startAt, ended - swapAfter);
 				rows.push({
 					...base,
 					minutes: step.minutes + (i === s.stepIndex ? (s.adjustMs ?? 0) / 60_000 : 0),

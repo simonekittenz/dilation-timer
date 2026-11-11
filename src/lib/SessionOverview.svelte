@@ -3,6 +3,7 @@
 	import { formatClock, formatClockTime } from './dates';
 	import DilatorName from './DilatorName.svelte';
 	import { remainingMs, sessionOverview } from './session';
+	import { describeSeconds } from './stats';
 	import { store } from './store.svelte';
 	import Swatch from './Swatch.svelte';
 
@@ -11,6 +12,12 @@
 	const s = $derived(store.active!);
 	const overview = $derived(sessionOverview(s, store.now, store.switchWindowFor));
 	const left = $derived(remainingMs(s, store.now));
+	const swaps = $derived(
+		overview.rows.flatMap((r) => (r.swapSeconds !== undefined ? [r.swapSeconds] : []))
+	);
+	const averageSwap = $derived(
+		swaps.length ? swaps.reduce((a, b) => a + b, 0) / swaps.length : null
+	);
 	const range = (from: number, to: number, estimated: boolean) =>
 		`${estimated ? '~' : ''}${formatClockTime(from)} – ${formatClockTime(to)}`;
 
@@ -48,6 +55,16 @@
 							{#if row.status === 'now' && s.phase === 'running'}
 								· {formatClock(left)} left{/if}
 						</span>
+						{#if row.readySeconds !== undefined}
+							<span class="extra" data-testid="ready-time">
+								Ready after {describeSeconds(row.readySeconds)}
+							</span>
+						{/if}
+						{#if row.swapSeconds !== undefined}
+							<span class="extra" data-testid="swap-time">
+								Swapped in {describeSeconds(row.swapSeconds)}
+							</span>
+						{/if}
 					</span>
 					<span class="len">{formatDuration(row.minutes)}</span>
 				</li>
@@ -71,6 +88,12 @@
 				<dd>{formatDuration(overview.plannedMinutes)}</dd>
 			</div>
 		</dl>
+		{#if averageSwap !== null}
+			<p class="swaps" data-testid="swap-average">
+				{swaps.length === 1 ? 'One swap' : `${swaps.length} swaps`} so far, about
+				<strong>{describeSeconds(averageSwap)}</strong> each
+			</p>
+		{/if}
 		<p class="note">
 			Times with ~ are a guess: they move if you pause, add minutes, or switch late.
 		</p>
@@ -168,6 +191,19 @@
 		font-size: 0.85rem;
 		font-variant-numeric: tabular-nums;
 		color: var(--muted);
+	}
+	.extra {
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+	.swaps {
+		margin: 0.7rem 0 0;
+		text-align: center;
+		font-size: 0.9rem;
+		color: var(--muted);
+	}
+	.swaps strong {
+		color: var(--accent-strong);
 	}
 	li.now .name,
 	li.now .len {
