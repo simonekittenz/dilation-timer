@@ -192,3 +192,11 @@ describe('the words on the start screen', () => {
 		expect(start).not.toContain('press Ready');
 	});
 });
+
+describe('the start screen clock', () => {
+	const timer = readFileSync(new URL('./Timer.svelte', import.meta.url), 'utf8');
+
+	it('is big but grey, not the pink of the running countdown', () => {
+		expect(timer).toMatch(/\.startstage \.countdown \{[^}]*color: var\(--muted\)/);
+	});
+});

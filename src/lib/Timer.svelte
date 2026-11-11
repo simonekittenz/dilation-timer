@@ -930,7 +930,11 @@
 		color: var(--accent-strong);
 		text-align: center;
 	}
-	/* the start screen's clock: the same big numbers, softer while paused */
+	/* the start screen's clock: big, but in the soft grey of secondary text so Go! is what stands out;
+	   fainter still while paused */
+	.startstage .countdown {
+		color: var(--muted);
+	}
 	.countdown.dim {
 		opacity: 0.45;
 	}
