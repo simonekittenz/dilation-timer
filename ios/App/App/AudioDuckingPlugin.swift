@@ -8,6 +8,10 @@ import UIKit
 ///
 /// The sound is played natively, not by the web view, because the web view manages its own audio
 /// session and could undo the ducking.
+///
+/// Everything that touches the audio session or the player runs on one background queue
+/// (`audioQueue`): activating the session can block for a moment, and doing that on the main thread
+/// freezes the screen ("AVAudioSession Hang Risk"). Only the screen-lock setting needs the main thread.
 @objc(AudioDuckingPlugin)
 public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "AudioDuckingPlugin"
@@ -19,8 +23,10 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "keepAwake", returnType: CAPPluginReturnPromise)
     ]
 
+    /// Owns `player` and `loopTimer`: only touch them from here.
+    private let audioQueue = DispatchQueue(label: "com.simonekittenz.dilationtimer.audio")
     private var player: AVAudioPlayer?
-    private var loopTimer: Timer?
+    private var loopTimer: DispatchSourceTimer?
     private let finishObserver = FinishObserver()
 
     private struct Request {
@@ -31,7 +37,7 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Plays a bundled sound once. Resolves as soon as it has started.
     @objc func play(_ call: CAPPluginCall) {
         guard let request = request(from: call) else { return }
-        DispatchQueue.main.async {
+        audioQueue.async {
             self.cancelLoop()
             do {
                 try self.start(request)
@@ -46,15 +52,19 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func loop(_ call: CAPPluginCall) {
         guard let request = request(from: call) else { return }
         let interval = max(0.5, Double(call.getInt("intervalMs") ?? 2500) / 1000.0)
-        DispatchQueue.main.async { [weak self] in
+        audioQueue.async { [weak self] in
             guard let self = self else { return }
             self.cancelLoop()
             do {
                 try self.start(request)
-                self.loopTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                let timer = DispatchSource.makeTimerSource(queue: self.audioQueue)
+                timer.schedule(deadline: .now() + interval, repeating: interval)
+                timer.setEventHandler { [weak self] in
                     guard let self = self else { return }
                     _ = try? self.start(request)
                 }
+                timer.resume()
+                self.loopTimer = timer
                 call.resolve()
             } catch {
                 call.reject("Couldn't play the alarm sound", nil, error)
@@ -63,7 +73,7 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func stop(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
+        audioQueue.async {
             self.cancelLoop()
             self.player?.stop()
             self.player = nil
@@ -107,7 +117,10 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
         next.delegate = finishObserver
         finishObserver.onFinish = { [weak self] in
             // hand the audio back as soon as a sound ends; the next repeat asks for it again
-            self?.endDucking()
+            self?.audioQueue.async {
+                // a newer sound may have started meanwhile: then the audio is still needed
+                if self?.player?.isPlaying != true { self?.endDucking() }
+            }
         }
         next.prepareToPlay()
         player?.stop()
@@ -116,11 +129,11 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func cancelLoop() {
-        loopTimer?.invalidate()
+        loopTimer?.cancel()
         loopTimer = nil
     }
 
-    /// Lets the other app's audio return to normal volume.
+    /// Lets the other app's audio return to normal volume. Call it on `audioQueue`.
     private func endDucking() {
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
     }
