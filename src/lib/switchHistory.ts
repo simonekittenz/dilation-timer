@@ -2,12 +2,10 @@ import type { LogEntry } from './types';
 
 /** Only the most recent swaps count, so the typical time follows how you do it now. */
 export const MAX_SAMPLES = 10;
-/** One very long swap (a phone call, falling asleep) must not drag the typical time up. */
-export const MAX_SAMPLE_MS = 10 * 60_000;
+/** One swap that went on for hours (falling asleep) counts as no more than this, so it can't drag the typical time up. */
+export const MAX_SAMPLE_MS = 60 * 60_000;
 /** A dilator needs this many swaps before its own typical time is trusted. */
 export const MIN_SAMPLES = 3;
-/** The most the typical swap time can ever be, so the nudge can never run away. */
-export const MAX_LEARNED_MS = 10 * 60_000;
 /** The typical time goes up by at most this much per swap (it can come down at once). */
 export const MAX_RISE_MS = 60_000;
 /** Nudging late is worse than nudging early, so aim above the middle: three out of four swaps are quicker. */
@@ -51,10 +49,7 @@ function replay(samples: number[]): number | null {
 	const recent = samples.slice(-REPLAYED_SAMPLES);
 	let typical: number | null = null;
 	for (let n = MIN_SAMPLES; n <= recent.length; n++) {
-		const target = Math.min(
-			typicalOf(recent.slice(Math.max(0, n - MAX_SAMPLES), n)),
-			MAX_LEARNED_MS
-		);
+		const target = typicalOf(recent.slice(Math.max(0, n - MAX_SAMPLES), n));
 		typical = typical === null ? target : Math.min(target, typical + MAX_RISE_MS);
 	}
 	return typical === null ? null : Math.round(typical);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { confirmSwitch, estimatedFinish, finish, startSession, tick } from './session';
 import {
-	MAX_LEARNED_MS,
+	MAX_SAMPLE_MS,
 	MAX_RISE_MS,
 	MIN_SAMPLES,
 	describeSwitch,
@@ -182,11 +182,17 @@ describe('swaps that went past the nudge', () => {
 	});
 });
 
-describe('the learned time can never run away', () => {
-	it('is never more than the ceiling', () => {
-		const slow = { seconds: 3 * 3600, nudged: true, askedMore: true };
-		const h = learnSwitches(swapsTo('B', Array(30).fill(slow)));
-		expect(usualSwitchMs(h, 'B')).toBe(MAX_LEARNED_MS);
+describe('the learned time cannot run away', () => {
+	it('has no ceiling: someone who really takes 15 minutes gets nudged at 15 minutes', () => {
+		const slow = { seconds: 15 * 60, nudged: true, askedMore: true };
+		const h = learnSwitches(swapsTo('B', [slow, slow, slow, slow]));
+		expect(usualSwitchMs(h, 'B')).toBe(15 * MIN);
+	});
+
+	it('counts one swap that went on for hours as no more than an hour', () => {
+		const asleep = { seconds: 3 * 3600, nudged: true, askedMore: true };
+		const h = learnSwitches(swapsTo('B', Array(30).fill(asleep)));
+		expect(usualSwitchMs(h, 'B')).toBe(MAX_SAMPLE_MS);
 	});
 
 	it('only creeps up a little with every swap, however much slower the latest ones are', () => {
