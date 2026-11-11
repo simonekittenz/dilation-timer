@@ -186,6 +186,14 @@ describe('the words on the start screen', () => {
 		timer.indexOf("s.phase === 'switch'}")
 	);
 
+	it('greet with "Let\'s get started" on the screen and on the lock screen', () => {
+		expect(start).toContain("Let's get started ♡");
+		expect(start).not.toContain("Let's begin");
+		const notice = readFileSync(new URL('./sessionNotice.ts', import.meta.url), 'utf8');
+		expect(notice).toContain("Let's get started ♡");
+		expect(notice).not.toContain("Let's begin");
+	});
+
 	it('say the session starts when you press Go, and the button says Go!', () => {
 		expect(start).toContain('The session starts when you press Go.');
 		expect(start).toMatch(/>\s*Go!\s*</);

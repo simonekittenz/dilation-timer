@@ -75,7 +75,7 @@ describe('what the lock screen timer says', () => {
 	it('counts up from the start while waiting for Ready', () => {
 		const s = getReady(begin());
 		expect(planSessionNotice(s, MIN)).toMatchObject({
-			title: "Let's begin ♡",
+			title: "Let's get started ♡",
 			text: 'Bring in #2',
 			clock: 'up',
 			at: 0

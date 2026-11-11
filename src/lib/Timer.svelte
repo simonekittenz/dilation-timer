@@ -284,7 +284,7 @@
 		{@const first = s.steps[s.stepIndex]}
 		<div class="stage startstage">
 			<span class="startmascot"><Mascot mood="happy" size={110} /></span>
-			<p class="title">Let's begin ♡</p>
+			<p class="title">Let's get started ♡</p>
 			<p class="big swap">
 				Bring in <Swatch color={first.color} size={34} />
 				<strong><DilatorName label={first.label} nickname={first.nickname} /></strong>

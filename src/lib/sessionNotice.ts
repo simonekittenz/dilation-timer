@@ -39,7 +39,7 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 	if (s.phase === 'start') {
 		const paused = isWaitPaused(s);
 		return {
-			title: "Let's begin ♡",
+			title: "Let's get started ♡",
 			text: paused ? `Bring in ${who(current)} · paused` : `Bring in ${who(current)}`,
 			clock: paused ? 'none' : 'up',
 			at: now - waitedMs(s, now),
