@@ -20,8 +20,8 @@ to switch to the next one.
 - **First-run setup.** Asks which program you follow and your surgery date, then shows the week you're
   in so you can check it looks right.
 - **Session timer.** You start each session yourself: a start screen shows which dilator to bring in
-  first, with a clock counting up quietly (no nudges), and the first timer starts when you press
-  **Ready**. How long that took is saved with the session. Pause, add or remove a minute, or skip ahead
+  first, with a clock counting up (no nudges; Pause and Reset are there, and Settings can hide it), and
+  the first timer starts when you press **Go!** How long that took is saved with the session. Pause, add or remove a minute, or skip ahead
   to the next dilator. A soft chime warns you 10 seconds before the end.
 - **A gentle switch.** When a timer ends there's a quiet window to swap dilators. If you haven't
   pressed "I switched" by then, a soft nudge repeats. **+ 1 min** gives you a little longer for that

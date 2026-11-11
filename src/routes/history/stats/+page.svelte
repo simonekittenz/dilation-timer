@@ -207,7 +207,7 @@
 	<section class="card" data-testid="stats-ready">
 		<h2>Time to Ready</h2>
 		{#if ready}
-			<p class="muted note">From pressing Start session to pressing Ready on the first dilator.</p>
+			<p class="muted note">From pressing Start session to pressing Go on the first dilator.</p>
 			<dl class="grid">
 				<div>
 					<dt>Typical</dt>

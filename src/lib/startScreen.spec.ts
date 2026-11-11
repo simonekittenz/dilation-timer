@@ -177,3 +177,18 @@ describe('the clock on the start screen can be switched off in Settings', () => 
 		expect(timer).not.toContain('class="waited"');
 	});
 });
+
+describe('the words on the start screen', () => {
+	const timer = readFileSync(new URL('./Timer.svelte', import.meta.url), 'utf8');
+	const start = timer.slice(
+		timer.indexOf("s.phase === 'start'}"),
+		timer.indexOf("s.phase === 'switch'}")
+	);
+
+	it('say the session starts when you press Go, and the button says Go!', () => {
+		expect(start).toContain('The session starts when you press Go.');
+		expect(start).toMatch(/>\s*Go!\s*</);
+		expect(start).not.toContain('Ready ✓');
+		expect(start).not.toContain('press Ready');
+	});
+});

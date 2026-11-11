@@ -290,7 +290,7 @@
 				<strong><DilatorName label={first.label} nickname={first.nickname} /></strong>
 			</p>
 			{#if first.diameterMm}<p class="muted hint">{first.diameterMm} mm</p>{/if}
-			<p class="muted hint calmhint">No rush, the timer starts when you press Ready.</p>
+			<p class="muted hint calmhint">The session starts when you press Go.</p>
 			{#if store.settings.showStartTimer !== false}
 				<p
 					class="countdown"
@@ -353,7 +353,7 @@
 					clockLit++; // the first dilator's clock lights up as it starts
 				}}
 			>
-				Ready ✓
+				Go!
 			</button>
 			<button
 				class="btn ghost more"
@@ -713,11 +713,6 @@
 		align-items: center;
 		gap: 1.6rem;
 		padding-bottom: 1.5rem;
-	}
-	/* the controls under the quiet clock on the start screen */
-	.waitrow {
-		padding-bottom: 0;
-		gap: 2.4rem;
 	}
 	.row.second {
 		gap: 3.2rem;
@@ -1099,7 +1094,22 @@
 			padding: 0.45rem 0.9rem;
 			font-size: 0.85rem;
 		}
-		/* the start screen: a smaller bunny and clock, so Ready and Cancel stay on screen */
+	}
+	/* the smallest screens: the clock matters more than the bunny inside the ring */
+	@media (max-width: 600px) and (max-height: 680px) {
+		.pet {
+			display: none;
+		}
+		.ring {
+			width: min(64vw, 31dvh, 240px);
+		}
+		.clock {
+			font-size: clamp(2.4rem, 13vw, 3.4rem);
+		}
+	}
+	/* The start screen has more on it than the running timer, so on any window that is not tall (a phone, but
+	   also a browser window) it gets a smaller bunny and clock, to keep Ready and Cancel in view. */
+	@media (max-height: 880px) {
 		.startstage {
 			gap: 0.4rem;
 		}
@@ -1111,23 +1121,13 @@
 			font-size: clamp(2.4rem, 12vw, 3rem);
 		}
 	}
-	/* the smallest screens: the clock matters more than the bunny inside the ring */
-	@media (max-width: 600px) and (max-height: 680px) {
+	@media (max-height: 700px) {
 		.startmascot :global(svg) {
 			width: 4rem;
 			height: 4rem;
 		}
 		.calmhint {
 			display: none;
-		}
-		.pet {
-			display: none;
-		}
-		.ring {
-			width: min(64vw, 31dvh, 240px);
-		}
-		.clock {
-			font-size: clamp(2.4rem, 13vw, 3.4rem);
 		}
 	}
 	/* A phone held sideways has plenty of width and very little height: the controls move beside the clock
