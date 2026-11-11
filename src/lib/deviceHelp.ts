@@ -88,7 +88,7 @@ export interface BatteryAdvice {
 	steps: string[];
 }
 
-const OPEN = 'Press “Open app settings” below, then tap Battery';
+const OPEN = 'Press “Open app settings”, then tap Battery';
 
 /** What to do, in the words that phone's settings use (they differ a little between versions). */
 export function batteryAdvice(group: MakerGroup): BatteryAdvice {

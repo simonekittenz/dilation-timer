@@ -178,7 +178,14 @@ Verified on an Android 15 virtual phone with the screen off and Doze forced on: 
 2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
 the app cleared them. **Not yet tried on a real phone or on a real iPhone** (the iPhone app has only run in the simulator). Some makers (Samsung, Xiaomi,
 Oppo) kill background apps harder than stock Android; if alerts are late there, turn off battery
-optimisation for the app.
+optimisation for the app. The app now says so itself (feedback from a Samsung S25 Ultra and A17, where the
+alarm didn't ring and alerts didn't arrive in the background): `DeviceHelpPlugin.java` reads the maker and
+whether the system leaves the app out of its battery limits (`isIgnoringBatteryOptimizations`) and opens the
+app's own page in the system settings (no special permission, and not `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`,
+which Play restricts). `src/lib/deviceHelp.ts` has the steps in each maker's words (Samsung, Xiaomi/Redmi/Poco,
+Oppo/Realme/OnePlus, Huawei/Honor, Vivo/iQOO). They show under Settings → Sessions & alerts → Battery and
+alerts, and as a one-time dismissible note on Today for those makers while the limits are still on. Samsung's
+"Sleeping apps" list can't be read by an app, so that step stays a written hint.
 
 On an iPhone there are no channels: a notification is **silent unless it names a sound file**. So every
 alert and reminder also gets `sound: 'public/sounds/….wav'` (the app's own alarm WAVs, which sit inside
