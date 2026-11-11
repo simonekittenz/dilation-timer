@@ -23,8 +23,12 @@
 <h1>History 📖</h1>
 
 {#if store.log.some((e) => !e.skipped)}
-	<a class="btn ghost small statslink" href="/history/stats" data-testid="stats-link">
-		Statistics: swap times and more
+	<a class="statslink" href="/history/stats" data-testid="stats-link">
+		<span class="text">
+			<span class="label">Statistics</span>
+			<span class="hint">Time per dilator, your days and streaks, swap times</span>
+		</span>
+		<span class="chev" aria-hidden="true">›</span>
 	</a>
 {/if}
 
@@ -87,8 +91,42 @@
 {/each}
 
 <style>
+	/* a row like the ones in the Settings menu */
 	.statslink {
-		margin-bottom: 0.8rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1rem;
+		padding: 0.9rem 1.1rem;
+		border: 2px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--ink);
+		text-decoration: none;
+	}
+	.statslink:active {
+		transform: scale(0.99);
+	}
+	.statslink .text {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+	.statslink .label {
+		font-size: 1rem;
+		font-weight: 700;
+	}
+	.statslink .hint {
+		font-size: 0.82rem;
+		line-height: 1.35;
+		color: var(--muted);
+	}
+	.statslink .chev {
+		flex: none;
+		font-size: 1.4rem;
+		line-height: 1;
+		color: var(--muted);
 	}
 	h1 {
 		margin-bottom: 1rem;
