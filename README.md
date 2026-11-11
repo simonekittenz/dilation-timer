@@ -26,7 +26,11 @@ to switch to the next one.
 - **A gentle switch.** When a timer ends there's a quiet window to swap dilators. If you haven't
   pressed "I switched" by then, a soft nudge repeats. **+ 1 min** gives you a little longer for that
   one switch, and **Chill out, I'm on it!** quiets the nudging for another window.
-- **The last dilator needs no nagging.** A fanfare plays, the session logs itself, and the screen clears.
+- **The last dilator needs no nagging.** A fanfare plays and the "all done" screen stays up until you tap
+  it away. It shows the session in numbers (time with the dilators, how long you took to be Ready, each
+  swap) and kind notes when you were quicker than usual. **More statistics** (also at the top of History)
+  shows your shortest, longest and typical swap times, overall and per dilator, your time to Ready, and
+  how long you stay with each dilator.
 - **Custom session.** Short on time? Pick a length with a slider (or **1 hour** / **2 hours**) and the
   dilators to use. Today's routine is stretched or squeezed to fit, in blocks of 5 minutes (dilators
   already at 5 minutes stay at 5), and you can edit it before you start.

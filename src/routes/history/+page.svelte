@@ -21,6 +21,12 @@
 
 <h1>History 📖</h1>
 
+{#if store.log.some((e) => !e.skipped)}
+	<a class="btn ghost small statslink" href="/history/stats" data-testid="stats-link">
+		📊 Statistics: swap times and more
+	</a>
+{/if}
+
 {#if groups.length === 0}
 	<p class="card muted">No sessions logged yet. Your first one will show up here ✿</p>
 {/if}
@@ -80,6 +86,9 @@
 {/each}
 
 <style>
+	.statslink {
+		margin-bottom: 0.8rem;
+	}
 	h1 {
 		margin-bottom: 1rem;
 		font-weight: 900;

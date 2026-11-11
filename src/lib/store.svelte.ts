@@ -1,5 +1,4 @@
 import {
-	CELEBRATE_MS,
 	celebrate,
 	chime,
 	keepAwake,
@@ -83,6 +82,8 @@ const SEEN_KEY = 'dilation-timer:milestones-seen';
 const INTROS_KEY = 'dilation-timer:dilator-intros-seen';
 /** How long the "time to switch" ears cue stays up. */
 const CUE_MS = 3500;
+/** The "all done" screen stays up until it is tapped away, but not for ever: an old one is just filed away. */
+const FINISH_SCREEN_MS = 30 * 60_000;
 
 /** What "push back" just did, for the note on Today and its Undo. Not saved: it is gone on reload. */
 export interface PushBackNote {
@@ -408,10 +409,11 @@ class Store {
 		if (nativeAudioAvailable()) void stopNative();
 		void this.startLockedScreenAlerts();
 		void this.startReminders();
-		if (this.active) void keepAwake(true);
+		if (this.active && this.active.phase !== 'finished') void keepAwake(true);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') this.step();
-			if (this.active && document.visibilityState === 'visible') void keepAwake(true);
+			if (this.active && this.active.phase !== 'finished' && document.visibilityState === 'visible')
+				void keepAwake(true);
 		});
 	}
 
@@ -490,6 +492,8 @@ class Store {
 		const next = tick(s, this.now);
 		if (next !== s) {
 			if (next.phase !== s.phase) {
+				// nothing left to time: the screen may go to sleep while the summary is on show
+				if (next.phase === 'finished') void keepAwake(false);
 				// Only cue if it just happened, not when catching up after the app was asleep.
 				if (overtimeMs(next, this.now) < 10_000) {
 					if (next.phase === 'finished') {
@@ -506,12 +510,8 @@ class Store {
 			this.save();
 		}
 		const cur = this.active!;
-		// a newly conquered dilator keeps the end screen up until it is tapped away
-		if (
-			cur.phase === 'finished' &&
-			this.now - alertStart(cur) >= CELEBRATE_MS &&
-			this.conquered.length === 0
-		) {
+		// the end screen has the session's numbers on it, so it waits to be tapped away
+		if (cur.phase === 'finished' && this.now - alertStart(cur) >= FINISH_SCREEN_MS) {
 			this.complete();
 			return;
 		}
@@ -530,7 +530,7 @@ class Store {
 		);
 	}
 
-	/** The end screen's "Yay" button, for when it stayed up to celebrate. */
+	/** The end screen's "Yay" button: files the session away and clears the screen. */
 	acknowledgeFinish() {
 		if (this.active?.phase === 'finished') this.complete();
 	}
@@ -637,7 +637,10 @@ class Store {
 	/** End this dilator's timer now and move on to the switch prompt. */
 	skipStep() {
 		this.change(skipStep);
-		if (this.active?.phase === 'finished') celebrate();
+		if (this.active?.phase === 'finished') {
+			celebrate();
+			void keepAwake(false);
+		}
 	}
 
 	cancel() {

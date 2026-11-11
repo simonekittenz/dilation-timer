@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Mascot from './Mascot.svelte';
 	import MascotEars from './MascotEars.svelte';
 	import DilatorName from './DilatorName.svelte';
@@ -16,6 +17,7 @@
 		remainingMs,
 		stepDurationMs
 	} from './session';
+	import { describeSeconds, praise, summarizeSession } from './stats';
 	import { store } from './store.svelte';
 
 	const s = $derived(store.active!);
@@ -48,6 +50,14 @@
 	let clockLit = $state(0);
 
 	const conquered = $derived(s.phase === 'finished' ? store.conquered : []);
+	// the history does not have this session yet, so it is what it is compared with
+	const summary = $derived(summarizeSession(s));
+	const praised = $derived(summary ? praise(summary, store.log) : []);
+
+	function moreStatistics() {
+		store.acknowledgeFinish();
+		void goto('/history/stats');
+	}
 
 	let overviewOpen = $state(false);
 	// when it is time to switch, or the session is done, the overview gets out of the way
@@ -345,12 +355,46 @@
 				</div>
 			{/each}
 			{#if bubble && conquered.length === 0}<p class="bubble">{bubble}</p>{/if}
+			{#if summary}
+				<section class="summary" data-testid="session-summary" aria-label="Your session in numbers">
+					<dl class="facts">
+						<div>
+							<dt>With the dilators</dt>
+							<dd>{describeSeconds(summary.heldSeconds)}</dd>
+						</div>
+						{#if summary.readySeconds !== undefined}
+							<div>
+								<dt>Ready after</dt>
+								<dd>{describeSeconds(summary.readySeconds)}</dd>
+							</div>
+						{/if}
+						{#if summary.averageSwapSeconds !== undefined}
+							<div>
+								<dt>Average swap</dt>
+								<dd>{describeSeconds(summary.averageSwapSeconds)}</dd>
+							</div>
+						{/if}
+					</dl>
+					{#if summary.swaps.length > 0}
+						<ul class="swaps">
+							{#each summary.swaps as w, i (i)}
+								<li>
+									<span>Swap to <DilatorName label={w.label} nickname={w.nickname} /></span>
+									<strong>{describeSeconds(w.seconds)}</strong>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					{#each praised as line (line)}<p class="praise">{line}</p>{/each}
+				</section>
+			{/if}
 		</div>
-		{#if conquered.length > 0}
-			<div class="pad">
-				<button class="btn huge" onclick={() => store.acknowledgeFinish()}>Yay! ♡</button>
-			</div>
-		{/if}
+		<div class="pad">
+			<button class="btn huge" onclick={() => store.acknowledgeFinish()}>Yay! ♡</button>
+			<button class="btn ghost more" onclick={moreStatistics} data-testid="more-stats">
+				📊 More statistics
+			</button>
+		</div>
 	{/if}
 </section>
 
@@ -740,6 +784,58 @@
 			animation: none;
 		}
 	}
+	.summary {
+		width: 100%;
+		display: grid;
+		gap: 0.6rem;
+		padding: 0.8rem 0.9rem;
+		border-radius: 20px;
+		background: var(--bg);
+		text-align: left;
+	}
+	.facts {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
+	}
+	.facts dt {
+		font-size: 0.75rem;
+		color: var(--muted);
+	}
+	.facts dd {
+		margin: 0;
+		font-size: 1.15rem;
+		font-weight: 900;
+		color: var(--accent-strong);
+		font-variant-numeric: tabular-nums;
+	}
+	.swaps {
+		list-style: none;
+		margin: 0;
+		padding: 0.5rem 0 0;
+		border-top: 2px dashed var(--line);
+		display: grid;
+		gap: 0.25rem;
+		font-size: 0.9rem;
+	}
+	.swaps li {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		color: var(--muted);
+	}
+	.swaps strong {
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
+	.praise {
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--accent-strong);
+		text-align: center;
+	}
 	/* the quiet clock on the start screen: there only to be noted, so it stays small and soft */
 	.waited {
 		color: var(--muted);
@@ -971,6 +1067,9 @@
 		.countdown {
 			padding: 0.1rem 1rem;
 			font-size: clamp(2rem, 11dvh, 2.8rem);
+		}
+		.swaps {
+			display: none;
 		}
 		.huge {
 			padding: 0.9rem 1rem;
