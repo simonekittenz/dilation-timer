@@ -52,20 +52,38 @@
 	</label>
 	<label class="item">
 		<span class="text">
-			<span class="label">Clock on the start screen</span>
+			<span class="label">Start screen</span>
 			<span class="hint">
-				When you start a session, show a clock counting how long you take to get ready, with Pause
-				and Reset. Off keeps that screen simple; the time is still noted
+				When you start a session, show which dilator to bring in first, and begin the first timer
+				when you press Go. Off starts the first timer straight away
 			</span>
 		</span>
 		<input
 			type="checkbox"
 			class="toggle"
-			checked={draft.showStartTimer !== false}
-			onchange={(e) => (draft.showStartTimer = e.currentTarget.checked)}
-			aria-label="Clock on the start screen"
+			checked={draft.startScreen !== false}
+			onchange={(e) => (draft.startScreen = e.currentTarget.checked)}
+			aria-label="Start screen"
 		/>
 	</label>
+	{#if draft.startScreen !== false}
+		<label class="item">
+			<span class="text">
+				<span class="label">Clock on the start screen</span>
+				<span class="hint">
+					When you start a session, show a clock counting how long you take to get ready, with Pause
+					and Reset. Off keeps that screen simple; the time is still noted
+				</span>
+			</span>
+			<input
+				type="checkbox"
+				class="toggle"
+				checked={draft.showStartTimer !== false}
+				onchange={(e) => (draft.showStartTimer = e.currentTarget.checked)}
+				aria-label="Clock on the start screen"
+			/>
+		</label>
+	{/if}
 	{#if isNative()}
 		<label class="item">
 			<span class="text">

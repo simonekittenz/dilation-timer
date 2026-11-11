@@ -4,6 +4,7 @@ import { planBackgroundAlerts } from './backgroundAlerts';
 import {
 	adjust,
 	isWaitPaused,
+	newSession,
 	confirmSwitch,
 	estimatedFinish,
 	finish,
@@ -198,5 +199,35 @@ describe('the start screen clock', () => {
 
 	it('is big but grey, not the pink of the running countdown', () => {
 		expect(timer).toMatch(/\.startstage \.countdown \{[^}]*color: var\(--muted\)/);
+	});
+});
+
+describe('starting a session with or without the start screen', () => {
+	it('waits for Go on the start screen, by default', () => {
+		const s = newSession(steps, 'morning', '2026-01-01', 1_000, true);
+		expect(s.phase).toBe('start');
+		expect(tick(s, 60 * MIN)).toBe(s); // no timer yet
+	});
+
+	it('starts the first timer straight away when the start screen is off, as it used to', () => {
+		const s = newSession(steps, 'morning', '2026-01-01', 1_000, false);
+		expect(s.phase).toBe('running');
+		expect(plannedEnd(s)).toBe(1_000 + 10 * MIN);
+		expect(s.records[0].startedAt).toBe(1_000);
+		// and no wait is noted for that session
+		expect(finish(s, 40 * MIN).steps[0].readySeconds).toBeUndefined();
+		expect(planBackgroundAlerts(s, 2_000, 60_000)).not.toEqual([]); // alerts as before
+	});
+
+	it('is a switch in Settings, which also hides the clock row while it is off', () => {
+		const alerts = readFileSync(
+			new URL('../routes/settings/alerts/+page.svelte', import.meta.url),
+			'utf8'
+		);
+		expect(alerts).toContain('draft.startScreen');
+		const clockRow = alerts.indexOf('draft.showStartTimer');
+		const guard = alerts.indexOf('draft.startScreen !== false}');
+		expect(guard).toBeGreaterThan(-1);
+		expect(clockRow).toBeGreaterThan(guard);
 	});
 });

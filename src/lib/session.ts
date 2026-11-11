@@ -45,6 +45,22 @@ export function startSession(
 }
 
 /**
+ * A new session as the app starts it: waiting on the start screen, or (with the start screen switched
+ * off in Settings) with the first timer running straight away, as it used to.
+ */
+export function newSession(
+	steps: SessionStep[],
+	slot: SlotId | null,
+	date: string,
+	now: number,
+	withStartScreen: boolean,
+	id?: string
+): ActiveSession {
+	const s = startSession(steps, slot, date, now, id);
+	return withStartScreen ? getReady(s) : s;
+}
+
+/**
  * A just-started session waits on a "bring in this dilator" screen: the first timer only runs once
  * you press Ready. How long that took is noted, quietly.
  */

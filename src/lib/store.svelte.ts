@@ -39,7 +39,7 @@ import {
 	alertStart,
 	chillOut,
 	confirmSwitch,
-	getReady,
+	newSession,
 	ready,
 	restartWait,
 	extendSwitchWindow,
@@ -49,7 +49,6 @@ import {
 	pause,
 	resume,
 	skipStep,
-	startSession,
 	switchWindowLeftMs,
 	tick
 } from './session';
@@ -597,8 +596,12 @@ class Store {
 		unlock();
 		void this.askForAlertPermission();
 		void clearReminderNotifications({ pendingSnooze: true }); // no reminders while a session runs
-		this.active = getReady(
-			startSession(resolveSteps(this.settings.dilators, phase.steps), slot, date, Date.now())
+		this.active = newSession(
+			resolveSteps(this.settings.dilators, phase.steps),
+			slot,
+			date,
+			Date.now(),
+			this.settings.startScreen !== false
 		);
 		void keepAwake(true);
 		this.save();
@@ -617,10 +620,16 @@ class Store {
 		unlock();
 		void this.askForAlertPermission();
 		void clearReminderNotifications({ pendingSnooze: true });
-		this.active = getReady({
-			...startSession(resolveSteps(this.settings.dilators, usable), slot, this.today, Date.now()),
+		this.active = {
+			...newSession(
+				resolveSteps(this.settings.dilators, usable),
+				slot,
+				this.today,
+				Date.now(),
+				this.settings.startScreen !== false
+			),
 			custom: true
-		});
+		};
 		void keepAwake(true);
 		this.save();
 		return true;

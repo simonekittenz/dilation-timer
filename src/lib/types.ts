@@ -83,6 +83,8 @@ export interface Settings {
 	streak?: boolean;
 	/** Android app: keep the running session's timer on the lock screen. Missing means yes. */
 	lockScreenTimer?: boolean;
+	/** Start sessions on the "Let's begin" screen, with the first timer waiting for Go. Missing means yes. */
+	startScreen?: boolean;
 	/** Show the clock (with Pause and Reset) on the start screen. It is timed either way. Missing means yes. */
 	showStartTimer?: boolean;
 	/** Daily reminders to start a session. Missing means never set up. */

@@ -54,6 +54,12 @@ describe('migrate', () => {
 		expect(migrateSettings({ volume: 60 }).volume).toBe(60);
 	});
 
+	it('uses the start screen unless it was switched off', () => {
+		expect(migrateSettings({ startDate: '2026-01-01' }).startScreen).toBe(true);
+		expect(migrateSettings({ startScreen: false }).startScreen).toBe(false);
+		expect(migrateSettings({ startScreen: true }).startScreen).toBe(true);
+	});
+
 	it('shows the clock on the start screen unless it was switched off', () => {
 		expect(migrateSettings({ startDate: '2026-01-01' }).showStartTimer).toBe(true);
 		expect(migrateSettings({ showStartTimer: false }).showStartTimer).toBe(false);

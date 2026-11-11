@@ -141,6 +141,7 @@ export function defaultSettings(today = new Date()): Settings {
 		celebrations: true,
 		streak: true,
 		lockScreenTimer: true,
+		startScreen: true,
 		showStartTimer: true,
 		dilators: wihDilators(),
 		messages: defaultMessages(),

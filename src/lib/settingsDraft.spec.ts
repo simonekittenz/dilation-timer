@@ -16,6 +16,13 @@ describe('buildSettings', () => {
 		expect(out.messages).toEqual(draft.messages);
 	});
 
+	it('keeps the choice about the start screen', () => {
+		const { draft, text } = fresh();
+		expect(buildSettings(draft, text)!.startScreen).toBe(true);
+		draft.startScreen = false;
+		expect(buildSettings(draft, text)!.startScreen).toBe(false);
+	});
+
 	it('keeps the choice about the start screen clock', () => {
 		const { draft, text } = fresh();
 		expect(buildSettings(draft, text)!.showStartTimer).toBe(true);
