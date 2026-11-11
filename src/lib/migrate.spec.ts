@@ -54,6 +54,12 @@ describe('migrate', () => {
 		expect(migrateSettings({ volume: 60 }).volume).toBe(60);
 	});
 
+	it('shows the clock on the start screen unless it was switched off', () => {
+		expect(migrateSettings({ startDate: '2026-01-01' }).showStartTimer).toBe(true);
+		expect(migrateSettings({ showStartTimer: false }).showStartTimer).toBe(false);
+		expect(migrateSettings({ showStartTimer: true }).showStartTimer).toBe(true);
+	});
+
 	it('defaults to the bunny, and keeps a chosen kitty', () => {
 		expect(migrateSettings({ startDate: '2026-01-01' }).mascot).toBe('bunny');
 		expect(migrateSettings({ mascot: 'kitty' }).mascot).toBe('kitty');

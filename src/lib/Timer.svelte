@@ -282,60 +282,68 @@
 		</div>
 	{:else if s.phase === 'start'}
 		{@const first = s.steps[s.stepIndex]}
-		<div class="stage">
-			<Mascot mood="happy" size={110} />
+		<div class="stage startstage">
+			<span class="startmascot"><Mascot mood="happy" size={110} /></span>
 			<p class="title">Let's begin ♡</p>
 			<p class="big swap">
 				Bring in <Swatch color={first.color} size={34} />
 				<strong><DilatorName label={first.label} nickname={first.nickname} /></strong>
 			</p>
 			{#if first.diameterMm}<p class="muted hint">{first.diameterMm} mm</p>{/if}
-			<p class="muted hint">No rush, the timer starts when you press Ready.</p>
-			<p class="waited" data-testid="start-clock" aria-label="Time since you started">
-				{formatClock(waitedMs(s, store.now))}{#if isWaitPaused(s)}&nbsp;· paused{/if}
-			</p>
-			<div class="row second waitrow">
-				<button class="round small" onclick={() => store.restartWait()} data-testid="wait-reset">
-					<span class="disc">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path class="line" d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" /><path
-								class="line"
-								d="M4 4.5v4.2h4.2"
-							/></svg
-						>
-					</span>
-					<span class="cap">Reset</span>
-				</button>
-				{#if isWaitPaused(s)}
-					<button class="round small" onclick={() => store.resume()} data-testid="wait-resume">
+			<p class="muted hint calmhint">No rush, the timer starts when you press Ready.</p>
+			{#if store.settings.showStartTimer !== false}
+				<p
+					class="countdown"
+					class:dim={isWaitPaused(s)}
+					data-testid="start-clock"
+					aria-label="Time since you started"
+				>
+					{formatClock(waitedMs(s, store.now))}
+				</p>
+				{#if isWaitPaused(s)}<p class="muted hint pausedtag">Paused</p>{/if}
+				<div class="row second waitrow">
+					<button class="round small" onclick={() => store.restartWait()} data-testid="wait-reset">
 						<span class="disc">
 							<svg viewBox="0 0 24 24" aria-hidden="true"
-								><path
-									class="fill"
-									d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
+								><path class="line" d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" /><path
+									class="line"
+									d="M4 4.5v4.2h4.2"
 								/></svg
 							>
 						</span>
-						<span class="cap">Continue</span>
+						<span class="cap">Reset</span>
 					</button>
-				{:else}
-					<button class="round small" onclick={() => store.pause()} data-testid="wait-pause">
-						<span class="disc">
-							<svg viewBox="0 0 24 24" aria-hidden="true"
-								><rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
-									class="fill"
-									x="14"
-									y="5"
-									width="4"
-									height="14"
-									rx="1.5"
-								/></svg
-							>
-						</span>
-						<span class="cap">Pause</span>
-					</button>
-				{/if}
-			</div>
+					{#if isWaitPaused(s)}
+						<button class="round small" onclick={() => store.resume()} data-testid="wait-resume">
+							<span class="disc">
+								<svg viewBox="0 0 24 24" aria-hidden="true"
+									><path
+										class="fill"
+										d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
+									/></svg
+								>
+							</span>
+							<span class="cap">Continue</span>
+						</button>
+					{:else}
+						<button class="round small" onclick={() => store.pause()} data-testid="wait-pause">
+							<span class="disc">
+								<svg viewBox="0 0 24 24" aria-hidden="true"
+									><rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
+										class="fill"
+										x="14"
+										y="5"
+										width="4"
+										height="14"
+										rx="1.5"
+									/></svg
+								>
+							</span>
+							<span class="cap">Pause</span>
+						</button>
+					{/if}
+				</div>
+			{/if}
 		</div>
 		<div class="pad">
 			<button
@@ -927,13 +935,13 @@
 		color: var(--accent-strong);
 		text-align: center;
 	}
-	/* the quiet clock on the start screen: there only to be noted, so it stays small and soft */
-	.waited {
-		color: var(--muted);
-		font-size: 1rem;
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-		opacity: 0.8;
+	/* the start screen's clock: the same big numbers, softer while paused */
+	.countdown.dim {
+		opacity: 0.45;
+	}
+	.pausedtag {
+		margin-top: -0.4rem;
+		font-weight: 800;
 	}
 	/* the calm countdown is just big pink numbers; only the overtime one sits in a pill */
 	.countdown {
@@ -1091,9 +1099,27 @@
 			padding: 0.45rem 0.9rem;
 			font-size: 0.85rem;
 		}
+		/* the start screen: a smaller bunny and clock, so Ready and Cancel stay on screen */
+		.startstage {
+			gap: 0.4rem;
+		}
+		.startmascot :global(svg) {
+			width: 5.5rem;
+			height: 5.5rem;
+		}
+		.startstage .countdown {
+			font-size: clamp(2.4rem, 12vw, 3rem);
+		}
 	}
 	/* the smallest screens: the clock matters more than the bunny inside the ring */
 	@media (max-width: 600px) and (max-height: 680px) {
+		.startmascot :global(svg) {
+			width: 4rem;
+			height: 4rem;
+		}
+		.calmhint {
+			display: none;
+		}
 		.pet {
 			display: none;
 		}

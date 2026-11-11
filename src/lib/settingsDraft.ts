@@ -53,6 +53,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		celebrations: draft.celebrations !== false,
 		streak: draft.streak !== false,
 		lockScreenTimer: draft.lockScreenTimer !== false,
+		showStartTimer: draft.showStartTimer !== false,
 		reminders: draft.reminders,
 		setup: draft.setup,
 		dilators,

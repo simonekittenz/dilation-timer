@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { planBackgroundAlerts } from './backgroundAlerts';
 import {
@@ -149,5 +150,30 @@ describe('the start screen: the first timer waits for "Ready"', () => {
 				text: 'Bring in A · paused'
 			});
 		});
+	});
+});
+
+describe('the clock on the start screen can be switched off in Settings', () => {
+	const timer = readFileSync(new URL('./Timer.svelte', import.meta.url), 'utf8');
+	const alerts = readFileSync(
+		new URL('../routes/settings/alerts/+page.svelte', import.meta.url),
+		'utf8'
+	);
+
+	it('hides the clock and its buttons together, while the time is still noted', () => {
+		const start = timer.slice(timer.indexOf("s.phase === 'start'}"));
+		const shown = start.indexOf('store.settings.showStartTimer !== false');
+		expect(shown).toBeGreaterThan(-1);
+		for (const id of ['start-clock', 'wait-reset', 'wait-pause', 'wait-resume']) {
+			expect(start.indexOf(id), id).toBeGreaterThan(shown);
+		}
+		// Ready still notes the wait, whether or not the clock is on screen
+		expect(timer).toContain('store.confirm()');
+	});
+
+	it('has a switch in Settings, and the clock is big again', () => {
+		expect(alerts).toContain('draft.showStartTimer');
+		expect(timer).toContain('class="countdown"');
+		expect(timer).not.toContain('class="waited"');
 	});
 });

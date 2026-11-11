@@ -50,6 +50,22 @@
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.newDilatorExtraMinutes} />
 	</label>
+	<label class="item">
+		<span class="text">
+			<span class="label">Clock on the start screen</span>
+			<span class="hint">
+				When you start a session, show a clock counting how long you take to get ready, with Pause
+				and Reset. Off keeps that screen simple; the time is still noted
+			</span>
+		</span>
+		<input
+			type="checkbox"
+			class="toggle"
+			checked={draft.showStartTimer !== false}
+			onchange={(e) => (draft.showStartTimer = e.currentTarget.checked)}
+			aria-label="Clock on the start screen"
+		/>
+	</label>
 	{#if isNative()}
 		<label class="item">
 			<span class="text">

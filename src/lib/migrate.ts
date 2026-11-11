@@ -90,6 +90,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		celebrations,
 		streak: saved.streak !== false,
 		lockScreenTimer: saved.lockScreenTimer !== false,
+		showStartTimer: saved.showStartTimer !== false,
 		reminders: normalizeReminders(saved.reminders),
 		setup,
 		phases

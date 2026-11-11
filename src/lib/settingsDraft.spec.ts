@@ -16,6 +16,13 @@ describe('buildSettings', () => {
 		expect(out.messages).toEqual(draft.messages);
 	});
 
+	it('keeps the choice about the start screen clock', () => {
+		const { draft, text } = fresh();
+		expect(buildSettings(draft, text)!.showStartTimer).toBe(true);
+		draft.showStartTimer = false;
+		expect(buildSettings(draft, text)!.showStartTimer).toBe(false);
+	});
+
 	it('keeps the reminders (autosave must never drop them)', () => {
 		const { draft, text } = fresh();
 		draft.reminders = {
