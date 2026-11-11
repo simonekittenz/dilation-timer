@@ -4,6 +4,7 @@ import { REMINDER_IDS, SNOOZE_ID, SNOOZE_MINUTES, type PlannedReminder } from '.
 import {
 	armAlerts,
 	CHANNELS,
+	IOS_SOUNDS,
 	clearReminderNotifications,
 	REMINDER_ACTION_TYPE,
 	snoozeReminder,
@@ -22,6 +23,7 @@ import {
 interface Sent {
 	id: number;
 	channelId: string;
+	sound?: string;
 	schedule: { at: Date; allowWhileIdle: boolean };
 }
 
@@ -356,5 +358,71 @@ describe('daily reminders', () => {
 			['open', { slot: undefined, date: undefined }],
 			['open', { slot: undefined, date: undefined }]
 		]);
+	});
+});
+
+describe('sound on an iPhone', () => {
+	const reminder: PlannedReminder = {
+		id: REMINDER_IDS[0],
+		at: 100_000,
+		slot: 'morning',
+		date: '2026-01-01',
+		title: 'Time',
+		body: 'b'
+	};
+
+	it('names the alarm sound on every alert, because an iPhone notification is silent otherwise', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api, 'ios');
+		await armAlerts(
+			[...alerts, { id: ALERT_ID + 2, at: 200_000, kind: 'done', title: 'Done', body: 'b' }],
+			false
+		);
+		const sent = api.schedule.mock.calls[0][0].notifications;
+		expect(sent.map((n) => n.sound)).toEqual([
+			IOS_SOUNDS.switch,
+			IOS_SOUNDS.nudge,
+			IOS_SOUNDS.done
+		]);
+	});
+
+	it('also does it for the test alert and for reminders', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api, 'ios');
+		await sendTestAlert(false);
+		expect(api.schedule.mock.calls[0][0].notifications[0].sound).toBe(IOS_SOUNDS.switch);
+		await syncReminders([reminder], false);
+		expect(api.schedule.mock.calls[1][0].notifications[0].sound).toBe(IOS_SOUNDS.reminder);
+		await snoozeReminder('morning', '2026-01-01', 'T', 'b', false);
+		expect(api.schedule.mock.calls[2][0].notifications[0].sound).toBe(IOS_SOUNDS.reminder);
+	});
+
+	it('is silent when the alarm volume is off', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api, 'ios');
+		await armAlerts(alerts, true);
+		expect(api.schedule.mock.calls[0][0].notifications.map((n) => n.sound)).toEqual([
+			undefined,
+			undefined
+		]);
+	});
+
+	it('is left to the notification channel on Android', async () => {
+		const { api } = fake();
+		setNotificationsForTests(api, 'android');
+		await armAlerts(alerts, false);
+		expect(api.schedule.mock.calls[0][0].notifications.map((n) => n.sound)).toEqual([
+			undefined,
+			undefined
+		]);
+	});
+
+	it('points at sound files that are in the app', async () => {
+		const { existsSync } = await import('node:fs');
+		for (const file of new Set(Object.values(IOS_SOUNDS))) {
+			expect(
+				existsSync(new URL(`../../static/${file.replace('public/', '')}`, import.meta.url))
+			).toBe(true);
+		}
 	});
 });

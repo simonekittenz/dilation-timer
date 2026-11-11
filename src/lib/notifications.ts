@@ -48,6 +48,8 @@ interface ScheduledNotification {
 	body: string;
 	channelId: string;
 	schedule: { at: Date; allowWhileIdle: boolean };
+	/** iPhone only: the sound file to play. Without one an iPhone notification is silent. */
+	sound?: string;
 	actionTypeId?: string;
 	extra?: Record<string, unknown>;
 }
@@ -110,14 +112,30 @@ const CHANNEL_DEFS = [
 	}
 ];
 
+/**
+ * iPhone notifications have no channels: they are silent unless they name a sound file. These are the
+ * app's own alarm sounds, as they sit in the app (the `public` folder is the built website).
+ */
+export const IOS_SOUNDS = {
+	switch: 'public/sounds/ping.wav',
+	nudge: 'public/sounds/nudge.wav',
+	done: 'public/sounds/fanfare.wav',
+	reminder: 'public/sounds/ping.wav'
+} as const;
+
 let injected: NotificationsApi | null | undefined;
+let testPlatform: 'ios' | 'android' | 'web' = 'web';
 let queue: Promise<unknown> = Promise.resolve();
 let channelsReady = false;
 let reminderActionsReady = false;
 
 /** Tests swap in a fake (or `null` for "not available"); `undefined` resets. */
-export function setNotificationsForTests(api: NotificationsApi | null | undefined) {
+export function setNotificationsForTests(
+	api: NotificationsApi | null | undefined,
+	platform: 'ios' | 'android' | 'web' = 'web'
+) {
 	injected = api;
+	testPlatform = platform;
 	channelsReady = false;
 	reminderActionsReady = false;
 	queue = Promise.resolve();
@@ -173,6 +191,12 @@ async function ensureChannels(n: NotificationsApi) {
 const channelFor = (kind: AlertKind | 'reminder', quiet: boolean) =>
 	quiet ? CHANNELS.quiet : CHANNELS[kind];
 
+/** The sound to name on the notification: only an iPhone needs it, and none when the volume is off. */
+function soundFor(kind: AlertKind | 'reminder', quiet: boolean): { sound?: string } {
+	const platform = injected === undefined ? nativePlatform() : testPlatform;
+	return platform === 'ios' && !quiet ? { sound: IOS_SOUNDS[kind] } : {};
+}
+
 /**
  * Clears a session's alerts, scheduled or already showing. The Settings test alert is only taken off
  * the screen once it has been shown: one still waiting to go off is left scheduled, so locking the
@@ -200,6 +224,7 @@ export function armAlerts(alerts: BackgroundAlert[], quiet: boolean): Promise<vo
 					title: a.title,
 					body: a.body,
 					channelId: channelFor(a.kind, quiet),
+					...soundFor(a.kind, quiet),
 					// exact time, and even while the phone is in deep sleep
 					schedule: { at: new Date(a.at), allowWhileIdle: true }
 				}))
@@ -237,6 +262,7 @@ export function sendTestAlert(quiet: boolean, inSeconds = 10): Promise<boolean> 
 						title: 'Test alert 🔔',
 						body: 'If you can see this on your lock screen, locked-screen alerts work.',
 						channelId: channelFor('switch', quiet),
+						...soundFor('switch', quiet),
 						schedule: { at: new Date(Date.now() + inSeconds * 1000), allowWhileIdle: true }
 					}
 				]
@@ -302,6 +328,7 @@ function reminderNotification(
 		title: r.title,
 		body: r.body,
 		channelId: channelFor('reminder', quiet),
+		...soundFor('reminder', quiet),
 		schedule: { at: new Date(at), allowWhileIdle: true },
 		actionTypeId: REMINDER_ACTION_TYPE,
 		extra: { slot: r.slot, date: r.date }

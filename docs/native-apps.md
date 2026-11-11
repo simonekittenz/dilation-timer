@@ -136,7 +136,12 @@ Verified on an Android 15 virtual phone with the screen off and Doze forced on: 
 2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
 the app cleared them. **Not yet tried on a real phone or on a real iPhone** (the iPhone app has only run in the simulator). Some makers (Samsung, Xiaomi,
 Oppo) kill background apps harder than stock Android; if alerts are late there, turn off battery
-optimisation for the app. iPhone uses the same code with its normal notification sound.
+optimisation for the app.
+
+On an iPhone there are no channels: a notification is **silent unless it names a sound file**. So every
+alert and reminder also gets `sound: 'public/sounds/….wav'` (the app's own alarm WAVs, which sit inside
+the app in its `public` folder; see `IOS_SOUNDS` in `notifications.ts`), and none when the alarm volume
+is off. The phone's ringer switch and Focus modes still mute it, as for any notification.
 
 ## Signing
 
