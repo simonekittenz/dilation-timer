@@ -40,6 +40,9 @@
 
 * {
 	box-sizing: border-box;
+	/* No double-tap zoom: a quick second tap that lands a little off a button must not zoom the page.
+	   Pinching still works. */
+	touch-action: manipulation;
 }
 
 body {
