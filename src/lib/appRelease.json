@@ -1,11 +1,11 @@
 {
 	"android": {
 		"file": "/downloads/Dilation-timer.apk",
-		"version": "1.13",
-		"versionCode": 14,
-		"sizeBytes": 5169172,
-		"sha256": "07c7296a42cf49b6be450dca5ff6a6c75ea7d7a4a3bbed27dbd0be6031721128",
-		"builtAt": "2026-11-08T14:02:58.141Z",
+		"version": "1.14",
+		"versionCode": 15,
+		"sizeBytes": 5173347,
+		"sha256": "eade0847d0a9c4f92f449bea04def659da66a525bbb2c03b52717a3832c894db",
+		"builtAt": "2026-11-11T13:01:46.140Z",
 		"signer": "c856421a3aaf4f7795bc0457e8384b741765a56e681048983b36b55111122f45"
 	}
 }
