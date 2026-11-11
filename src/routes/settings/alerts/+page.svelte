@@ -34,8 +34,8 @@
 		<span class="text">
 			<span class="label">Gentle switch window</span>
 			<span class="hint">
-				Extra minutes of quiet time on top of how long you usually take to swap to that dilator,
-				before the alarm starts blinking and beeping
+				Minutes of quiet time to swap to the next dilator before the alarm starts blinking and
+				beeping. If you usually take longer to swap to that dilator, I wait that long instead
 			</span>
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.switchWindowMinutes} />
@@ -54,18 +54,22 @@
 		<span class="label">Your usual swap times</span>
 		{#if store.usualSwitches.length}
 			<p class="hint">
-				I time how long you take to switch, and wait that long (plus the window above) before
-				nudging you.
+				I time how long you take to switch and nudge you when that time is up, never sooner than the
+				window above. Swaps where you forgot to press the button don't count.
 			</p>
 			<ul class="usual">
 				{#each store.usualSwitches as u (u.label)}
-					<li><span>{u.label}</span><strong>{describeSwitch(u.ms)}</strong></li>
+					<li>
+						<span>{u.label}</span><strong
+							>{describeSwitch(u.ms)} · nudge after {describeSwitch(u.nudgeMs)}</strong
+						>
+					</li>
 				{/each}
 			</ul>
 		{:else}
 			<p class="hint">
-				I'll learn how long you take to switch to each dilator, and wait that long (plus the window
-				above) before nudging you. Until then only the window above counts.
+				After a few sessions I'll learn how long you take to switch to each dilator and nudge you
+				when that time is up. Until then only the window above counts.
 			</p>
 		{/if}
 	</div>

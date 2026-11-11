@@ -99,6 +99,10 @@ export interface StepRecord {
 	endedAt: number | null;
 	/** How long it took to get to this dilator: from the previous timer ending to "I switched". */
 	switchedAfterMs?: number;
+	/** The nudge had already started when "I switched" was pressed. */
+	switchNudged?: boolean;
+	/** "+1 min" or "Chill out" was used during this swap. */
+	switchAskedMore?: boolean;
 }
 
 export interface ActiveSession {
@@ -144,6 +148,10 @@ export interface LogEntry {
 		actualSeconds: number;
 		/** Seconds between the previous timer ending and pressing "I switched" to start this one. */
 		switchSeconds?: number;
+		/** The nudge had already started when "I switched" was pressed. */
+		switchNudged?: boolean;
+		/** "+1 min" or "Chill out" was used during this swap. */
+		switchAskedMore?: boolean;
 	}[];
 }
 

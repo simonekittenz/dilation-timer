@@ -202,8 +202,8 @@ function closeCurrent(s: ActiveSession, now: number) {
 
 /**
  * "I switched the dilator" — closes the current step and starts the next timer.
- * Pass the switch window that was in force to leave out swaps that only happened after the nudge: that
- * time is how long it took to react, not how long the swap takes.
+ * The swap is noted with how long it took and whether the nudge had started (given the switch window
+ * that was in force) and whether you asked for more time, so the app can tell a slow swap from a forgotten one.
  */
 export function confirmSwitch(
 	s: ActiveSession,
@@ -212,12 +212,12 @@ export function confirmSwitch(
 ): ActiveSession {
 	if (s.phase !== 'switch') return s;
 	const next = s.steps[s.stepIndex + 1];
-	// how long the swap took: from the timer ending to now
+	const switchedAfterMs = Math.max(0, now - alertStart(s));
 	// "Chill out" only exists once the nudge has happened, so it counts as nudged even though it moves the time
 	const nudged =
 		switchWindowMs !== undefined &&
 		(s.quietUntil != null || now >= escalateAt({ ...s, quietUntil: null }, switchWindowMs));
-	const switchedAfterMs = nudged ? undefined : Math.max(0, now - alertStart(s));
+	const askedMore = (s.windowExtraMs ?? 0) > 0 || s.quietUntil != null;
 	return {
 		...s,
 		phase: 'running',
@@ -238,7 +238,9 @@ export function confirmSwitch(
 				plannedMinutes: next.minutes,
 				startedAt: now,
 				endedAt: null,
-				...(switchedAfterMs !== undefined ? { switchedAfterMs } : {})
+				switchedAfterMs,
+				...(nudged ? { switchNudged: true } : {}),
+				...(askedMore ? { switchAskedMore: true } : {})
 			}
 		]
 	};
@@ -261,7 +263,9 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000),
 			...(r.switchedAfterMs !== undefined
 				? { switchSeconds: Math.round(r.switchedAfterMs / 1000) }
-				: {})
+				: {}),
+			...(r.switchNudged ? { switchNudged: true } : {}),
+			...(r.switchAskedMore ? { switchAskedMore: true } : {})
 		}))
 	};
 }

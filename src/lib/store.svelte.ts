@@ -286,7 +286,7 @@ class Store {
 		}
 	}
 
-	/** The swaps in your history, for the average that is added to the Settings window. */
+	/** The swaps in your history, for your usual swap time per dilator. */
 	private switchHistory = $derived(learnSwitches(this.log));
 
 	/** The Settings window alone. */
@@ -296,7 +296,7 @@ class Store {
 
 	/**
 	 * How long to wait before nudging about the swap to dilator `step` of this session: how long you
-	 * usually take to switch to that dilator, plus the gentle window from Settings.
+	 * usually take to switch to that dilator, but at least the gentle window from Settings.
 	 */
 	switchWindowFor = (step: number): number =>
 		switchWindowFor(
@@ -322,11 +322,12 @@ class Store {
 		return this.active ? this.switchWindowFor(this.active.stepIndex + 1) : this.configuredWindowMs;
 	}
 
-	/** Your usual swap time per dilator, for Settings. */
-	get usualSwitches(): { label: string; ms: number }[] {
-		return [...this.switchHistory.byLabel.keys()].map((label) => ({
+	/** Your usual swap time per dilator, and when I nudge you about it, for Settings. */
+	get usualSwitches(): { label: string; ms: number; nudgeMs: number }[] {
+		return [...this.switchHistory.typical.keys()].map((label) => ({
 			label,
-			ms: usualSwitchMs(this.switchHistory, label)
+			ms: usualSwitchMs(this.switchHistory, label),
+			nudgeMs: switchWindowFor(this.switchHistory, label, this.configuredWindowMs, 0)
 		}));
 	}
 
