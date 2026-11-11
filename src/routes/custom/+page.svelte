@@ -66,8 +66,19 @@
 	}
 </script>
 
-<header>
-	<a class="back" href="/">← Today</a>
+<header class="head">
+	{#if stage === 'review' && !store.active}
+		<button
+			type="button"
+			class="back-btn"
+			aria-label="Back to choosing dilators"
+			onclick={() => (stage = 'pick')}
+		>
+			‹
+		</button>
+	{:else}
+		<a class="back-btn" href="/" aria-label="Back to Today">‹</a>
+	{/if}
 	<h1>Custom session <span class="sparkle">✨</span></h1>
 </header>
 
@@ -166,22 +177,45 @@
 	</section>
 
 	<button class="btn huge" disabled={!valid} onclick={start}>Start custom session</button>
-	<button class="btn ghost" onclick={() => (stage = 'pick')}>← Back</button>
 {/if}
 
 <style>
-	header {
+	/* the same title row as the pages inside Settings: a big round back button, then the title */
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
 		margin-bottom: 1rem;
 	}
-	.back {
-		font-weight: 800;
-		color: var(--accent-strong);
-		text-decoration: none;
-	}
 	h1 {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
 		font-size: 1.7rem;
 		font-weight: 900;
+		line-height: 1.15;
 		color: var(--accent-strong);
+	}
+	.back-btn {
+		flex: none;
+		display: grid;
+		place-items: center;
+		width: 2.7rem;
+		height: 2.7rem;
+		padding: 0 0 0.2rem;
+		border-radius: 50%;
+		border: 2px solid var(--accent);
+		background: var(--surface);
+		color: var(--accent-strong);
+		font: inherit;
+		font-size: 2rem;
+		font-weight: 800;
+		line-height: 1;
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.back-btn:active {
+		transform: scale(0.94);
 	}
 	h2 {
 		font-size: 1.15rem;
