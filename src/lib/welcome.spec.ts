@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+	APP_STORE_ID,
+	APP_STORE_URL,
 	PLAY_STORE_URL,
 	describeDownload,
 	detectPlatform,
@@ -87,5 +89,12 @@ describe('playStoreUrl', () => {
 			{}
 		])
 			expect(playStoreUrl({ playUrl: bad })).toBeNull();
+	});
+});
+
+describe('App Store link', () => {
+	it("is this app's page, which sends people to their own country's store", () => {
+		expect(APP_STORE_ID).toBe('6828830828');
+		expect(APP_STORE_URL).toBe('https://apps.apple.com/app/id6828830828');
 	});
 });

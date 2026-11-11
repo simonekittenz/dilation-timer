@@ -38,7 +38,7 @@ export function hasSeenWelcome(): boolean {
 	}
 }
 
-export function markWelcomeSeen(choice: 'web' | 'android') {
+export function markWelcomeSeen(choice: 'web' | 'android' | 'ios') {
 	try {
 		localStorage.setItem(KEY, choice);
 	} catch {
@@ -60,6 +60,12 @@ export interface AndroidRelease {
 	sha256: string;
 	builtAt: string;
 }
+
+/** The App Store's id for this app, as in `apps.apple.com/app/id…` and App Store Connect's address. */
+export const APP_STORE_ID = '6828830828';
+
+/** This app's page on the App Store. This short form sends people to their own country's store. */
+export const APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
 
 /** "5.7 MB · v1.0 · 18 Oct 2026" */
 /** This app's page on Google Play, once it has been published. */

@@ -8,6 +8,8 @@ to switch to the next one.
 
 **Use it:** <https://dilation-timer.vercel.app> (in the browser, or added to your home screen)
 **Android app:** download it from the start page at the same address.
+
+**iPhone app:** [get it on the App Store](https://apps.apple.com/app/id6828830828).
 **iPhone app:** not in the App Store yet. It builds and starts in the iOS simulator, and the steps to put it on TestFlight and the App Store are in [`docs/app-store.md`](docs/app-store.md). Until then it can be built from this repo with Xcode (see [`docs/native-apps.md`](docs/native-apps.md)).
 
 ## What it does

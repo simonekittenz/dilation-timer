@@ -4,6 +4,8 @@
 	import release from '#lib/appRelease.json';
 	import { store } from '#lib/store.svelte.ts';
 	import {
+		APP_STORE_ID,
+		APP_STORE_URL,
 		describeDownload,
 		detectPlatform,
 		hasSeenWelcome,
@@ -24,7 +26,11 @@
 	}
 </script>
 
-<svelte:head><title>Welcome · Dilation timer</title></svelte:head>
+<svelte:head>
+	<title>Welcome · Dilation timer</title>
+	<!-- Safari on iPhone shows its own "Get / Open" bar at the top for the App Store app -->
+	<meta name="apple-itunes-app" content="app-id={APP_STORE_ID}" />
+</svelte:head>
 
 <header>
 	<Mascot size={110} />
@@ -102,13 +108,25 @@
 		</details>
 	</section>
 
-	<section class="card choice ios" id="ios">
+	<section class="card choice ios" class:recommended={platform === 'ios'} id="ios">
+		{#if platform === 'ios'}<span class="badge">Best for your phone ♡</span>{/if}
 		<h2>🍎 iPhone app</h2>
-		<p>Coming later. For now the web version is the way to go on an iPhone.</p>
+		<ul>
+			<li>Free on the App Store, with its own bunny icon on your home screen</li>
+			<li>Alerts that still reach you when your phone is locked</li>
+		</ul>
+		<a
+			class="store-badge"
+			href={APP_STORE_URL}
+			data-testid="app-store-link"
+			onclick={() => markWelcomeSeen('ios')}
+		>
+			<img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+		</a>
 	</section>
 
-	<section class="card choice web" class:recommended={platform !== 'android'} id="web">
-		{#if platform !== 'android'}<span class="badge">Best for your device ♡</span>{/if}
+	<section class="card choice web" class:recommended={platform === 'desktop'} id="web">
+		{#if platform === 'desktop'}<span class="badge">Best for your device ♡</span>{/if}
 		<h2>🌐 Web version</h2>
 		<ul>
 			<li>Nothing to install. It works on any phone or computer</li>
@@ -255,14 +273,23 @@
 	.ios {
 		order: 3;
 	}
+	.ios.recommended {
+		order: 1;
+	}
 	.web {
 		order: 2;
 	}
 	.web.recommended {
 		order: 1;
 	}
-	.ios {
-		opacity: 0.8;
+	.store-badge {
+		display: inline-block;
+		line-height: 0;
+	}
+	.store-badge img {
+		display: block;
+		height: 50px;
+		width: auto;
 	}
 	.badge {
 		font-size: 0.78rem;
