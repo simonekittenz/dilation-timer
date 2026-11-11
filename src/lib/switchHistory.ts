@@ -7,7 +7,7 @@ export const MAX_SAMPLE_MS = 60 * 60_000;
 /** A dilator needs this many swaps before its own typical time is trusted. */
 export const MIN_SAMPLES = 3;
 /** The typical time goes up by at most this much per swap (it can come down at once). */
-export const MAX_RISE_MS = 60_000;
+export const MAX_RISE_MS = 5 * 60_000;
 /** Nudging late is worse than nudging early, so aim above the middle: three out of four swaps are quicker. */
 const PERCENTILE = 0.75;
 /** A swap this much slower than the middle one is a flyer (you forgot, something came up). */

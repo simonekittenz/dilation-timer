@@ -195,18 +195,19 @@ describe('the learned time cannot run away', () => {
 		expect(usualSwitchMs(h, 'B')).toBe(MAX_SAMPLE_MS);
 	});
 
-	it('only creeps up a little with every swap, however much slower the latest ones are', () => {
-		const quick = Array(5).fill(60);
-		const typical = (extra: number) =>
-			usualSwitchMs(learnSwitches(swapsTo('B', [...quick, ...Array(extra).fill(170)])), 'B');
+	it('only creeps up a few minutes with every swap, however much slower the latest ones are', () => {
+		const steady = Array(7).fill(600); // 10 minutes
+		const typical = (slower: number) =>
+			usualSwitchMs(learnSwitches(swapsTo('B', [...steady, ...Array(slower).fill(1200)])), 'B');
 		let last = typical(0);
-		for (let n = 1; n <= 12; n++) {
+		for (let n = 1; n <= 10; n++) {
 			const now = typical(n);
 			expect(now - last).toBeLessThanOrEqual(MAX_RISE_MS);
 			last = now;
 		}
-		expect(last).toBeGreaterThan(typical(0)); // it does follow you when you really are slower
-		expect(last).toBe(170_000);
+		// three 20-minute swaps would pull a plain 75th percentile up by 7.5 minutes at once: held to 5
+		expect(typical(3)).toBe(10 * MIN + MAX_RISE_MS);
+		expect(last).toBe(20 * MIN); // it does follow you when you really are slower
 	});
 
 	it('ignores a sudden flyer instead of creeping towards it', () => {
