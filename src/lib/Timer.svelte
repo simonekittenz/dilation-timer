@@ -10,6 +10,8 @@
 	import { pickMessage } from './messages';
 	import {
 		ADJUST_MS,
+		isWaitPaused,
+		waitedMs,
 		estimatedFinish,
 		isLastStep,
 		isPaused,
@@ -290,8 +292,50 @@
 			{#if first.diameterMm}<p class="muted hint">{first.diameterMm} mm</p>{/if}
 			<p class="muted hint">No rush, the timer starts when you press Ready.</p>
 			<p class="waited" data-testid="start-clock" aria-label="Time since you started">
-				{formatClock(store.now - s.startedAt)}
+				{formatClock(waitedMs(s, store.now))}{#if isWaitPaused(s)}&nbsp;· paused{/if}
 			</p>
+			<div class="row second waitrow">
+				<button class="round small" onclick={() => store.restartWait()} data-testid="wait-reset">
+					<span class="disc">
+						<svg viewBox="0 0 24 24" aria-hidden="true"
+							><path class="line" d="M4.5 12a7.5 7.5 0 1 0 2.3-5.4" /><path
+								class="line"
+								d="M4 4.5v4.2h4.2"
+							/></svg
+						>
+					</span>
+					<span class="cap">Reset</span>
+				</button>
+				{#if isWaitPaused(s)}
+					<button class="round small" onclick={() => store.resume()} data-testid="wait-resume">
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true"
+								><path
+									class="fill"
+									d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
+								/></svg
+							>
+						</span>
+						<span class="cap">Continue</span>
+					</button>
+				{:else}
+					<button class="round small" onclick={() => store.pause()} data-testid="wait-pause">
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true"
+								><rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
+									class="fill"
+									x="14"
+									y="5"
+									width="4"
+									height="14"
+									rx="1.5"
+								/></svg
+							>
+						</span>
+						<span class="cap">Pause</span>
+					</button>
+				{/if}
+			</div>
 		</div>
 		<div class="pad">
 			<button
@@ -661,6 +705,11 @@
 		align-items: center;
 		gap: 1.6rem;
 		padding-bottom: 1.5rem;
+	}
+	/* the controls under the quiet clock on the start screen */
+	.waitrow {
+		padding-bottom: 0;
+		gap: 2.4rem;
 	}
 	.row.second {
 		gap: 3.2rem;

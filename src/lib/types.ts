@@ -124,6 +124,8 @@ export interface ActiveSession {
 	warned: boolean;
 	/** When the timer was paused (null while running). Older saved sessions won't have this. */
 	pausedAt?: number | null;
+	/** The start screen's clock counts from here (set by Reset and Continue). Missing means `startedAt`. */
+	waitSince?: number;
 	/** Minutes added or removed from the current step with the +/- buttons. */
 	adjustMs?: number;
 	/** When the current step's timer ended (or was skipped), used for the switch window and overtime. */

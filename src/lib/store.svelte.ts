@@ -41,6 +41,7 @@ import {
 	confirmSwitch,
 	getReady,
 	ready,
+	restartWait,
 	extendSwitchWindow,
 	finish,
 	isEscalated,
@@ -644,6 +645,11 @@ class Store {
 		this.active = fn(this.active, Date.now());
 		this.save();
 		this.step();
+	}
+
+	/** Reset on the start screen: the clock counting how long it took to be ready goes back to zero. */
+	restartWait() {
+		this.change(restartWait);
 	}
 
 	pause() {

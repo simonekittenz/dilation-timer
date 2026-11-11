@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { planBackgroundAlerts } from './backgroundAlerts';
 import {
 	adjust,
+	isWaitPaused,
 	confirmSwitch,
 	estimatedFinish,
 	finish,
 	getReady,
 	pause,
+	resume,
+	restartWait,
+	waitedMs,
 	plannedEnd,
 	ready,
 	sessionOverview,
@@ -14,6 +18,7 @@ import {
 	startSession,
 	tick
 } from './session';
+import { planSessionNotice } from './sessionNotice';
 import { learnSwitches, usualSwitchMs } from './switchHistory';
 import type { SessionStep } from './types';
 
@@ -54,9 +59,8 @@ describe('the start screen: the first timer waits for "Ready"', () => {
 		expect(ready(running, 5_000)).toBe(running);
 	});
 
-	it('can not be paused, adjusted or skipped before Ready, and is not a swap', () => {
+	it('can not be adjusted, skipped or switched before Ready', () => {
 		const s = begin(0);
-		expect(pause(s, 1_000)).toBe(s);
 		expect(adjust(s, MIN, 1_000)).toBe(s);
 		expect(skipStep(s, 1_000)).toBe(s);
 		expect(confirmSwitch(s, 1_000)).toBe(s);
@@ -84,5 +88,66 @@ describe('the start screen: the first timer waits for "Ready"', () => {
 		expect(o.rows[0].startAt).toBe(5 * MIN);
 		expect(o.rows[0].endAt).toBe(15 * MIN);
 		expect(o.rows[1].endAt).toBe(35 * MIN);
+	});
+
+	describe('the clock on the start screen', () => {
+		it('counts from when the session was started', () => {
+			expect(waitedMs(begin(1_000), 61_000)).toBe(60_000);
+		});
+
+		it('stops when paused and carries on from there when continued', () => {
+			let s = pause(begin(0), 30_000);
+			expect(isWaitPaused(s)).toBe(true);
+			expect(waitedMs(s, 10 * MIN)).toBe(30_000); // frozen
+			s = resume(s, 5 * MIN);
+			expect(isWaitPaused(s)).toBe(false);
+			expect(waitedMs(s, 5 * MIN)).toBe(30_000);
+			expect(waitedMs(s, 5 * MIN + 20_000)).toBe(50_000);
+			expect(s.startedAt).toBe(0); // the session itself still began at the start
+		});
+
+		it('goes back to zero on Reset, paused or not', () => {
+			let s = restartWait(begin(0), 90_000);
+			expect(waitedMs(s, 90_000)).toBe(0);
+			expect(waitedMs(s, 100_000)).toBe(10_000);
+			s = pause(s, 100_000);
+			s = restartWait(s, 400_000);
+			expect(waitedMs(s, 400_000)).toBe(0); // reset while paused: zero, still paused
+			expect(isWaitPaused(s)).toBe(true);
+			expect(waitedMs(resume(s, 500_000), 530_000)).toBe(30_000);
+		});
+
+		it('is what is saved as the time it took, without the pauses and before a Reset', () => {
+			let s = begin(0);
+			s = pause(s, 60_000); // a break after a minute
+			s = resume(s, 10 * MIN);
+			s = restartWait(s, 10 * MIN + 5_000); // start over
+			s = ready(s, 10 * MIN + 65_000);
+			expect(s.records[0].readyAfterMs).toBe(60_000);
+		});
+
+		it('uses the frozen value when Ready is pressed while paused', () => {
+			const s = pause(begin(0), 45_000);
+			expect(ready(s, 20 * MIN).records[0].readyAfterMs).toBe(45_000);
+			expect(ready(s, 20 * MIN).pausedAt).toBeNull();
+		});
+
+		it('does nothing outside the start screen', () => {
+			const running = ready(begin(0), 1_000);
+			expect(restartWait(running, 5_000)).toBe(running);
+			expect(isWaitPaused(running)).toBe(false);
+		});
+
+		it('is shown on the lock screen as paused, or counting up from where it is', () => {
+			const s = begin(0);
+			expect(planSessionNotice(s, 40_000)).toMatchObject({ clock: 'up', at: 0 });
+			const reset = restartWait(s, 30_000);
+			expect(planSessionNotice(reset, 40_000)).toMatchObject({ clock: 'up', at: 30_000 });
+			const paused = pause(reset, 50_000);
+			expect(planSessionNotice(paused, 90_000)).toMatchObject({
+				clock: 'none',
+				text: 'Bring in A · paused'
+			});
+		});
 	});
 });

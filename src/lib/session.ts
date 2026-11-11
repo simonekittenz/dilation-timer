@@ -52,10 +52,27 @@ export function getReady(s: ActiveSession): ActiveSession {
 	return { ...s, phase: 'start' };
 }
 
+/**
+ * How long the wait for "Ready" has run: what the quiet clock on the start screen shows, and what is
+ * saved as the time it took. It stops while paused, and Reset starts it over.
+ */
+export function waitedMs(s: ActiveSession, now: number): number {
+	return Math.max(0, (s.pausedAt ?? now) - (s.waitSince ?? s.startedAt));
+}
+
+/** The start screen's clock is paused. */
+export const isWaitPaused = (s: ActiveSession) => s.phase === 'start' && s.pausedAt != null;
+
+/** Reset on the start screen: the clock goes back to zero (and stays paused, if it was). */
+export function restartWait(s: ActiveSession, now: number): ActiveSession {
+	if (s.phase !== 'start') return s;
+	return { ...s, waitSince: s.pausedAt ?? now };
+}
+
 /** "Ready" — the first timer starts now, and the wait before it is noted. */
 export function ready(s: ActiveSession, now: number): ActiveSession {
 	if (s.phase !== 'start') return s;
-	const readyAfterMs = Math.max(0, now - s.startedAt);
+	const readyAfterMs = waitedMs(s, now);
 	return {
 		...s,
 		phase: 'running',
@@ -187,14 +204,18 @@ export function tick(s: ActiveSession, now: number): ActiveSession {
 }
 
 export function pause(s: ActiveSession, now: number): ActiveSession {
-	if (s.phase !== 'running' || s.pausedAt != null) return s;
+	if ((s.phase !== 'running' && s.phase !== 'start') || s.pausedAt != null) return s;
 	return { ...s, pausedAt: now };
 }
 
 /** Continues a paused timer; the time spent paused doesn't count towards the step. */
 export function resume(s: ActiveSession, now: number): ActiveSession {
-	if (s.phase !== 'running' || s.pausedAt == null) return s;
+	if ((s.phase !== 'running' && s.phase !== 'start') || s.pausedAt == null) return s;
 	const gap = now - s.pausedAt;
+	if (s.phase === 'start') {
+		// the wait before Ready: its clock carries on from where it stopped
+		return { ...s, pausedAt: null, waitSince: (s.waitSince ?? s.startedAt) + gap };
+	}
 	return {
 		...s,
 		pausedAt: null,

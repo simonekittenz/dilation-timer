@@ -1,7 +1,7 @@
 import { who } from './backgroundAlerts';
 import { formatClock } from './dates';
 import { nativePlatform } from './platform';
-import { alertStart, isLastStep, plannedEnd, remainingMs } from './session';
+import { alertStart, isLastStep, isWaitPaused, plannedEnd, remainingMs, waitedMs } from './session';
 import type { ActiveSession } from './types';
 
 /**
@@ -37,11 +37,12 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 	const next = isLastStep(s) ? null : s.steps[s.stepIndex + 1];
 
 	if (s.phase === 'start') {
+		const paused = isWaitPaused(s);
 		return {
 			title: "Let's begin ♡",
-			text: `Bring in ${who(current)}`,
-			clock: 'up',
-			at: s.startedAt,
+			text: paused ? `Bring in ${who(current)} · paused` : `Bring in ${who(current)}`,
+			clock: paused ? 'none' : 'up',
+			at: now - waitedMs(s, now),
 			expiresInMs: NOTICE_LINGER_MS
 		};
 	}
