@@ -236,6 +236,43 @@
 				</button>
 			</div>
 		</div>
+	{:else if s.phase === 'start'}
+		{@const first = s.steps[s.stepIndex]}
+		<div class="stage">
+			<Mascot mood="happy" size={110} />
+			<p class="title">Let's begin ♡</p>
+			<p class="big swap">
+				Bring in <Swatch color={first.color} size={34} />
+				<strong><DilatorName label={first.label} nickname={first.nickname} /></strong>
+			</p>
+			{#if first.diameterMm}<p class="muted hint">{first.diameterMm} mm</p>{/if}
+			<p class="muted hint">No rush, the timer starts when you press Ready.</p>
+			<p class="countdown" data-testid="start-clock">{formatClock(store.now - s.startedAt)}</p>
+		</div>
+		<div class="pad">
+			<button
+				class="btn huge breathe"
+				onclick={() => {
+					store.confirm();
+					clockLit++; // the first dilator's clock lights up as it starts
+				}}
+			>
+				Ready ✓
+			</button>
+			<button
+				class="btn ghost more"
+				onclick={async () =>
+					(await ask({
+						title: 'Stop this session?',
+						message: "It won't be logged.",
+						confirmLabel: 'Yes, stop it',
+						cancelLabel: 'Keep going',
+						danger: true
+					})) && store.cancel()}
+			>
+				Cancel
+			</button>
+		</div>
 	{:else if s.phase === 'switch'}
 		<div class="stage">
 			<Mascot mood={escalated ? 'alert' : 'happy'} size={110} />

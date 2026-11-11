@@ -44,6 +44,30 @@ export function startSession(
 	};
 }
 
+/**
+ * A just-started session waits on a "bring in this dilator" screen: the first timer only runs once
+ * you press Ready. How long that took is noted, quietly.
+ */
+export function getReady(s: ActiveSession): ActiveSession {
+	return { ...s, phase: 'start' };
+}
+
+/** "Ready" — the first timer starts now, and the wait before it is noted. */
+export function ready(s: ActiveSession, now: number): ActiveSession {
+	if (s.phase !== 'start') return s;
+	const readyAfterMs = Math.max(0, now - s.startedAt);
+	return {
+		...s,
+		phase: 'running',
+		warned: false,
+		pausedAt: null,
+		stepStartedAt: now,
+		records: s.records.map((r, i) =>
+			i === s.stepIndex ? { ...r, startedAt: now, readyAfterMs } : r
+		)
+	};
+}
+
 /** Length of the current step, including any +/- minute adjustments. */
 export function stepDurationMs(s: ActiveSession): number {
 	return s.steps[s.stepIndex].minutes * 60_000 + (s.adjustMs ?? 0);
@@ -132,7 +156,11 @@ export function estimatedFinish(
 		s.steps.slice(from).reduce((sum, _, k) => sum + windowBefore(windows, from + k), 0);
 	let swaps: number;
 	let thisOne: number;
-	if (s.phase === 'running') {
+	if (s.phase === 'start') {
+		// the first timer has not started: all of it is still to come
+		thisOne = stepDurationMs(s);
+		swaps = window(s.stepIndex + 1);
+	} else if (s.phase === 'running') {
 		thisOne = Math.max(0, remainingMs(s, now));
 		swaps = window(s.stepIndex + 1); // one swap before every dilator still to come
 	} else {
@@ -261,6 +289,7 @@ export function finish(s: ActiveSession, now: number): LogEntry {
 			color: r.color,
 			plannedMinutes: r.plannedMinutes,
 			actualSeconds: Math.round(((r.endedAt ?? now) - r.startedAt) / 1000),
+			...(r.readyAfterMs !== undefined ? { readySeconds: Math.round(r.readyAfterMs / 1000) } : {}),
 			...(r.switchedAfterMs !== undefined
 				? { switchSeconds: Math.round(r.switchedAfterMs / 1000) }
 				: {}),
@@ -308,7 +337,7 @@ export function sessionOverview(
 	s.steps.forEach((step, i) => {
 		const record = s.records[i];
 		const base = { label: step.label, nickname: step.nickname, color: step.color };
-		if (i < s.stepIndex || s.phase !== 'running') {
+		if (i < s.stepIndex || (s.phase !== 'running' && s.phase !== 'start')) {
 			if (i <= s.stepIndex) {
 				// finished dilators: when they really ran (the last one ended when its timer did)
 				const startAt = record?.startedAt ?? now;
@@ -328,12 +357,14 @@ export function sessionOverview(
 				return;
 			}
 		} else if (i === s.stepIndex) {
-			const endAt = now + Math.max(0, remainingMs(s, now));
+			// before "Ready" the first timer has not started: it will run from now
+			const waiting = s.phase === 'start';
+			const endAt = now + (waiting ? stepDurationMs(s) : Math.max(0, remainingMs(s, now)));
 			rows.push({
 				...base,
 				minutes: stepDurationMs(s) / 60_000,
 				status: 'now',
-				startAt: record?.startedAt ?? s.stepStartedAt,
+				startAt: waiting ? now : (record?.startedAt ?? s.stepStartedAt),
 				endAt,
 				estimated: true
 			});

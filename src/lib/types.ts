@@ -88,7 +88,8 @@ export interface Settings {
 	phases: Phase[];
 }
 
-export type SessionPhase = 'running' | 'switch' | 'finished';
+/** 'start': the session has begun and is waiting for "Ready" before the first timer runs. */
+export type SessionPhase = 'start' | 'running' | 'switch' | 'finished';
 
 export interface StepRecord {
 	label: string;
@@ -97,6 +98,8 @@ export interface StepRecord {
 	plannedMinutes: number;
 	startedAt: number;
 	endedAt: number | null;
+	/** The first dilator only: how long it took from starting the session to pressing "Ready". */
+	readyAfterMs?: number;
 	/** How long it took to get to this dilator: from the previous timer ending to "I switched". */
 	switchedAfterMs?: number;
 	/** The nudge had already started when "I switched" was pressed. */
@@ -146,6 +149,8 @@ export interface LogEntry {
 		color?: string;
 		plannedMinutes: number;
 		actualSeconds: number;
+		/** The first dilator only: seconds from starting the session to pressing "Ready". */
+		readySeconds?: number;
 		/** Seconds between the previous timer ending and pressing "I switched" to start this one. */
 		switchSeconds?: number;
 		/** The nudge had already started when "I switched" was pressed. */

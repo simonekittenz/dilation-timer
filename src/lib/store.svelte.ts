@@ -40,6 +40,8 @@ import {
 	alertStart,
 	chillOut,
 	confirmSwitch,
+	getReady,
+	ready,
 	extendSwitchWindow,
 	finish,
 	isEscalated,
@@ -559,11 +561,8 @@ class Store {
 		unlock();
 		void this.askForAlertPermission();
 		void clearReminderNotifications({ pendingSnooze: true }); // no reminders while a session runs
-		this.active = startSession(
-			resolveSteps(this.settings.dilators, phase.steps),
-			slot,
-			date,
-			Date.now()
+		this.active = getReady(
+			startSession(resolveSteps(this.settings.dilators, phase.steps), slot, date, Date.now())
 		);
 		void keepAwake(true);
 		this.save();
@@ -582,10 +581,10 @@ class Store {
 		unlock();
 		void this.askForAlertPermission();
 		void clearReminderNotifications({ pendingSnooze: true });
-		this.active = {
+		this.active = getReady({
 			...startSession(resolveSteps(this.settings.dilators, usable), slot, this.today, Date.now()),
 			custom: true
-		};
+		});
 		void keepAwake(true);
 		this.save();
 		return true;
@@ -595,7 +594,9 @@ class Store {
 		if (!this.active) return;
 		unlock();
 		const now = Date.now();
-		if (this.active.phase === 'switch') {
+		if (this.active.phase === 'start') {
+			this.active = ready(this.active, now);
+		} else if (this.active.phase === 'switch') {
 			this.active = confirmSwitch(this.active, now, this.switchWindowMs);
 		}
 		this.save();

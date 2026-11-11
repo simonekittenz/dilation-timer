@@ -4,6 +4,7 @@
 	import Swatch from '#lib/Swatch.svelte';
 	import { SLOT_LABELS } from '#lib/schedule.ts';
 	import { store } from '#lib/store.svelte.ts';
+	import { describeSwitch } from '#lib/switchHistory.ts';
 
 	const groups = $derived(
 		Object.entries(
@@ -54,6 +55,11 @@
 							>
 						{/each}
 					</p>
+					{#if e.steps[0]?.readySeconds !== undefined}
+						<p class="muted ready">
+							Ready after {describeSwitch(e.steps[0].readySeconds * 1000)}
+						</p>
+					{/if}
 				{/if}
 			</div>
 			<button

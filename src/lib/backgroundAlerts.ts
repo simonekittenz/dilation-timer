@@ -54,7 +54,7 @@ export function planBackgroundAlerts(
 	now: number,
 	switchWindowMs: number
 ): BackgroundAlert[] {
-	if (!s || s.phase === 'finished') return [];
+	if (!s || s.phase === 'finished' || s.phase === 'start') return []; // nothing rings before "Ready"
 	if (s.phase === 'running' && s.pausedAt != null) return [];
 
 	const next = s.steps[s.stepIndex + 1];
