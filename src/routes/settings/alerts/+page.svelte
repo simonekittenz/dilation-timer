@@ -50,6 +50,24 @@
 		</span>
 		<input type="number" min="0" step="0.5" class="num" bind:value={draft.newDilatorExtraMinutes} />
 	</label>
+	{#if nativePlatform() === 'android'}
+		<label class="item">
+			<span class="text">
+				<span class="label">Timer on the lock screen</span>
+				<span class="hint">
+					While a session runs and you've left the app or locked your phone, keep its timer where
+					you can see it. On Android 16 it also shows as a chip at the top
+				</span>
+			</span>
+			<input
+				type="checkbox"
+				class="toggle"
+				checked={draft.lockScreenTimer !== false}
+				onchange={(e) => (draft.lockScreenTimer = e.currentTarget.checked)}
+				aria-label="Timer on the lock screen"
+			/>
+		</label>
+	{/if}
 	<div class="block" data-testid="usual-switches">
 		<span class="label">Your usual swap times</span>
 		{#if store.usualSwitches.length}

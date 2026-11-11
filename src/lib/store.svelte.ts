@@ -52,6 +52,7 @@ import {
 	switchWindowLeftMs,
 	tick
 } from './session';
+import { hideSessionNotice, planSessionNotice, showSessionNotice } from './sessionNotice';
 import { currentMilestone, type Milestone } from './milestones';
 import { isFirstTime, learnSwitches, switchWindowFor, usualSwitchMs } from './switchHistory';
 import { conqueredDilators, introKey, pendingIntro, type DilatorIntro } from './newDilators';
@@ -429,12 +430,18 @@ class Store {
 		await watchAppState((isActive) => {
 			setAppActive(isActive);
 			if (isActive) {
+				void hideSessionNotice();
 				void disarmAlerts();
 				void clearReminderNotifications({ pendingSnooze: false });
 				this.syncRemindersSoon(); // a new day may have started while the app was away
 				this.step();
 			} else {
 				this.step();
+				void showSessionNotice(
+					this.settings.lockScreenTimer === false
+						? null
+						: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now())
+				);
 				void armAlerts(
 					planBackgroundAlerts(
 						this.active ? $state.snapshot(this.active) : null,

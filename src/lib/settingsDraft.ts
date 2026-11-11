@@ -52,6 +52,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		mascot: draft.mascot === 'kitty' ? 'kitty' : 'bunny',
 		celebrations: draft.celebrations !== false,
 		streak: draft.streak !== false,
+		lockScreenTimer: draft.lockScreenTimer !== false,
 		reminders: draft.reminders,
 		setup: draft.setup,
 		dilators,

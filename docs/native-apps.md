@@ -132,6 +132,22 @@ the apps hand the job to the phone's alarm clock instead (`@capacitor/local-noti
 - A notification sound does not duck other audio the way the in-app alarm does; that is Android's
   normal behaviour for notifications.
 
+### The timer on the lock screen (Android)
+
+While a session runs and you leave the app or lock the phone, the app also puts up one quiet **ongoing
+notification** with the session's timer (`SessionNoticePlugin.java`, `src/lib/sessionNotice.ts`): the
+dilator, "1 of 3", what comes next, and a clock that Android itself counts down. It makes no sound; the
+alerts above still do that. It is taken down when the app comes back, and by itself (`setTimeoutAfter`) just
+after the timer ends, which is when the "Time to switch" alert takes over. While paused or waiting to switch
+it shows the time left, or counts up, and goes by itself after 3 hours at most. It has its own channel
+(`dt-session-v1`, low importance) and id (40900, away from the alerts' 41000 and up).
+
+On **Android 16 and newer** it also asks to be promoted to a Live Update (`POST_PROMOTED_NOTIFICATIONS`,
+`android.requestPromotedOngoing`): a chip in the status bar plus a card on the lock screen. Older versions
+just show the notification. A switch under Settings → Sessions & alerts turns it off. Checked on the Android 15
+emulator (it appears when the app is left, ticks, and hands over to the alert); **the Android 16 chip is not
+checked yet** (needs an Android 16 phone or emulator image).
+
 Verified on an Android 15 virtual phone with the screen off and Doze forced on: the alert arrived within
 2 seconds of the timer ending, the reminder followed, the right sound was on each channel, and opening
 the app cleared them. **Not yet tried on a real phone or on a real iPhone** (the iPhone app has only run in the simulator). Some makers (Samsung, Xiaomi,

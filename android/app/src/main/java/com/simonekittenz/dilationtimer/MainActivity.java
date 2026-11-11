@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // our own plugin, registered before the bridge starts
         registerPlugin(AudioDuckingPlugin.class);
+        registerPlugin(SessionNoticePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -140,6 +140,7 @@ export function defaultSettings(today = new Date()): Settings {
 		mascot: 'bunny',
 		celebrations: true,
 		streak: true,
+		lockScreenTimer: true,
 		dilators: wihDilators(),
 		messages: defaultMessages(),
 		phases: wihPhases()

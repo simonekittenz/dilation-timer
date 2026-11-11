@@ -25,7 +25,7 @@ export interface BackgroundAlert {
 	body: string;
 }
 
-const who = (step: SessionStep) =>
+export const who = (step: SessionStep) =>
 	step.nickname ? `${step.label} “${step.nickname}”` : step.label;
 
 function nudges(next: SessionStep, firstAt: number, now: number): BackgroundAlert[] {

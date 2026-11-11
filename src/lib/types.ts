@@ -81,6 +81,8 @@ export interface Settings {
 	celebrations?: boolean;
 	/** Show the day streak on Today. Missing means yes. */
 	streak?: boolean;
+	/** Android app: keep the running session's timer on the lock screen. Missing means yes. */
+	lockScreenTimer?: boolean;
 	/** Daily reminders to start a session. Missing means never set up. */
 	reminders?: Reminders;
 	dilators: Dilator[];
