@@ -24,7 +24,7 @@
 
 {#if store.log.some((e) => !e.skipped)}
 	<a class="btn ghost small statslink" href="/history/stats" data-testid="stats-link">
-		📊 Statistics: swap times and more
+		Statistics: swap times and more
 	</a>
 {/if}
 

@@ -29,8 +29,9 @@ to switch to the next one.
 - **The last dilator needs no nagging.** A fanfare plays and the "all done" screen stays up until you tap
   it away. It shows the session in numbers (time with the dilators, how long you took to be Ready, each
   swap) and kind notes when you were quicker than usual. **More statistics** (also at the top of History)
-  shows your shortest, longest and typical swap times, overall and per dilator, your time to Ready, and
-  how long you stay with each dilator.
+  shows how long you stay with each dilator, your sessions day by day (the last two weeks as bars, the
+  last twelve as a calendar of squares, and how many planned sessions you did), your current and longest
+  streak, and your shortest, longest and typical swap times, overall and per dilator, and time to Ready.
 - **Custom session.** Short on time? Pick a length with a slider (or **1 hour** / **2 hours**) and the
   dilators to use. Today's routine is stretched or squeezed to fit, in blocks of 5 minutes (dilators
   already at 5 minutes stay at 5), and you can edit it before you start.

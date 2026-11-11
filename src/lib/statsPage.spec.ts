@@ -1,0 +1,37 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const page = read('../routes/history/stats/+page.svelte');
+
+describe('the statistics page', () => {
+	it('leads with the time with each dilator, then the days, then the streak, and swaps further down', () => {
+		const at = (id: string) => page.indexOf(`data-testid="${id}"`);
+		const order = [
+			'stats-holds',
+			'stats-days',
+			'stats-streak',
+			'stats-total',
+			'stats-swaps',
+			'stats-ready'
+		];
+		for (const id of order) expect(at(id), id).toBeGreaterThan(-1);
+		expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b));
+	});
+
+	it('shows the current and the longest streak, only for people who have the streak switched on', () => {
+		expect(page).toContain('store.settings.streak !== false');
+		expect(page).toContain('streak.current');
+		expect(page).toContain('streak.best');
+	});
+
+	it('has no chart emoji anywhere in the app', () => {
+		for (const file of [
+			'../routes/history/stats/+page.svelte',
+			'../routes/history/+page.svelte',
+			'./Timer.svelte'
+		]) {
+			expect(read(file), file).not.toContain('📊');
+		}
+	});
+});

@@ -1,5 +1,7 @@
+import { addDays, dayNumber } from './dates';
+import { isRestPhase, phaseForDate } from './schedule';
 import { alertStart } from './session';
-import type { ActiveSession, LogEntry } from './types';
+import type { ActiveSession, LogEntry, Settings } from './types';
 
 type Step = LogEntry['steps'][number];
 
@@ -124,6 +126,8 @@ export interface HoldStats {
 	sessions: number;
 	/** Average time with it, in seconds. */
 	averageSeconds: number;
+	/** All the time you have spent with it, in seconds. */
+	totalSeconds: number;
 	plannedMinutes: number;
 }
 
@@ -138,12 +142,16 @@ export function holdStats(log: LogEntry[]): HoldStats[] {
 			perLabel.set(st.label, mine);
 		});
 	}
-	return [...perLabel].map(([label, { seconds, planned }]) => ({
-		label,
-		sessions: seconds.length,
-		averageSeconds: Math.round(seconds.reduce((a, b) => a + b, 0) / seconds.length),
-		plannedMinutes: planned
-	}));
+	return [...perLabel].map(([label, { seconds, planned }]) => {
+		const total = seconds.reduce((a, b) => a + b, 0);
+		return {
+			label,
+			sessions: seconds.length,
+			averageSeconds: Math.round(total / seconds.length),
+			totalSeconds: total,
+			plannedMinutes: planned
+		};
+	});
 }
 
 export interface SessionSummary {
@@ -212,4 +220,92 @@ export function praise(summary: SessionSummary, log: LogEntry[]): string[] {
 		if (quicker(summary.readySeconds, ready.typical)) lines.push('Quicker to Ready than usual ♡');
 	}
 	return lines;
+}
+
+// ---- day by day
+
+/**
+ * How a day went:
+ * - done: every planned session (or an extra one on a rest day);
+ * - partial: some of the planned sessions;
+ * - skipped: sessions marked as skipped, nothing done;
+ * - missed: sessions were planned, none done, and the day is over;
+ * - pending: today, with sessions planned and none done yet;
+ * - rest: a rest day; none: no phase covers the day; before: before Day 1.
+ */
+export type DayKind =
+	'done' | 'partial' | 'skipped' | 'missed' | 'pending' | 'rest' | 'none' | 'before';
+
+export interface DayCell {
+	date: string;
+	kind: DayKind;
+	/** Sessions done that day. */
+	sessions: number;
+	/** Sessions the schedule planned for the day. */
+	planned: number;
+	/** Time with the dilators, in seconds. */
+	seconds: number;
+	isToday: boolean;
+}
+
+/** The `count` days up to and including `today`, oldest first. */
+export function dayCells(
+	settings: Settings,
+	log: LogEntry[],
+	today: string,
+	count: number
+): DayCell[] {
+	const byDate = new Map<string, LogEntry[]>();
+	for (const e of log) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
+	return Array.from({ length: count }, (_, i) => {
+		const date = addDays(today, i - (count - 1));
+		const entries = byDate.get(date) ?? [];
+		const done = entries.filter((e) => !e.skipped);
+		const skipped = entries.length - done.length;
+		const phase = phaseForDate(settings, date);
+		const planned = phase?.slots.length ?? 0;
+		const seconds = done.reduce(
+			(sum, e) => sum + e.steps.reduce((t, _, k) => t + holdSeconds(e.steps, k), 0),
+			0
+		);
+		let kind: DayKind;
+		if (dayNumber(settings.startDate, date) < 1) kind = 'before';
+		else if (done.length > 0) kind = planned > 0 && done.length < planned ? 'partial' : 'done';
+		else if (skipped > 0) kind = 'skipped';
+		else if (planned === 0) kind = phase && isRestPhase(phase) ? 'rest' : 'none';
+		else kind = date === today ? 'pending' : 'missed';
+		return { date, kind, sessions: done.length, planned, seconds, isToday: date === today };
+	});
+}
+
+/** 0 for Monday .. 6 for Sunday. */
+export function weekdayIndex(date: string): number {
+	const [y, m, d] = date.split('-').map(Number);
+	return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+}
+
+export interface Consistency {
+	/** Days with at least one session. */
+	activeDays: number;
+	/** Days in the stretch that were part of the schedule (up to today). */
+	days: number;
+	/** Planned sessions that were done, and how many were planned, over that stretch. */
+	doneSessions: number;
+	plannedSessions: number;
+	/** Days on which every planned session was done. */
+	perfectDays: number;
+}
+
+/** How steady you have been over some days. Today only counts for what is already done. */
+export function consistency(cells: DayCell[]): Consistency {
+	const counted = cells.filter((c) => c.kind !== 'before');
+	const done = (c: DayCell) => Math.min(c.sessions, c.planned);
+	const asked = (c: DayCell) => (c.isToday ? done(c) : c.planned);
+	return {
+		activeDays: counted.filter((c) => c.sessions > 0).length,
+		days: counted.length,
+		doneSessions: counted.reduce((sum, c) => sum + done(c), 0),
+		plannedSessions: counted.reduce((sum, c) => sum + asked(c), 0),
+		perfectDays: counted.filter((c) => c.kind === 'done' && c.planned > 0).length
+	};
 }

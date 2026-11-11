@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { defaultSettings } from './defaults';
 import { confirmSwitch, finish, getReady, ready, startSession, tick } from './session';
 import {
+	consistency,
+	dayCells,
 	describeSeconds,
 	holdSeconds,
 	holdStats,
@@ -9,7 +12,8 @@ import {
 	seriesOf,
 	summarizeSession,
 	swapStats,
-	totals
+	totals,
+	weekdayIndex
 } from './stats';
 import type { LogEntry, SessionStep } from './types';
 
@@ -208,5 +212,89 @@ describe('the end screen summary', () => {
 		const quick = Array.from({ length: 4 }, () => entry({ ready: 60, swaps: { B: 100 } }));
 		expect(praise(sum, quick)).toEqual([]);
 		expect(praise(sum, slow.slice(0, 2))).toEqual([]); // too little history to compare with
+	});
+});
+
+describe('day by day', () => {
+	// 2026-01-15 onwards is week 2: a morning and an evening session every day; Day 1 is 2026-01-01
+	const settings = defaultSettings(new Date(2026, 0, 1));
+	const session = (
+		date: string,
+		slot: 'morning' | 'evening',
+		held = 600,
+		skipped = false
+	): LogEntry => ({
+		id: `${date}-${slot}`,
+		date,
+		slot,
+		startedAt: 0,
+		finishedAt: 1,
+		skipped,
+		steps: [{ label: 'A', plannedMinutes: 10, actualSeconds: held }]
+	});
+	const both = (date: string) => [session(date, 'morning'), session(date, 'evening')];
+
+	it('classifies each day, oldest first, ending today', () => {
+		const log = [
+			session('2026-01-19', 'morning'), // today: one of two
+			...both('2026-01-18'),
+			session('2026-01-17', 'morning', 600, true), // skipped
+			session('2026-01-16', 'evening') // only one of two
+			// the 15th: nothing
+		];
+		const cells = dayCells(settings, log, '2026-01-19', 5);
+		expect(cells.map((c) => c.date)).toEqual([
+			'2026-01-15',
+			'2026-01-16',
+			'2026-01-17',
+			'2026-01-18',
+			'2026-01-19'
+		]);
+		expect(cells.map((c) => c.kind)).toEqual(['missed', 'partial', 'skipped', 'done', 'partial']);
+		expect(cells[3]).toMatchObject({ sessions: 2, planned: 2, seconds: 1200 });
+		expect(cells[4].isToday).toBe(true);
+	});
+
+	it('knows about days before Day 1, rest days, and a today with nothing done yet', () => {
+		const cells = dayCells(settings, [], '2026-01-16', 20);
+		expect(cells[0].kind).toBe('before'); // 28 Dec
+		expect(cells.find((c) => c.date === '2026-01-03')!.kind).toBe('rest'); // week 0 is rest
+		expect(cells.at(-1)!.kind).toBe('pending');
+		expect(cells.at(-2)!.kind).toBe('missed');
+	});
+
+	it('counts an extra session on a day without a plan as a good day', () => {
+		const cells = dayCells(settings, [session('2026-01-03', 'morning')], '2026-01-04', 2);
+		expect(cells[0]).toMatchObject({ kind: 'done', sessions: 1, planned: 0 });
+	});
+
+	it('finds the weekday, Monday first', () => {
+		expect(weekdayIndex('2026-01-19')).toBe(0); // a Monday
+		expect(weekdayIndex('2026-01-25')).toBe(6); // a Sunday
+	});
+
+	it('sums up how steady you were, without holding today against you', () => {
+		const log = [
+			session('2026-01-19', 'morning'),
+			...both('2026-01-18'),
+			session('2026-01-17', 'morning')
+		];
+		const c = consistency(dayCells(settings, log, '2026-01-19', 5));
+		// 15th missed, 16th missed, 17th half, 18th all, 19th (today) one so far
+		expect(c).toEqual({
+			activeDays: 3,
+			days: 5,
+			doneSessions: 4,
+			plannedSessions: 9, // 2+2+2+2 of the past days, and the 1 done today
+			perfectDays: 1
+		});
+	});
+
+	it('adds up the total time with each dilator', () => {
+		const a = holdStats([
+			session('2026-01-15', 'morning', 600),
+			session('2026-01-16', 'morning', 300)
+		]);
+		expect(a[0]).toMatchObject({ label: 'A', sessions: 2, totalSeconds: 900, averageSeconds: 450 });
 	});
 });

@@ -434,7 +434,7 @@
 				<span class="words">Yay! ♡</span>
 			</button>
 			<button class="btn ghost more" onclick={moreStatistics} data-testid="more-stats">
-				📊 More statistics
+				More statistics
 			</button>
 		</div>
 	{/if}
