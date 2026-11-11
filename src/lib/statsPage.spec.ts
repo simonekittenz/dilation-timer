@@ -25,6 +25,18 @@ describe('the statistics page', () => {
 		expect(page).toContain('streak.best');
 	});
 
+	it('has the same title row as the Settings pages: a round back button, then the title', () => {
+		expect(page).toContain('class="back-btn" href="/history"');
+		expect(page).toContain('>‹</a>');
+		expect(page).not.toContain('← History');
+		// the look is copied from the Settings pages, so check the two have not drifted apart
+		const settings = read('../routes/settings/settings.css');
+		for (const rule of ['width: 2.7rem;', 'border: 2px solid var(--accent);', 'font-size: 2rem;']) {
+			expect(settings).toContain(rule);
+			expect(page).toContain(rule);
+		}
+	});
+
 	it('has no chart emoji anywhere in the app', () => {
 		for (const file of [
 			'../routes/history/stats/+page.svelte',

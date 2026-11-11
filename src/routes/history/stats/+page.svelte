@@ -46,8 +46,10 @@
 
 <svelte:head><title>Statistics · Dilation timer</title></svelte:head>
 
-<a class="back" href="/history">← History</a>
-<h1>Statistics</h1>
+<div class="head">
+	<a class="back-btn" href="/history" aria-label="Back to History">‹</a>
+	<h1>Statistics</h1>
+</div>
 
 {#if sums.sessions === 0}
 	<p class="card muted" data-testid="no-stats">
@@ -235,16 +237,40 @@
 {/if}
 
 <style>
-	.back {
-		display: inline-block;
-		margin-bottom: 0.4rem;
-		font-weight: 800;
-		text-decoration: none;
+	/* the same title row as the pages inside Settings: a big round back button, then the title */
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		margin-bottom: 1rem;
 	}
 	h1 {
-		font-size: 1.6rem;
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		font-size: 1.7rem;
 		font-weight: 900;
-		margin-bottom: 0.8rem;
+		line-height: 1.15;
+		color: var(--accent-strong);
+	}
+	.back-btn {
+		flex: none;
+		display: grid;
+		place-items: center;
+		width: 2.7rem;
+		height: 2.7rem;
+		padding-bottom: 0.2rem;
+		border-radius: 50%;
+		border: 2px solid var(--accent);
+		background: var(--surface);
+		color: var(--accent-strong);
+		font-size: 2rem;
+		font-weight: 800;
+		line-height: 1;
+		text-decoration: none;
+	}
+	.back-btn:active {
+		transform: scale(0.94);
 	}
 	.card {
 		display: grid;
