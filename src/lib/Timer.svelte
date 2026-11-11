@@ -54,6 +54,38 @@
 	const summary = $derived(summarizeSession(s));
 	const praised = $derived(summary ? praise(summary, store.log) : []);
 
+	// Without anything to read or choose, the all-done screen closes by itself after a while: the Yay
+	// button fills up and, when it is full, the session is filed away. Touching the screen stops it (someone
+	// is reading), so does leaving the app; coming back starts the wait again. A newly conquered dilator
+	// is worth reading about, so that screen waits to be tapped.
+	const AUTO_CLOSE_MS = 10_000;
+	let autoClosing = $state(false);
+	let autoRun = $state(0);
+	const canAutoClose = $derived(s.phase === 'finished' && conquered.length === 0);
+
+	$effect(() => {
+		if (!canAutoClose) {
+			autoClosing = false;
+			return;
+		}
+		const arm = () => {
+			autoClosing = true;
+			autoRun = performance.now(); // a new value restarts the bar
+		};
+		const onVisible = () =>
+			document.visibilityState === 'visible' ? arm() : (autoClosing = false);
+		onVisible();
+		document.addEventListener('visibilitychange', onVisible);
+		return () => document.removeEventListener('visibilitychange', onVisible);
+	});
+
+	$effect(() => {
+		if (!autoClosing) return;
+		void autoRun;
+		const timer = setTimeout(() => store.acknowledgeFinish(), AUTO_CLOSE_MS);
+		return () => clearTimeout(timer);
+	});
+
 	function moreStatistics() {
 		store.acknowledgeFinish();
 		void goto('/history/stats');
@@ -336,7 +368,8 @@
 			<p class="muted hint">The next timer starts when you press "I switched".</p>
 		</div>
 	{:else}
-		<div class="stage">
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="stage" onpointerdown={() => (autoClosing = false)}>
 			<Mascot mood="done" size={120} />
 			<p class="title">All done, you did it! 🎉</p>
 			<p class="big">Take the last one out 🌸</p>
@@ -390,7 +423,16 @@
 			{/if}
 		</div>
 		<div class="pad">
-			<button class="btn huge" onclick={() => store.acknowledgeFinish()}>Yay! ♡</button>
+			<button
+				class="btn huge yay"
+				data-testid="yay"
+				data-closing={autoClosing ? 'true' : undefined}
+				style:--auto-close="{AUTO_CLOSE_MS}ms"
+				onclick={() => store.acknowledgeFinish()}
+			>
+				{#if autoClosing}{#key autoRun}<span class="fill" aria-hidden="true"></span>{/key}{/if}
+				<span class="words">Yay! ♡</span>
+			</button>
 			<button class="btn ghost more" onclick={moreStatistics} data-testid="more-stats">
 				📊 More statistics
 			</button>
@@ -903,6 +945,29 @@
 		width: 100%;
 		padding: 1.1rem 1rem;
 		font-size: 1.25rem;
+	}
+	/* the Yay button fills up while the all-done screen is about to close by itself */
+	.yay {
+		position: relative;
+		overflow: hidden;
+	}
+	.yay .fill {
+		position: absolute;
+		inset: 0;
+		transform-origin: left center;
+		background: rgba(255, 255, 255, 0.38);
+		animation: autoclose var(--auto-close, 10s) linear forwards;
+	}
+	.yay .words {
+		position: relative;
+	}
+	@keyframes autoclose {
+		from {
+			transform: scaleX(0);
+		}
+		to {
+			transform: scaleX(1);
+		}
 	}
 	.breathe {
 		animation: breathe 3.5s ease-in-out infinite;
