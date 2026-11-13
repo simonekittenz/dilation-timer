@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './settings.css';
 	import { page } from '$app/state';
+	import { routePath } from '#lib/route.ts';
 	import { provideSettingsForm } from '#lib/settingsForm.svelte.ts';
 
 	let { children } = $props();
@@ -15,7 +16,7 @@
 		schedule: 'Your schedule',
 		data: 'Your data'
 	};
-	const section = $derived(page.url.pathname.replace(/\/$/, '').split('/')[2] ?? '');
+	const section = $derived(routePath(page.url.pathname).split('/')[2] ?? '');
 </script>
 
 <div class="settings">

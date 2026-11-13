@@ -138,8 +138,8 @@ describe('the Android download', () => {
 
 	it('keeps the session screen focused: no menu, a one-line dilator strip, round controls', () => {
 		const layout = read('src/routes/+layout.svelte').toString();
-		expect(layout).toContain("page.url.pathname === '/' && !!store.active");
-		expect(layout).toContain("page.url.pathname !== '/welcome' && !focus");
+		expect(layout).toContain("path === '/' && !!store.active");
+		expect(layout).toContain("path !== '/welcome' && !focus");
 		const timer = read('src/lib/Timer.svelte').toString();
 		expect(timer).toContain('class="steps"');
 		expect(timer).toContain('class="round main"');

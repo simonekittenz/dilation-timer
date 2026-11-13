@@ -5,12 +5,16 @@
 	import { page, updated } from '$app/state';
 	import ConfirmDialog from '#lib/ConfirmDialog.svelte';
 	import { isNative } from '#lib/platform.ts';
+	import { routePath } from '#lib/route.ts';
 	import { store } from '#lib/store.svelte.ts';
 	import { updates } from '#lib/updates.svelte.ts';
 	import { startAnalytics } from '#lib/analytics.ts';
 	import { hasSeenWelcome, isStandalonePwa, shouldShowWelcome } from '#lib/welcome.ts';
 
 	let { children } = $props();
+
+	// On the iPhone the app starts at an address whose path is empty, which is the same page as "/".
+	const path = $derived(routePath(page.url.pathname));
 
 	// Load saved data before any page script runs (pages copy settings into local drafts).
 	if (browser) {
@@ -23,7 +27,7 @@
 	// and anyone who already has data or has chosen never do).
 	const showWelcome = $derived(
 		browser &&
-			page.url.pathname === '/' &&
+			path === '/' &&
 			shouldShowWelcome({
 				native: isNative(),
 				standalone: isStandalonePwa(),
@@ -41,7 +45,7 @@
 		const opens = store.reminderOpened;
 		if (opens === seenReminderOpens) return;
 		seenReminderOpens = opens;
-		if (page.url.pathname !== '/') void goto('/');
+		if (path !== '/') void goto('/');
 	});
 
 	// An installed app can sit open in the background for days. When a new version has been
@@ -58,7 +62,7 @@
 	});
 
 	// While a session is on screen there is nothing else to look at: no menu, just the timer.
-	const focus = $derived(page.url.pathname === '/' && !!store.active);
+	const focus = $derived(path === '/' && !!store.active);
 
 	const tabs = [
 		{ href: '/', label: 'Today', icon: '🌸' },
@@ -70,16 +74,15 @@
 <ConfirmDialog />
 
 <div class="shell" class:alerting={store.escalated}>
-	<main class:focus class:wide={page.url.pathname === '/'}>
+	<main class:focus class:wide={path === '/'}>
 		{#if !showWelcome}{@render children()}{/if}
 	</main>
-	{#if page.url.pathname !== '/welcome' && !focus}
+	{#if path !== '/welcome' && !focus}
 		<nav>
 			{#each tabs as t (t.href)}
 				<a
 					href={t.href}
-					aria-current={page.url.pathname === t.href ||
-					(t.href !== '/' && page.url.pathname.startsWith(`${t.href}/`))
+					aria-current={path === t.href || (t.href !== '/' && path.startsWith(`${t.href}/`))
 						? 'page'
 						: undefined}><span aria-hidden="true">{t.icon}</span> {t.label}</a
 				>
