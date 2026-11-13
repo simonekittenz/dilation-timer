@@ -83,8 +83,11 @@
 		<ol class="steps">
 			{#each lateSteps as st, i (i)}
 				<li>
-					<Swatch color={st.color} size={20} />
-					<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
+					<span class="who">
+						<Swatch color={st.color} size={20} />
+						<DilatorName label={st.label} nickname={st.nickname} />
+					</span>
+					<span class="mins">{st.minutes} min</span>
 				</li>
 			{/each}
 		</ol>
@@ -119,8 +122,11 @@
 			<ol class="steps">
 				{#each steps as st, i (i)}
 					<li>
-						<Swatch color={st.color} size={20} />
-						<DilatorName label={st.label} nickname={st.nickname} /> · {st.minutes} min
+						<span class="who">
+							<Swatch color={st.color} size={20} />
+							<DilatorName label={st.label} nickname={st.nickname} />
+						</span>
+						<span class="mins">{st.minutes} min</span>
 					</li>
 				{/each}
 			</ol>
@@ -209,20 +215,33 @@
 		width: 100%;
 		margin-top: 0.3rem;
 	}
+	/* the dilators in two even columns (one on a narrow screen): names on the left, minutes lined up on the right */
 	.steps {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem 1rem;
+		width: 100%;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+		gap: 0.45rem 1.4rem;
 		color: var(--muted);
 		font-weight: 600;
 	}
 	.steps li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+	}
+	.steps .who {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
+		min-width: 0;
+	}
+	.steps .mins {
+		flex: none;
+		font-variant-numeric: tabular-nums;
 	}
 	/* a phone held sideways: today's routine on the left, the schedule beside it */
 	@media (orientation: landscape) and (max-height: 540px) {

@@ -80,3 +80,20 @@ describe('the calendar of squares', () => {
 		expect(page).toContain('month.plannedDays');
 	});
 });
+
+describe('the routine list on Today', () => {
+	const today = read('../routes/+page.svelte');
+
+	it('lines the names up on the left and the minutes up on the right, in tidy columns', () => {
+		expect(today).toContain('<span class="mins">{st.minutes} min</span>');
+		expect(today).not.toContain('· {st.minutes} min');
+		const css = today.slice(today.indexOf('.steps {'));
+		expect(css).toContain('display: grid');
+		expect(css).toContain('justify-content: space-between');
+		expect(css).toContain('font-variant-numeric: tabular-nums');
+	});
+
+	it("is the same for today's routine and the late-night one", () => {
+		expect((today.match(/<span class="mins">/g) ?? []).length).toBe(2);
+	});
+});
