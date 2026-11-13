@@ -47,3 +47,16 @@ describe('the statistics page', () => {
 		}
 	});
 });
+
+describe('the history page', () => {
+	const history = read('../routes/history/+page.svelte');
+
+	it('shows the swap time next to each dilator after the first, which is the swap to it', () => {
+		expect(history).toContain('i > 0 && st.switchSeconds !== undefined');
+		expect(history).toContain('(Swap time: {describeSwitch(st.switchSeconds * 1000)})');
+	});
+
+	it('keeps the time with the dilator itself free of the swap', () => {
+		expect(history).toContain('{mins(holdSeconds(e.steps, i))}');
+	});
+});

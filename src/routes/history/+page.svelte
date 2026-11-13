@@ -59,10 +59,15 @@
 						>{/if}
 					<p class="muted chips">
 						{#each e.steps as st, i (i)}
-							<span
+							<span class="step"
 								><Swatch color={st.color ?? '#ff9ccb'} size={14} />
 								<DilatorName label={st.label} nickname={st.nickname} />
-								{mins(holdSeconds(e.steps, i))}</span
+								{mins(holdSeconds(e.steps, i))}
+								{#if i > 0 && st.switchSeconds !== undefined}<em
+										class="swap"
+										data-testid="swap-time"
+										>(Swap time: {describeSwitch(st.switchSeconds * 1000)})</em
+									>{/if}</span
 							>
 						{/each}
 					</p>
@@ -137,10 +142,24 @@
 		font-size: 1rem;
 		margin: 1.2rem 0 0.5rem;
 	}
+	/* one dilator per line, so its swap time has room next to it */
 	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.1rem 0.8rem;
+		display: grid;
+		gap: 0.15rem;
+	}
+	/* the whole note moves to the next line when it does not fit, instead of splitting in the middle */
+	/* a line that wraps lines up under the name, so a swap note stays with its own dilator */
+	.step {
+		display: block;
+		padding-left: 1.2rem;
+		text-indent: -1.2rem;
+	}
+	.swap {
+		text-indent: 0;
+		display: inline-block;
+		white-space: nowrap;
+		font-size: 0.85em;
+		opacity: 0.85;
 	}
 	.entry {
 		display: flex;
