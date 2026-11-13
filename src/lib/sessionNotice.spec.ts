@@ -83,6 +83,20 @@ describe('what the lock screen timer says', () => {
 		expect(planSessionNotice(ready(s, MIN), 2 * MIN)!.clock).toBe('down');
 	});
 
+	it('carries the friend you picked, and how it feels: happy while timing, alert to switch, stars at the end', () => {
+		const running = planSessionNotice(begin(), 2 * MIN)!;
+		expect(running).toMatchObject({ mascot: 'bunny', mood: 'happy', afterMood: 'alert' });
+		expect(planSessionNotice(begin(), 2 * MIN, 'kitty')!.mascot).toBe('kitty');
+		const waiting = planSessionNotice(tick(begin(), 10 * MIN), 12 * MIN, 'kitty')!;
+		expect(waiting).toMatchObject({ mascot: 'kitty', mood: 'alert' });
+		let s = begin();
+		s = confirmSwitch(tick(s, 10 * MIN), 10 * MIN);
+		s = confirmSwitch(tick(s, 30 * MIN), 30 * MIN);
+		expect(planSessionNotice(s, 31 * MIN)).toMatchObject({ mood: 'happy', afterMood: 'done' });
+		expect(planSessionNotice(getReady(begin()), MIN)!.mood).toBe('happy');
+		expect(planSessionNotice(pause(begin(), 4 * MIN), 5 * MIN)!.mood).toBe('happy');
+	});
+
 	it('is nothing when there is no session, it is over, or the timer already ended', () => {
 		expect(planSessionNotice(null, 0)).toBeNull();
 		const last = startSession([steps[0]], 'morning', '2026-01-01', 0);

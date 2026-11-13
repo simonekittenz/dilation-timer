@@ -168,6 +168,12 @@ carries the words for after it (`afterTitle`/`afterText`) and iOS swaps them in 
 the timer's end ("Time to switch"). It stays up until the app is opened again, which takes it down; iOS also
 ends one by itself after several hours at most. The "Time to switch" alert is still the local notification.
 
+The card shows your friend, the bunny or the kitty you picked in Settings, on the lock screen and in the
+Dynamic Island (`SessionMascot.swift` redraws `Mascot.svelte` with the same shapes and numbers, since the
+extension can't use the web drawing). Its face follows the moment: happy while timing, wide eyes when it is time
+to switch, stars at the very end. The three new fields (`mascot`, `mood`, `afterMood`) are optional, so a Live
+Activity left on the lock screen by an older build still opens after an update.
+
 The card is a deep rose with plain white writing (about 6:1), so it is readable over any wallpaper, light or
 dark. The first version had pink on pale pink and the clock nearly vanished (feedback from a tester), and the
 count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black.

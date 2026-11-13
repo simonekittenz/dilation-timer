@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6D0A12000000000000000017 /* SessionMascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000007 /* SessionMascot.swift */; };
 		6D0A12000000000000000011 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000001 /* SessionActivityAttributes.swift */; };
 		6D0A12000000000000000012 /* SessionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000001 /* SessionActivityAttributes.swift */; };
 		6D0A12000000000000000013 /* SessionWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0A12000000000000000002 /* SessionWidgetBundle.swift */; };
@@ -52,6 +53,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6D0A12000000000000000007 /* SessionMascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionMascot.swift; sourceTree = "<group>"; };
 		6D0A12000000000000000001 /* SessionActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionActivityAttributes.swift; sourceTree = "<group>"; };
 		6D0A12000000000000000002 /* SessionWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionWidgetBundle.swift; sourceTree = "<group>"; };
 		6D0A12000000000000000003 /* SessionLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLiveActivity.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			children = (
 				6D0A12000000000000000002 /* SessionWidgetBundle.swift */,
 				6D0A12000000000000000003 /* SessionLiveActivity.swift */,
+				6D0A12000000000000000007 /* SessionMascot.swift */,
 				6D0A12000000000000000004 /* Info.plist */,
 			);
 			path = SessionWidget;
@@ -279,6 +282,7 @@
 			files = (
 				6D0A12000000000000000013 /* SessionWidgetBundle.swift in Sources */,
 				6D0A12000000000000000014 /* SessionLiveActivity.swift in Sources */,
+				6D0A12000000000000000017 /* SessionMascot.swift in Sources */,
 				6D0A12000000000000000012 /* SessionActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

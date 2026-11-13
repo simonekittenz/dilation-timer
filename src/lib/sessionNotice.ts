@@ -2,7 +2,7 @@ import { who } from './backgroundAlerts';
 import { formatClock } from './dates';
 import { nativePlatform } from './platform';
 import { alertStart, isLastStep, isWaitPaused, plannedEnd, remainingMs, waitedMs } from './session';
-import type { ActiveSession } from './types';
+import type { ActiveSession, MascotKind } from './types';
 
 /**
  * The running session's timer on the lock screen. Android: an ongoing notification (on Android 16 a Live
@@ -23,7 +23,13 @@ export interface SessionNotice {
 	/** iPhone: what to say instead once a countdown has run out, since nothing can update it by then. */
 	afterTitle?: string;
 	afterText?: string;
+	/** iPhone: the friend picked in Settings, and how it looks right now and after the countdown. */
+	mascot?: MascotKind;
+	mood?: Mood;
+	afterMood?: Mood;
 }
+
+export type Mood = 'happy' | 'alert' | 'done';
 
 /** A notice for a session that is paused or waiting is taken down by itself after this long. */
 export const NOTICE_LINGER_MS = 3 * 60 * 60_000;
@@ -31,7 +37,16 @@ export const NOTICE_LINGER_MS = 3 * 60 * 60_000;
 const PAST_END_MS = 500;
 
 /** What the notice should say right now, or null when there should be none. */
-export function planSessionNotice(s: ActiveSession | null, now: number): SessionNotice | null {
+export function planSessionNotice(
+	s: ActiveSession | null,
+	now: number,
+	mascot: MascotKind = 'bunny'
+): SessionNotice | null {
+	const notice = plan(s, now);
+	return notice ? { ...notice, mascot } : null;
+}
+
+function plan(s: ActiveSession | null, now: number): SessionNotice | null {
 	if (!s || s.phase === 'finished') return null;
 	const current = s.steps[s.stepIndex];
 	const next = isLastStep(s) ? null : s.steps[s.stepIndex + 1];
@@ -43,7 +58,8 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 			text: paused ? `Bring in ${who(current)} · paused` : `Bring in ${who(current)}`,
 			clock: paused ? 'none' : 'up',
 			at: now - waitedMs(s, now),
-			expiresInMs: NOTICE_LINGER_MS
+			expiresInMs: NOTICE_LINGER_MS,
+			mood: 'happy'
 		};
 	}
 
@@ -54,7 +70,8 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 			text: `Swap to ${who(next)}`,
 			clock: 'up',
 			at: alertStart(s),
-			expiresInMs: NOTICE_LINGER_MS
+			expiresInMs: NOTICE_LINGER_MS,
+			mood: 'alert'
 		};
 	}
 
@@ -65,7 +82,8 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 			text: `${formatClock(remainingMs(s, now))} left · ${place}`,
 			clock: 'none',
 			at: now,
-			expiresInMs: NOTICE_LINGER_MS
+			expiresInMs: NOTICE_LINGER_MS,
+			mood: 'happy'
 		};
 	}
 
@@ -79,7 +97,10 @@ export function planSessionNotice(s: ActiveSession | null, now: number): Session
 		// when the timer ends the alert for it takes over, so this one goes
 		expiresInMs: end - now + PAST_END_MS,
 		afterTitle: next ? 'Time to switch ♡' : 'All done! 🎉',
-		afterText: next ? `Swap to ${who(next)}` : 'Take the last one out'
+		afterText: next ? `Swap to ${who(next)}` : 'Take the last one out',
+		mood: 'happy',
+		// the friend perks up when it is time to switch, and celebrates at the very end
+		afterMood: next ? 'alert' : 'done'
 	};
 }
 

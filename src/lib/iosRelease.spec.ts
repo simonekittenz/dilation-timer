@@ -139,6 +139,36 @@ describe('the Live Activity on the lock screen', () => {
 		expect(lock).toContain('.frame(maxWidth: 104, alignment: .trailing)');
 	});
 
+	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {
+		const card = read('ios/App/SessionWidget/SessionLiveActivity.swift');
+		const mascot = read('ios/App/SessionWidget/SessionMascot.swift');
+		// the same shapes and numbers as the app's own Mascot.svelte
+		const svelte = read('src/lib/Mascot.svelte');
+		for (const piece of [
+			'cx="40" cy="34" rx="13" ry="30"',
+			'M22 64 L26 18 L64 48 Z',
+			'cx="60" cy="80" rx="42" ry="33"'
+		]) {
+			expect(svelte).toContain(piece);
+		}
+		expect(mascot).toContain('ellipse(40, 34, 13, 30)');
+		expect(mascot).toContain('triangle((22, 64), (26, 18), (64, 48))');
+		expect(mascot).toContain('ellipse(60, 80, 42, 33)');
+		for (const mood of ['alert', 'done']) expect(mascot).toContain(`"${mood}"`);
+		// on the card and in the Dynamic Island
+		expect((card.match(/SessionMascot\(/g) ?? []).length).toBeGreaterThanOrEqual(4);
+		// a Live Activity started by an older build has no such fields: they must be optional to decode
+		const shared = read('ios/App/Shared/SessionActivityAttributes.swift');
+		for (const field of ['mascot', 'mood', 'afterMood'])
+			expect(shared).toContain(`var ${field}: String?`);
+		const plugin = read('ios/App/App/SessionNoticePlugin.swift');
+		for (const field of ['mascot', 'mood', 'afterMood'])
+			expect(plugin).toContain(`call.getString("${field}")`);
+		expect([
+			...project.matchAll(/SessionMascot\.swift in Sources \*\/ = \{isa = PBXBuildFile/g)
+		]).toHaveLength(1);
+	});
+
 	it('is registered in the view controller and does nothing on older iPhones', () => {
 		expect(read('ios/App/App/MyViewController.swift')).toContain(
 			'registerPluginInstance(SessionNoticePlugin())'

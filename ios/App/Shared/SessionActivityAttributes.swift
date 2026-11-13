@@ -18,6 +18,12 @@ struct SessionActivityAttributes: ActivityAttributes {
         /// "Time to switch". Empty means keep showing the same thing.
         var afterTitle: String
         var afterText: String
+        /// "bunny" or "kitty": the friend picked in Settings. Missing (an older app) means the bunny.
+        /// These three are optional so an activity started by an older version still opens after an update.
+        var mascot: String?
+        /// "happy", "alert" or "done", and the same for after a countdown has run out.
+        var mood: String?
+        var afterMood: String?
     }
 
     var name: String

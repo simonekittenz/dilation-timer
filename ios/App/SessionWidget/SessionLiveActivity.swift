@@ -18,29 +18,31 @@ struct SessionLiveActivity: Widget {
             let shown = Shown(state: context.state, isStale: context.isStale)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text(shown.title)
-                        .font(.headline)
-                        .lineLimit(1)
+                    SessionMascot(kind: shown.mascot, mood: shown.mood, size: 36)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     ClockText(state: context.state, isStale: context.isStale, font: .title3, color: pink)
                         .frame(maxWidth: 90, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text(shown.text)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(shown.title)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text(shown.text)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } compactLeading: {
-                Image(systemName: "timer")
-                    .foregroundStyle(pink)
+                SessionMascot(kind: shown.mascot, mood: shown.mood, size: 24)
             } compactTrailing: {
                 ClockText(state: context.state, isStale: context.isStale, font: .caption, color: pink)
                     .frame(maxWidth: 52, alignment: .trailing)
             } minimal: {
-                Image(systemName: "timer")
-                    .foregroundStyle(pink)
+                SessionMascot(kind: shown.mascot, mood: shown.mood, size: 22)
             }
             .keylineTint(pink)
         }
@@ -53,16 +55,21 @@ private struct Shown {
     let title: String
     let text: String
     let clockOver: Bool
+    let mascot: String
+    let mood: String
 
     init(state: SessionActivityAttributes.ContentState, isStale: Bool) {
         let over = state.clock == "down" && (isStale || state.at <= Date())
         clockOver = over
+        mascot = state.mascot ?? "bunny"
         if over && !state.afterTitle.isEmpty {
             title = state.afterTitle
             text = state.afterText
+            mood = state.afterMood ?? state.mood ?? "happy"
         } else {
             title = state.title
             text = state.text
+            mood = state.mood ?? "happy"
         }
     }
 }
@@ -75,9 +82,7 @@ private struct LockScreenView: View {
     var body: some View {
         let shown = Shown(state: state, isStale: isStale)
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "timer")
-                .font(.title2)
-                .foregroundStyle(.white)
+            SessionMascot(kind: shown.mascot, mood: shown.mood, size: 46)
             VStack(alignment: .leading, spacing: 2) {
                 Text(shown.title)
                     .font(.headline)

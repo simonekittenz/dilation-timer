@@ -450,7 +450,11 @@ class Store {
 					void showSessionNotice(
 						this.settings.lockScreenTimer === false
 							? null
-							: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now())
+							: planSessionNotice(
+									this.active ? $state.snapshot(this.active) : null,
+									Date.now(),
+									this.settings.mascot
+								)
 					);
 				}
 				void armAlerts(
@@ -513,9 +517,21 @@ class Store {
 		const notice =
 			this.settings.lockScreenTimer === false
 				? null
-				: planSessionNotice(this.active ? $state.snapshot(this.active) : null, Date.now());
+				: planSessionNotice(
+						this.active ? $state.snapshot(this.active) : null,
+						Date.now(),
+						this.settings.mascot
+					);
 		const key = notice
-			? JSON.stringify([notice.title, notice.text, notice.clock, notice.at, notice.afterTitle])
+			? JSON.stringify([
+					notice.title,
+					notice.text,
+					notice.clock,
+					notice.at,
+					notice.afterTitle,
+					notice.mascot,
+					notice.mood
+				])
 			: '';
 		if (key === this.lastLiveNotice) return;
 		this.lastLiveNotice = key;
