@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { formatShortDate } from './dates';
-	import { describeSeconds, weekdayIndex, type DayCell } from './stats';
+	import { dayLabel, weekdayIndex, type DayCell } from './stats';
 
 	/** The latest days, oldest first: a bar for how long you were with the dilators each day. */
 	let { cells }: { cells: DayCell[] } = $props();
@@ -8,21 +8,7 @@
 	const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 	const top = $derived(Math.max(1, ...cells.map((c) => c.seconds)));
 	const minutes = (seconds: number) => `${Math.round(seconds / 60)}`;
-	const name = (c: DayCell) =>
-		c.sessions > 0
-			? `${formatShortDate(c.date)}: ${c.sessions} session${c.sessions === 1 ? '' : 's'}, ${describeSeconds(c.seconds)}`
-			: `${formatShortDate(c.date)}: ${
-					{
-						missed: 'no session',
-						skipped: 'skipped',
-						rest: 'rest day',
-						pending: 'not yet',
-						none: 'nothing planned',
-						before: '',
-						done: '',
-						partial: ''
-					}[c.kind]
-				}`;
+	const name = (c: DayCell) => `${formatShortDate(c.date)}: ${dayLabel(c)}`;
 </script>
 
 <div class="bars" role="img" aria-label="Minutes with the dilators, day by day">

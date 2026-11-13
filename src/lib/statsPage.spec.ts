@@ -60,3 +60,23 @@ describe('the history page', () => {
 		expect(history).toContain('{mins(holdSeconds(e.steps, i))}');
 	});
 });
+
+describe('the calendar of squares', () => {
+	const grid = read('./ConsistencyGrid.svelte');
+
+	it('fills by how much of the schedule got done, not by minutes', () => {
+		expect(grid).toContain('dayFill(c)');
+		expect(grid).not.toContain('data-level');
+		expect(grid).not.toContain('seconds');
+	});
+
+	it('shows a day with nothing planned as a dot, never as a missed day', () => {
+		expect(grid).toContain('.cell.rest::after');
+		expect(grid).toMatch(/\.cell\.before,\s*\.cell\.none \{\s*visibility: hidden/);
+	});
+
+	it('says "days done as planned" on the page, out of the days that had something planned', () => {
+		expect(page).toContain('Days done as planned');
+		expect(page).toContain('month.plannedDays');
+	});
+});

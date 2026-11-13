@@ -294,6 +294,8 @@ export interface Consistency {
 	plannedSessions: number;
 	/** Days on which every planned session was done. */
 	perfectDays: number;
+	/** Days that had sessions planned (today only once it is done): what `perfectDays` is out of. */
+	plannedDays: number;
 }
 
 /** How steady you have been over some days. Today only counts for what is already done. */
@@ -306,6 +308,42 @@ export function consistency(cells: DayCell[]): Consistency {
 		days: counted.length,
 		doneSessions: counted.reduce((sum, c) => sum + done(c), 0),
 		plannedSessions: counted.reduce((sum, c) => sum + asked(c), 0),
-		perfectDays: counted.filter((c) => c.kind === 'done' && c.planned > 0).length
+		perfectDays: counted.filter((c) => c.kind === 'done' && c.planned > 0).length,
+		plannedDays: counted.filter((c) => c.planned > 0 && (!c.isToday || c.sessions >= c.planned))
+			.length
 	};
+}
+
+const sessionsWord = (n: number) => `${n} session${n === 1 ? '' : 's'}`;
+
+/** How full a day's square is, 0 to 100: the share of the day's planned sessions that were done. */
+export function dayFill(c: DayCell): number {
+	if (c.planned > 0) return Math.round(Math.min(1, c.sessions / c.planned) * 100);
+	return c.sessions > 0 ? 100 : 0; // an extra session on a day with nothing planned
+}
+
+/** What to say about a day, for hovering over it and for screen readers. */
+export function dayLabel(c: DayCell): string {
+	const time = c.seconds > 0 ? `, ${describeSeconds(c.seconds)}` : '';
+	if (c.sessions > 0) {
+		if (c.planned === 0) return `${sessionsWord(c.sessions)} (nothing was planned)${time}`;
+		if (c.sessions > c.planned) {
+			return `${sessionsWord(c.sessions)}, ${c.planned} planned${time}`;
+		}
+		return `${c.sessions} of ${sessionsWord(c.planned)} planned${time}`;
+	}
+	switch (c.kind) {
+		case 'missed':
+			return `none of ${sessionsWord(c.planned)} planned`;
+		case 'pending':
+			return `${sessionsWord(c.planned)} planned, not done yet`;
+		case 'skipped':
+			return 'skipped';
+		case 'rest':
+			return 'rest day, nothing planned';
+		case 'none':
+			return 'nothing planned';
+		default:
+			return '';
+	}
 }

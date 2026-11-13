@@ -4,6 +4,8 @@ import { confirmSwitch, finish, getReady, ready, startSession, tick } from './se
 import {
 	consistency,
 	dayCells,
+	dayFill,
+	dayLabel,
 	describeSeconds,
 	holdSeconds,
 	holdStats,
@@ -286,8 +288,59 @@ describe('day by day', () => {
 			days: 5,
 			doneSessions: 4,
 			plannedSessions: 9, // 2+2+2+2 of the past days, and the 1 done today
-			perfectDays: 1
+			perfectDays: 1,
+			plannedDays: 4 // the four days that are over; today counts once it is all done
 		});
+	});
+
+	it('fills a day by how much of what was planned got done, not by minutes', () => {
+		const days = (n: number) => session(`2026-01-${10 + n}`, 'morning');
+		// one session planned (the first, "daily" week), done: a full square, however short
+		const week1 = defaultSettings(new Date(2026, 0, 1));
+		const full = dayCells(week1, [days(0)], '2026-01-11', 2).find((c) => c.date === '2026-01-10')!;
+		expect(full.planned).toBe(1);
+		expect(dayFill(full)).toBe(100);
+		// two planned, one done: half
+		const half = dayCells(settings, [session('2026-01-19', 'morning', 60)], '2026-01-20', 2)[0];
+		expect(half.planned).toBe(2);
+		expect(dayFill(half)).toBe(50);
+		// none done: empty; more than planned: still just full
+		expect(dayFill(dayCells(settings, [], '2026-01-20', 2)[0])).toBe(0);
+		const extra = dayCells(
+			settings,
+			[...both('2026-01-19'), session('2026-01-19', 'morning')],
+			'2026-01-20',
+			2
+		)[0];
+		expect(dayFill(extra)).toBe(100);
+	});
+
+	it('does not count rest days as missed, nor before the schedule started', () => {
+		const cells = dayCells(settings, [], '2026-01-10', 12); // week 0 is rest (days 1-7): 2026-01-01..07
+		const rest = cells.find((c) => c.date === '2026-01-05')!;
+		expect(rest.kind).toBe('rest');
+		expect(rest.planned).toBe(0);
+		expect(dayFill(rest)).toBe(0);
+		const c = consistency(cells);
+		expect(c.plannedDays).toBeLessThan(c.days); // rest days are not asked for
+		expect(c.perfectDays).toBe(0);
+	});
+
+	it('says in words what the schedule asked and what you did', () => {
+		const label = (log: LogEntry[], date: string, today = '2026-01-20') =>
+			dayLabel(dayCells(settings, log, today, 5).find((c) => c.date === date)!);
+		expect(label(both('2026-01-18'), '2026-01-18')).toMatch(/^2 of 2 sessions planned, /);
+		expect(label([session('2026-01-18', 'morning')], '2026-01-18')).toMatch(
+			/^1 of 2 sessions planned/
+		);
+		expect(label([], '2026-01-18')).toBe('none of 2 sessions planned');
+		expect(label([], '2026-01-20')).toBe('2 sessions planned, not done yet');
+		expect(label([session('2026-01-03', 'morning')], '2026-01-03', '2026-01-04')).toMatch(
+			/^1 session \(nothing was planned\)/
+		);
+		expect(label([...both('2026-01-18'), session('2026-01-18', 'morning')], '2026-01-18')).toMatch(
+			/^3 sessions, 2 planned/
+		);
 	});
 
 	it('adds up the total time with each dilator', () => {

@@ -81,10 +81,12 @@
 		<h3>The last {WEEKS} weeks</h3>
 		<ConsistencyGrid cells={grid} />
 		<dl class="grid">
-			<div>
-				<dt>Days with a session</dt>
-				<dd>{month.activeDays} <small>of {month.days}</small></dd>
-			</div>
+			{#if month.plannedDays > 0}
+				<div>
+					<dt>Days done as planned</dt>
+					<dd>{month.perfectDays} <small>of {month.plannedDays}</small></dd>
+				</div>
+			{/if}
 			{#if month.plannedSessions > 0}
 				<div>
 					<dt>Planned sessions done</dt>
@@ -92,7 +94,10 @@
 				</div>
 			{/if}
 		</dl>
-		<p class="muted note">The last 28 days. Rest days don't count against you.</p>
+		<p class="muted note">
+			The last 28 days, compared with your schedule. Rest days, and days before it started, don't
+			count.
+		</p>
 	</section>
 
 	{#if showStreak}
