@@ -121,6 +121,24 @@ describe('the Live Activity on the lock screen', () => {
 		}
 	});
 
+	it('is readable on any wallpaper: white writing on a deep rose card, with room for the title', () => {
+		const card = read('ios/App/SessionWidget/SessionLiveActivity.swift');
+		expect(card).toContain('.activityBackgroundTint(rose)');
+		expect(card).toContain('private let rose = Color(red: 0.72, green: 0.13, blue: 0.37)');
+		const lock = card.slice(
+			card.indexOf('struct LockScreenView'),
+			card.indexOf('struct ClockText')
+		);
+		expect(lock).toContain('.foregroundStyle(.white)');
+		expect(lock).toContain('color: .white');
+		// no pink or dark writing on the card itself (that was hard to read)
+		expect(lock).not.toContain('foregroundStyle(pink)');
+		expect(lock).not.toContain('ink');
+		// the title may wrap, and the clock cannot stretch across the row and squeeze it
+		expect(lock).toContain('.lineLimit(2)');
+		expect(lock).toContain('.frame(maxWidth: 104, alignment: .trailing)');
+	});
+
 	it('is registered in the view controller and does nothing on older iPhones', () => {
 		expect(read('ios/App/App/MyViewController.swift')).toContain(
 			'registerPluginInstance(SessionNoticePlugin())'

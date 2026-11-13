@@ -3,16 +3,17 @@ import SwiftUI
 import WidgetKit
 
 private let pink = Color(red: 1.0, green: 0.31, blue: 0.60)
-private let softPink = Color(red: 1.0, green: 0.94, blue: 0.96)
-private let ink = Color(red: 0.36, green: 0.16, blue: 0.28)
+/// The lock screen card is a deep rose with plain white writing: white on this is about 6:1, which stays
+/// readable over any wallpaper, where pink on pale pink (the first version) nearly vanished.
+private let rose = Color(red: 0.72, green: 0.13, blue: 0.37)
 
 @available(iOS 16.2, *)
 struct SessionLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SessionActivityAttributes.self) { context in
             LockScreenView(state: context.state, isStale: context.isStale)
-                .activityBackgroundTint(softPink)
-                .activitySystemActionForegroundColor(pink)
+                .activityBackgroundTint(rose)
+                .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             let shown = Shown(state: context.state, isStale: context.isStale)
             return DynamicIsland {
@@ -22,7 +23,7 @@ struct SessionLiveActivity: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    ClockText(state: context.state, isStale: context.isStale, font: .title3)
+                    ClockText(state: context.state, isStale: context.isStale, font: .title3, color: pink)
                         .frame(maxWidth: 90, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -35,7 +36,7 @@ struct SessionLiveActivity: Widget {
                 Image(systemName: "timer")
                     .foregroundStyle(pink)
             } compactTrailing: {
-                ClockText(state: context.state, isStale: context.isStale, font: .caption)
+                ClockText(state: context.state, isStale: context.isStale, font: .caption, color: pink)
                     .frame(maxWidth: 52, alignment: .trailing)
             } minimal: {
                 Image(systemName: "timer")
@@ -76,19 +77,23 @@ private struct LockScreenView: View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: "timer")
                 .font(.title2)
-                .foregroundStyle(pink)
+                .foregroundStyle(.white)
             VStack(alignment: .leading, spacing: 2) {
                 Text(shown.title)
                     .font(.headline)
-                    .foregroundStyle(ink)
-                    .lineLimit(1)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                 Text(shown.text)
                     .font(.subheadline)
-                    .foregroundStyle(ink.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(2)
             }
+            .layoutPriority(1)
             Spacer(minLength: 8)
-            ClockText(state: state, isStale: isStale, font: .title)
+            // a count-up clock would stretch across the whole row and squeeze the words: keep it to its own width
+            ClockText(state: state, isStale: isStale, font: .title2, color: .white)
+                .frame(maxWidth: 104, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -101,6 +106,7 @@ private struct ClockText: View {
     let state: SessionActivityAttributes.ContentState
     let isStale: Bool
     let font: Font
+    let color: Color
 
     var body: some View {
         switch state.clock {
@@ -112,14 +118,18 @@ private struct ClockText: View {
                     .font(font.weight(.heavy))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(pink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .foregroundStyle(color)
             }
         case "up":
             Text(state.at, style: .timer)
                 .font(font.weight(.heavy))
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
-                .foregroundStyle(pink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(color)
         default:
             EmptyView()
         }

@@ -168,6 +168,10 @@ carries the words for after it (`afterTitle`/`afterText`) and iOS swaps them in 
 the timer's end ("Time to switch"). It stays up until the app is opened again, which takes it down; iOS also
 ends one by itself after several hours at most. The "Time to switch" alert is still the local notification.
 
+The card is a deep rose with plain white writing (about 6:1), so it is readable over any wallpaper, light or
+dark. The first version had pink on pale pink and the clock nearly vanished (feedback from a tester), and the
+count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black.
+
 The extension needs its own App ID and profile. They are made on the first signed export by
 `-allowProvisioningUpdates`, like the app's own. The Settings switch "Timer on the lock screen" turns it off,
 and so can the person in iOS Settings. Checked in the simulator: the activity starts, the extension is
