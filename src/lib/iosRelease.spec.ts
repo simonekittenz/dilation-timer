@@ -149,7 +149,7 @@ describe('the Live Activity on the lock screen', () => {
 		expect(lock).toContain('.minimumScaleFactor(');
 		// no clock row at all while paused or once a countdown has run out
 		expect(lock).toContain('if shown.hasClock');
-		expect(card).toContain('var from: Date?');
+		expect(read('ios/App/Shared/SessionActivityAttributes.swift')).toContain('var from: Date?');
 	});
 
 	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {
