@@ -37,6 +37,17 @@ describe('what the lock screen timer says', () => {
 		expect(n).toMatchObject({ afterTitle: 'Time to switch ♡', afterText: 'Swap to #3 “Bun”' });
 	});
 
+	it('says when the countdown began, for the bar on the iPhone lock screen', () => {
+		expect(planSessionNotice(begin(), 2 * MIN)!.from).toBe(0);
+		const later = confirmSwitch(tick(begin(), 10 * MIN), 12 * MIN); // the next timer starts at 12 min
+		expect(planSessionNotice(later, 14 * MIN)!.from).toBe(12 * MIN);
+		// extra minutes make the whole countdown longer: it still began when the timer started
+		expect(planSessionNotice(adjust(begin(), 3 * MIN, 0), 0)!.from).toBe(0);
+		// a clock that counts up, or none, has no bar
+		expect(planSessionNotice(tick(begin(), 10 * MIN), 12 * MIN)!.from).toBeUndefined();
+		expect(planSessionNotice(pause(begin(), 4 * MIN), 5 * MIN)!.from).toBeUndefined();
+	});
+
 	it('follows added and removed minutes', () => {
 		const s = adjust(begin(), 3 * MIN, 0);
 		expect(planSessionNotice(s, 0)!.at).toBe(13 * MIN);

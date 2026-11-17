@@ -24,6 +24,8 @@ struct SessionActivityAttributes: ActivityAttributes {
         /// "happy", "alert" or "done", and the same for after a countdown has run out.
         var mood: String?
         var afterMood: String?
+        /// When the countdown began, for the progress bar (a countdown only). Optional like the fields above.
+        var from: Date?
     }
 
     var name: String

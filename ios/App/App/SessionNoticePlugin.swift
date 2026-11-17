@@ -40,7 +40,8 @@ public class SessionNoticePlugin: CAPPlugin, CAPBridgedPlugin {
             afterText: call.getString("afterText") ?? "",
             mascot: call.getString("mascot"),
             mood: call.getString("mood"),
-            afterMood: call.getString("afterMood")
+            afterMood: call.getString("afterMood"),
+            from: call.getDouble("from").map { Date(timeIntervalSince1970: $0 / 1000.0) }
         )
         // when a countdown runs out the activity turns "stale" by itself, which swaps in the words for after it
         let expires = call.getDouble("expiresInMs") ?? 0

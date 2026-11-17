@@ -1,7 +1,15 @@
 import { who } from './backgroundAlerts';
 import { formatClock } from './dates';
 import { nativePlatform } from './platform';
-import { alertStart, isLastStep, isWaitPaused, plannedEnd, remainingMs, waitedMs } from './session';
+import {
+	alertStart,
+	isLastStep,
+	isWaitPaused,
+	plannedEnd,
+	remainingMs,
+	stepDurationMs,
+	waitedMs
+} from './session';
 import type { ActiveSession, MascotKind } from './types';
 
 /**
@@ -27,6 +35,8 @@ export interface SessionNotice {
 	mascot?: MascotKind;
 	mood?: Mood;
 	afterMood?: Mood;
+	/** iPhone: when the countdown began, for the progress bar on the lock screen. */
+	from?: number;
 }
 
 export type Mood = 'happy' | 'alert' | 'done';
@@ -94,6 +104,7 @@ function plan(s: ActiveSession | null, now: number): SessionNotice | null {
 		text: next ? `Then ${who(next)}` : 'The last one',
 		clock: 'down',
 		at: end,
+		from: end - stepDurationMs(s),
 		// when the timer ends the alert for it takes over, so this one goes
 		expiresInMs: end - now + PAST_END_MS,
 		afterTitle: next ? 'Time to switch ♡' : 'All done! 🎉',

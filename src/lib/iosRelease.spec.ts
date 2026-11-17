@@ -133,20 +133,23 @@ describe('the Live Activity on the lock screen', () => {
 		expect(lock).toContain('color: .white');
 		// no pink or dark writing on the card itself (that was hard to read)
 		expect(lock).not.toContain('foregroundStyle(pink)');
-		expect(lock).not.toContain('ink');
-		// a Live Activity may be about 160 points tall: one compact row when it fits, and when the names are long
-		// the second line moves under the row and gets the whole width
-		expect(lock).toContain('ViewThatFits(in: .horizontal)');
-		expect(lock).toContain('.lineLimit(1)');
-		// the clock is what you glance for: it always keeps its own width, and the words give way
-		// (long names on a narrower phone used to squeeze it out completely)
+		expect(lock).not.toMatch(/\bink\b/);
+		// a Live Activity may be about 160 points tall, so the card is roomy: your friend and the words on top,
+		// a big clock under them, and a bar that fills as the countdown runs (the phone draws and ticks it)
+		expect(lock).toContain('SessionMascot(kind: shown.mascot, mood: shown.mood, size: 52)');
+		expect(lock).toContain('ProgressView(');
+		expect(lock).toContain('timerInterval:');
+		expect(lock).toContain('countsDown: false');
+		expect(lock).toContain('font: .system(size: 38)'); // the big clock
+		expect(lock).not.toContain('ViewThatFits');
+		// the clock keeps its own width, and a long name wraps (not cut off) because the words take the height they need
 		expect(lock).toContain('.fixedSize(horizontal: true, vertical: false)');
-		expect(lock).toContain('.layoutPriority(2)');
-		expect(lock).toContain('.frame(maxWidth: .infinity, alignment: .leading)');
-		expect(lock).not.toContain('.layoutPriority(1)');
-		// the words may wrap and shrink a little
+		expect(lock).toContain('.fixedSize(horizontal: false, vertical: true)');
 		expect(lock).toContain('.lineLimit(2)');
 		expect(lock).toContain('.minimumScaleFactor(');
+		// no clock row at all while paused or once a countdown has run out
+		expect(lock).toContain('if shown.hasClock');
+		expect(card).toContain('var from: Date?');
 	});
 
 	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {
