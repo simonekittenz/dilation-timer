@@ -498,6 +498,7 @@
 
 <style>
 	.timer {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -519,6 +520,16 @@
 	}
 	.timer.alert {
 		border-color: var(--warn);
+	}
+	/* the glow breathes by fading a layer in and out, not by animating a big blurred shadow */
+	.timer.alert::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		pointer-events: none;
+		box-shadow: 0 0 34px 8px color-mix(in srgb, var(--warn) 55%, transparent);
+		opacity: 0;
 		animation: glow 0.9s ease-in-out infinite;
 	}
 	.top {
@@ -1029,7 +1040,18 @@
 		animation: breathe 3.5s ease-in-out infinite;
 	}
 	.blink {
+		position: relative;
 		animation: blink 0.7s ease-in-out infinite;
+	}
+	.blink::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		pointer-events: none;
+		box-shadow: 0 0 0 10px color-mix(in srgb, var(--warn) 30%, transparent);
+		opacity: 0;
+		animation: blinkring 0.7s ease-in-out infinite;
 	}
 	@keyframes breathe {
 		50% {
@@ -1037,22 +1059,18 @@
 		}
 	}
 	@keyframes blink {
-		0%,
-		100% {
-			filter: none;
-			transform: scale(1);
-		}
 		50% {
-			filter: brightness(1.15) saturate(1.3);
 			transform: scale(1.04);
-			box-shadow: 0 0 0 10px color-mix(in srgb, var(--warn) 30%, transparent);
+		}
+	}
+	@keyframes blinkring {
+		50% {
+			opacity: 1;
 		}
 	}
 	@keyframes glow {
 		50% {
-			box-shadow:
-				0 6px 0 var(--line),
-				0 0 34px 8px color-mix(in srgb, var(--warn) 55%, transparent);
+			opacity: 1;
 		}
 	}
 	@media (max-width: 600px) and (max-height: 820px) {
@@ -1234,8 +1252,15 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.breathe,
-		.timer.alert {
+		.blink,
+		.blink::after,
+		.timer.alert::after {
 			animation: none;
+		}
+		/* still say "it is time" without any movement: a steady glow and ring */
+		.blink::after,
+		.timer.alert::after {
+			opacity: 0.7;
 		}
 	}
 </style>

@@ -210,6 +210,23 @@ alert and reminder also gets `sound: 'public/sounds/….wav'` (the app's own ala
 the app in its `public` folder; see `IOS_SOUNDS` in `notifications.ts`), and none when the alarm volume
 is off. The phone's ringer switch and Focus modes still mute it, as for any notification.
 
+### "I had to tap I switched five times" (iPhone, reported by a tester)
+
+Not reproduced (a browser handles every tap, even with the processor slowed twenty times), so these are the
+things that could cost taps while the alarm rings in overtime, and what was done about each:
+
+- **Audio work on the app's main thread** (the thread that also hands taps to the web view). Until 1.13,
+  `AudioDuckingPlugin` called `AVAudioSession.setActive` there on every alarm repeat, which can block for a
+  while when other audio plays (Xcode's "AVAudioSession Hang Risk"). Moved to its own queue in 1.14.
+- **A stop stuck in line.** On that queue, "stop" waited behind a repeat that was still waiting for the audio
+  session, so the alarm kept ringing after the tap, and a repeat already queued could even start after it.
+  Now `stop` counts first (`stopEverythingAskedSoFar`), and anything asked before that is skipped.
+- **Heavy animation while the alarm is on:** the page background, the card's shadow and the button's filter and
+  shadow all animated at once, each repainting a large area. Now only opacity and transform change (an overlay
+  fades instead), so old iPhones do not have to repaint every frame. The overlays have `pointer-events: none`.
+
+If it still happens, ask for the app version (bottom of Settings), the iPhone model, and whether music was playing.
+
 ## Signing
 
 Android only lets an update replace an installed app if both were signed with the same key. The app is

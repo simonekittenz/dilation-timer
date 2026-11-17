@@ -161,18 +161,31 @@
 		background: linear-gradient(180deg, var(--accent), var(--accent-strong));
 		color: var(--accent-ink);
 	}
-	.alerting {
+	/* While the alarm is on, the page flashes. Only the opacity of an overlay changes, which the phone can do
+	   without repainting the page every frame (repainting three big animations at once made old iPhones slow). */
+	.shell {
+		position: relative;
+		isolation: isolate;
+	}
+	.alerting::before {
+		content: '';
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		pointer-events: none;
+		background: color-mix(in srgb, var(--warn) 22%, transparent);
+		opacity: 0;
 		animation: flash 1s ease-in-out infinite;
 	}
 	@keyframes flash {
 		50% {
-			background: color-mix(in srgb, var(--warn) 22%, transparent);
+			opacity: 1;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.alerting {
+		.alerting::before {
 			animation: none;
-			background: color-mix(in srgb, var(--warn) 18%, transparent);
+			opacity: 0.8;
 		}
 	}
 </style>

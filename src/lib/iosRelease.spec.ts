@@ -189,3 +189,46 @@ describe('the Live Activity on the lock screen', () => {
 		expect(plugin).toContain('#available(iOS 16.2, *)');
 	});
 });
+
+describe('the alarm stays out of the way of a tap on "I switched"', () => {
+	const plugin = read('ios/App/App/AudioDuckingPlugin.swift');
+	const timer = read('src/lib/Timer.svelte');
+	const layout = read('src/routes/+layout.svelte');
+
+	it('does its audio work off the main thread, where taps are handled', () => {
+		const withoutScreenLock = plugin.slice(0, plugin.indexOf('func keepAwake'));
+		expect(withoutScreenLock).not.toContain('DispatchQueue.main');
+		expect(withoutScreenLock).toContain('audioQueue.async');
+	});
+
+	it('silences the alarm at once and for good: a sound asked for before the stop is skipped', () => {
+		expect(plugin).toContain('stopEverythingAskedSoFar()');
+		// stop bumps the count before it waits its turn on the audio queue
+		expect(plugin.indexOf('stopEverythingAskedSoFar() //')).toBeLessThan(
+			plugin.indexOf('audioQueue.async', plugin.indexOf('func stop('))
+		);
+		// and a sound that was waiting for the audio session does not play once the stop has happened
+		expect(plugin).toContain('guard asked == currentEpoch() else {');
+		expect(plugin).toContain('guard asked == self.currentEpoch() else { return timer.cancel() }');
+	});
+
+	it('only animates opacity and transform while the alarm is on, so it does not repaint the page every frame', () => {
+		for (const [name, source] of [
+			['blink', timer],
+			['blinkring', timer],
+			['glow', timer],
+			['flash', layout]
+		] as const) {
+			const body = source.slice(source.indexOf(`@keyframes ${name} {`));
+			const frames = body.slice(0, body.indexOf('\n\t}\n') + 4);
+			expect(frames, name).toMatch(/opacity|transform/);
+			expect(frames, name).not.toMatch(/box-shadow|filter|background/);
+		}
+	});
+
+	it('has overlays that never catch a tap', () => {
+		expect(timer).toMatch(/\.blink::after \{[^}]*pointer-events: none/);
+		expect(timer).toMatch(/\.timer\.alert::after \{[^}]*pointer-events: none/);
+		expect(layout).toMatch(/\.alerting::before \{[^}]*pointer-events: none/);
+	});
+});

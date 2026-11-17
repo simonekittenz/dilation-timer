@@ -25,6 +25,22 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Owns `player` and `loopTimer`: only touch them from here.
     private let audioQueue = DispatchQueue(label: "com.simonekittenz.dilationtimer.audio")
+
+    /// Goes up every time the alarm is stopped. A sound asked for before that is skipped, even if it was still
+    /// waiting in line: the audio queue can be held up for a while by the phone handing over the audio session
+    /// (for instance while music plays), and a tap on "I switched" must silence the alarm at once and for good.
+    private let epochLock = NSLock()
+    private var epoch = 0
+    private func currentEpoch() -> Int {
+        epochLock.lock()
+        defer { epochLock.unlock() }
+        return epoch
+    }
+    private func stopEverythingAskedSoFar() {
+        epochLock.lock()
+        epoch += 1
+        epochLock.unlock()
+    }
     private var player: AVAudioPlayer?
     private var loopTimer: DispatchSourceTimer?
     private let finishObserver = FinishObserver()
@@ -37,10 +53,12 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Plays a bundled sound once. Resolves as soon as it has started.
     @objc func play(_ call: CAPPluginCall) {
         guard let request = request(from: call) else { return }
+        let asked = currentEpoch()
         audioQueue.async {
+            guard asked == self.currentEpoch() else { return call.resolve() } // stopped in the meantime
             self.cancelLoop()
             do {
-                try self.start(request)
+                try self.start(request, asked: asked)
                 call.resolve()
             } catch {
                 call.reject("Couldn't play the alarm sound", nil, error)
@@ -52,16 +70,19 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func loop(_ call: CAPPluginCall) {
         guard let request = request(from: call) else { return }
         let interval = max(0.5, Double(call.getInt("intervalMs") ?? 2500) / 1000.0)
+        let asked = currentEpoch()
         audioQueue.async { [weak self] in
             guard let self = self else { return }
+            guard asked == self.currentEpoch() else { return call.resolve() } // stopped in the meantime
             self.cancelLoop()
             do {
-                try self.start(request)
+                try self.start(request, asked: asked)
                 let timer = DispatchSource.makeTimerSource(queue: self.audioQueue)
                 timer.schedule(deadline: .now() + interval, repeating: interval)
                 timer.setEventHandler { [weak self] in
                     guard let self = self else { return }
-                    _ = try? self.start(request)
+                    guard asked == self.currentEpoch() else { return timer.cancel() } // stopped: no more repeats
+                    _ = try? self.start(request, asked: asked)
                 }
                 timer.resume()
                 self.loopTimer = timer
@@ -73,6 +94,7 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func stop(_ call: CAPPluginCall) {
+        stopEverythingAskedSoFar() // at once, before this waits its turn on the audio queue
         audioQueue.async {
             self.cancelLoop()
             self.player?.stop()
@@ -107,10 +129,15 @@ public class AudioDuckingPlugin: CAPPlugin, CAPBridgedPlugin {
         return Request(url: url, volume: volume)
     }
 
-    private func start(_ request: Request) throws {
+    private func start(_ request: Request, asked: Int) throws {
+        guard asked == currentEpoch() else { return }
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playback, mode: .default, options: [.duckOthers])
-        try session.setActive(true)
+        try session.setActive(true) // can take a while when other audio is playing
+        guard asked == currentEpoch() else { // stopped while waiting for the session: hand it back, stay quiet
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
+            return
+        }
 
         let next = try AVAudioPlayer(contentsOf: request.url)
         next.volume = request.volume
