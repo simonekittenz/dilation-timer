@@ -81,26 +81,28 @@ private struct LockScreenView: View {
 
     var body: some View {
         let shown = Shown(state: state, isStale: isStale)
-        HStack(alignment: .center, spacing: 12) {
-            SessionMascot(kind: shown.mascot, mood: shown.mood, size: 46)
+        HStack(alignment: .center, spacing: 10) {
+            SessionMascot(kind: shown.mascot, mood: shown.mood, size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(shown.title)
                     .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.85)
+                    .minimumScaleFactor(0.8)
                 Text(shown.text)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
-            .layoutPriority(1)
-            Spacer(minLength: 8)
-            // a count-up clock would stretch across the whole row and squeeze the words: keep it to its own width
+            // the words take whatever room is left, however long the dilator names are...
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // ...because the clock is what you glance for: it always keeps its own width
             ClockText(state: state, isStale: isStale, font: .title2, color: .white)
-                .frame(maxWidth: 104, alignment: .trailing)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(2)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 14)
     }
 }

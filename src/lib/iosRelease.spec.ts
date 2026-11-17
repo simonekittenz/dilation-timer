@@ -134,9 +134,15 @@ describe('the Live Activity on the lock screen', () => {
 		// no pink or dark writing on the card itself (that was hard to read)
 		expect(lock).not.toContain('foregroundStyle(pink)');
 		expect(lock).not.toContain('ink');
-		// the title may wrap, and the clock cannot stretch across the row and squeeze it
+		// the clock is what you glance for: it always keeps its own width, and the words give way
+		// (long names on a narrower phone used to squeeze it out completely)
+		expect(lock).toContain('.fixedSize(horizontal: true, vertical: false)');
+		expect(lock).toContain('.layoutPriority(2)');
+		expect(lock).toContain('.frame(maxWidth: .infinity, alignment: .leading)');
+		expect(lock).not.toContain('.layoutPriority(1)');
+		// the words may wrap and shrink a little
 		expect(lock).toContain('.lineLimit(2)');
-		expect(lock).toContain('.frame(maxWidth: 104, alignment: .trailing)');
+		expect(lock).toContain('.minimumScaleFactor(');
 	});
 
 	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {

@@ -176,7 +176,10 @@ Activity left on the lock screen by an older build still opens after an update.
 
 The card is a deep rose with plain white writing (about 6:1), so it is readable over any wallpaper, light or
 dark. The first version had pink on pale pink and the clock nearly vanished (feedback from a tester), and the
-count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black.
+count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock keeps its own width and the words give way (they wrap,
+shrink a little, then shorten), because on a narrower phone such as an iPhone 12, long dilator names used to
+squeeze the clock out completely (feedback from a tester); the layout was checked with names as long as "Mister
+Fluffy Pants" on cards 390 and 340 points wide.
 
 The extension needs its own App ID and profile. They are made on the first signed export by
 `-allowProvisioningUpdates`, like the app's own. The Settings switch "Timer on the lock screen" turns it off,
