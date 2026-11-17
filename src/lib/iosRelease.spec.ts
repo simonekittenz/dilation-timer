@@ -134,6 +134,10 @@ describe('the Live Activity on the lock screen', () => {
 		// no pink or dark writing on the card itself (that was hard to read)
 		expect(lock).not.toContain('foregroundStyle(pink)');
 		expect(lock).not.toContain('ink');
+		// a Live Activity may be about 160 points tall: one compact row when it fits, and when the names are long
+		// the second line moves under the row and gets the whole width
+		expect(lock).toContain('ViewThatFits(in: .horizontal)');
+		expect(lock).toContain('.lineLimit(1)');
 		// the clock is what you glance for: it always keeps its own width, and the words give way
 		// (long names on a narrower phone used to squeeze it out completely)
 		expect(lock).toContain('.fixedSize(horizontal: true, vertical: false)');

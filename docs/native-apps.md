@@ -179,7 +179,9 @@ dark. The first version had pink on pale pink and the clock nearly vanished (fee
 count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock keeps its own width and the words give way (they wrap,
 shrink a little, then shorten), because on a narrower phone such as an iPhone 12, long dilator names used to
 squeeze the clock out completely (feedback from a tester); the layout was checked with names as long as "Mister
-Fluffy Pants" on cards 390 and 340 points wide.
+Fluffy Pants" on cards 390 and 340 points wide. A Live Activity may be about 160 points tall (ours is
+about 70), so the card has two layouts (`ViewThatFits`): one compact row when it all fits, and when it doesn't,
+the second line moves under the row and gets the full width, so nothing needs cutting off.
 
 The extension needs its own App ID and profile. They are made on the first signed export by
 `-allowProvisioningUpdates`, like the app's own. The Settings switch "Timer on the lock screen" turns it off,

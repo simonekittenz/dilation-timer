@@ -81,26 +81,49 @@ private struct LockScreenView: View {
 
     var body: some View {
         let shown = Shown(state: state, isStale: isStale)
-        HStack(alignment: .center, spacing: 10) {
-            SessionMascot(kind: shown.mascot, mood: shown.mood, size: 40)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(shown.title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+        // A Live Activity on the lock screen may be about 160 points tall and we only need about 70, so
+        // there is height to spare. One neat row when everything fits (the first layout); when the names
+        // are long, the second line moves under the row and gets the whole width (the second).
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 10) {
+                SessionMascot(kind: shown.mascot, mood: shown.mood, size: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(shown.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                    Text(shown.text)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.92))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                Spacer(minLength: 8)
+                ClockText(state: state, isStale: isStale, font: .title2, color: .white)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center, spacing: 10) {
+                    SessionMascot(kind: shown.mascot, mood: shown.mood, size: 40)
+                    Text(shown.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // the clock is what you glance for: it always keeps its own width, and the words give way
+                    ClockText(state: state, isStale: isStale, font: .title2, color: .white)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(2)
+                }
                 Text(shown.text)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            // the words take whatever room is left, however long the dilator names are...
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // ...because the clock is what you glance for: it always keeps its own width
-            ClockText(state: state, isStale: isStale, font: .title2, color: .white)
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
