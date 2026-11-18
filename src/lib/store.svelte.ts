@@ -562,6 +562,10 @@ class Store {
 				}
 			} else if (next.warned && !s.warned) {
 				chime();
+			} else if (next.overrun && !s.overrun && overtimeMs(next, this.now) < 10_000) {
+				// the last dilator's planned time is up but the session carries on: a soft ping, no fanfare
+				this.cueUntil = this.now + CUE_MS;
+				ping();
 			}
 			this.active = next;
 			this.save();
@@ -623,7 +627,9 @@ class Store {
 			slot,
 			date,
 			Date.now(),
-			this.settings.startScreen !== false
+			this.settings.startScreen !== false,
+			undefined,
+			this.settings.keepGoingOnLast === true
 		);
 		void keepAwake(true);
 		this.save();
@@ -648,7 +654,9 @@ class Store {
 				slot,
 				this.today,
 				Date.now(),
-				this.settings.startScreen !== false
+				this.settings.startScreen !== false,
+				undefined,
+				this.settings.keepGoingOnLast === true
 			),
 			custom: true
 		};

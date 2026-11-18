@@ -87,6 +87,8 @@ export interface Settings {
 	smartTimer?: boolean;
 	/** Swap times you set yourself, by dilator name (see `SwapOverride`). */
 	swapOverrides?: Record<string, { ms: number; since: number }>;
+	/** The last dilator's clock keeps running past zero, counting up, until you press Finish. Missing means no. */
+	keepGoingOnLast?: boolean;
 	/** Start sessions on the "Let's get started" screen, with the first timer waiting for Go. Missing means yes. */
 	startScreen?: boolean;
 	/** Show the clock (with Pause and Reset) on the start screen. It is timed either way. Missing means yes. */
@@ -132,6 +134,10 @@ export interface ActiveSession {
 	warned: boolean;
 	/** When the timer was paused (null while running). Older saved sessions won't have this. */
 	pausedAt?: number | null;
+	/** This session keeps timing the last dilator past zero until Finish (the setting when it started). */
+	keepGoing?: boolean;
+	/** The last dilator's planned time is up and the clock is running on as extra time. */
+	overrun?: boolean;
 	/** The start screen's clock counts from here (set by Reset and Continue). Missing means `startedAt`. */
 	waitSince?: number;
 	/** Minutes added or removed from the current step with the +/- buttons. */

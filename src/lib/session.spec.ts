@@ -12,7 +12,9 @@ import {
 	MIN_CHILL_MS,
 	finish,
 	isEscalated,
+	isOverrun,
 	isPaused,
+	newSession,
 	switchWindowLeftMs,
 	remainingMs,
 	overtimeMs,
@@ -336,5 +338,45 @@ describe('estimatedFinish: when the session should be over', () => {
 			expect(estimatedFinish(tick(s, 61 * MIN), 61 * MIN, W)).toBeNull();
 			expect(estimatedFinish(start(), 99 * MIN, W)).toBeGreaterThanOrEqual(99 * MIN);
 		});
+	});
+});
+
+describe('keep timing the last dilator (extra time until Finish)', () => {
+	const one = [{ label: 'A', minutes: 1, color: '#fff' }];
+	const MIN = 60_000;
+	const begin = (keepGoing: boolean) =>
+		newSession(one, null, '2026-01-01', 0, false, 'x', keepGoing);
+
+	it('ends the session at zero when the setting is off, as before', () => {
+		expect(tick(begin(false), 61_000).phase).toBe('finished');
+	});
+
+	it('runs on past zero as extra time, and ends only when you finish', () => {
+		let s = tick(begin(true), MIN + 1000);
+		expect(s.phase).toBe('running');
+		expect(s.overrun).toBe(true);
+		expect(isOverrun(s, MIN + 1000)).toBe(true);
+		expect(isOverrun(begin(true), 30_000)).toBe(false);
+		// still the same a long time later, and the time keeps counting
+		s = tick(s, 10 * MIN);
+		expect(s.phase).toBe('running');
+		expect(remainingMs(s, 10 * MIN)).toBe(-9 * MIN);
+		s = skipStep(s, 12 * MIN);
+		expect(s.phase).toBe('finished');
+		expect(finish(s, alertStart(s)).steps[0].actualSeconds).toBe(12 * 60);
+	});
+
+	it('only the last dilator keeps going; the others still hand over to the next', () => {
+		const two = [...one, { label: 'B', minutes: 1, color: '#000' }];
+		const s = tick(newSession(two, null, '2026-01-01', 0, false, 'x', true), MIN + 1);
+		expect(s.phase).toBe('switch');
+	});
+
+	it('cannot add or remove minutes in extra time, and finishing while paused ends it where it was paused', () => {
+		let s = tick(begin(true), 2 * MIN);
+		expect(adjust(s, MIN, 2 * MIN)).toBe(s);
+		s = pause(s, 5 * MIN);
+		s = skipStep(s, 9 * MIN);
+		expect(finish(s, alertStart(s)).steps[0].actualSeconds).toBe(5 * 60);
 	});
 });

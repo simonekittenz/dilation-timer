@@ -101,6 +101,22 @@
 	</label>
 	<label class="item">
 		<span class="text">
+			<span class="label">Keep timing the last dilator</span>
+			<span class="hint">
+				When the last timer reaches zero, keep the clock going (counting up as extra time) until you
+				press Finish, instead of ending the session right away. For when you want to stay longer
+			</span>
+		</span>
+		<input
+			type="checkbox"
+			class="toggle"
+			checked={draft.keepGoingOnLast === true}
+			onchange={(e) => (draft.keepGoingOnLast = e.currentTarget.checked)}
+			aria-label="Keep timing the last dilator"
+		/>
+	</label>
+	<label class="item">
+		<span class="text">
 			<span class="label">Start screen</span>
 			<span class="hint">
 				When you start a session, show which dilator to bring in first, and begin the first timer

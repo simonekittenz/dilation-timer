@@ -14,6 +14,7 @@
 		waitedMs,
 		estimatedFinish,
 		isLastStep,
+		isOverrun,
 		isPaused,
 		overtimeMs,
 		remainingMs,
@@ -32,12 +33,15 @@
 	const next = $derived(isLastStep(s) ? null : s.steps[s.stepIndex + 1]);
 	const overtime = $derived(overtimeMs(s, store.now));
 	const escalated = $derived(store.escalated);
-	const finish = $derived(estimatedFinish(s, store.now, store.switchWindowFor));
+	// the last dilator's planned time is up and (the setting) the clock runs on until Finish
+	const overrun = $derived(isOverrun(s, store.now));
+	const finish = $derived(overrun ? null : estimatedFinish(s, store.now, store.switchWindowFor));
 	const canShorten = $derived(left >= ADJUST_MS + 1000);
 	const bubble = $derived.by(() => {
 		const m = store.settings.messages;
 		const name = current.nickname || current.label;
 		const pet = store.settings.mascot;
+		if (overrun) return "Your planned time is up ♡ Finish whenever you're ready.";
 		if (s.phase === 'running') {
 			const minute = Math.floor((store.now - s.stepStartedAt) / 60_000);
 			return pickMessage(m.running, `${s.id}:${s.stepIndex}:${minute}`, name, pet);
@@ -169,10 +173,12 @@
 				<div class="inside">
 					<div class="pet"><Mascot size={64} /></div>
 					{#key clockLit}
-						<p class="clock" class:lit={clockLit > 0}>{formatClock(left)}</p>
+						<p class="clock" class:lit={clockLit > 0} class:extra={overrun}>
+							{overrun ? '+' : ''}{formatClock(overrun ? -left : left)}
+						</p>
 					{/key}
 					<p class="label">
-						{#if paused}Paused{:else}
+						{#if paused}Paused{:else if overrun}Extra time ♡{:else}
 							<DilatorName label={current.label} nickname={current.nickname} />
 						{/if}
 					</p>
@@ -182,84 +188,119 @@
 		</div>
 
 		<div class="pad">
-			<div class="row">
+			{#if overrun}
 				<button
-					class="round"
-					onclick={() => {
-						store.addMinutes(-1);
-						clockLit++;
-					}}
-					disabled={!canShorten}
-					aria-label="Remove one minute"
+					class="btn huge breathe"
+					data-testid="finish-extra"
+					onclick={() => store.skipStep()}
 				>
-					<span class="disc">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path class="line" d="M6 12h12" /></svg>
-					</span>
-					<span class="cap">− 1 min</span>
+					Finish ✓
 				</button>
-				{#if paused}
+			{:else}
+				<div class="row">
 					<button
-						class="round main"
+						class="round"
 						onclick={() => {
-							store.resume();
+							store.addMinutes(-1);
 							clockLit++;
 						}}
+						disabled={!canShorten}
+						aria-label="Remove one minute"
 					>
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path class="line" d="M6 12h12" /></svg>
+						</span>
+						<span class="cap">− 1 min</span>
+					</button>
+					{#if paused}
+						<button
+							class="round main"
+							onclick={() => {
+								store.resume();
+								clockLit++;
+							}}
+						>
+							<span class="disc">
+								<svg viewBox="0 0 24 24" aria-hidden="true"
+									><path
+										class="fill"
+										d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
+									/></svg
+								>
+							</span>
+							<span class="cap">Continue</span>
+						</button>
+					{:else}
+						<button class="round main" onclick={() => store.pause()}>
+							<span class="disc">
+								<svg viewBox="0 0 24 24" aria-hidden="true"
+									><rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
+										class="fill"
+										x="14"
+										y="5"
+										width="4"
+										height="14"
+										rx="1.5"
+									/></svg
+								>
+							</span>
+							<span class="cap">Pause</span>
+						</button>
+					{/if}
+					<button
+						class="round"
+						onclick={() => {
+							store.addMinutes(1);
+							clockLit++;
+						}}
+						aria-label="Add one minute"
+					>
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true"
+								><path class="line" d="M6 12h12M12 6v12" /></svg
+							>
+						</span>
+						<span class="cap">+ 1 min</span>
+					</button>
+				</div>
+			{/if}
+			<div class="row second">
+				{#if overrun}
+					<button class="round small" onclick={() => (paused ? store.resume() : store.pause())}>
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								{#if paused}
+									<path
+										class="fill"
+										d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
+									/>
+								{:else}
+									<rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
+										class="fill"
+										x="14"
+										y="5"
+										width="4"
+										height="14"
+										rx="1.5"
+									/>
+								{/if}
+							</svg>
+						</span>
+						<span class="cap">{paused ? 'Continue' : 'Pause'}</span>
+					</button>
+				{:else}
+					<button class="round small" onclick={() => store.skipStep()}>
 						<span class="disc">
 							<svg viewBox="0 0 24 24" aria-hidden="true"
 								><path
 									class="fill"
-									d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
-								/></svg
+									d="M5 5.5v13a1 1 0 0 0 1.5.9l8-6.5a1 1 0 0 0 0-1.8l-8-6.5A1 1 0 0 0 5 5.5z"
+								/><rect class="fill" x="16.5" y="5" width="3" height="14" rx="1.2" /></svg
 							>
 						</span>
-						<span class="cap">Continue</span>
-					</button>
-				{:else}
-					<button class="round main" onclick={() => store.pause()}>
-						<span class="disc">
-							<svg viewBox="0 0 24 24" aria-hidden="true"
-								><rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
-									class="fill"
-									x="14"
-									y="5"
-									width="4"
-									height="14"
-									rx="1.5"
-								/></svg
-							>
-						</span>
-						<span class="cap">Pause</span>
+						<span class="cap">{next ? 'Next dilator' : 'Finish now'}</span>
 					</button>
 				{/if}
-				<button
-					class="round"
-					onclick={() => {
-						store.addMinutes(1);
-						clockLit++;
-					}}
-					aria-label="Add one minute"
-				>
-					<span class="disc">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path class="line" d="M6 12h12M12 6v12" /></svg
-						>
-					</span>
-					<span class="cap">+ 1 min</span>
-				</button>
-			</div>
-			<div class="row second">
-				<button class="round small" onclick={() => store.skipStep()}>
-					<span class="disc">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path
-								class="fill"
-								d="M5 5.5v13a1 1 0 0 0 1.5.9l8-6.5a1 1 0 0 0 0-1.8l-8-6.5A1 1 0 0 0 5 5.5z"
-							/><rect class="fill" x="16.5" y="5" width="3" height="14" rx="1.2" /></svg
-						>
-					</span>
-					<span class="cap">{next ? 'Next dilator' : 'Finish now'}</span>
-				</button>
 				<button
 					class="round small quiet"
 					onclick={async () =>
@@ -940,6 +981,10 @@
 		font-weight: 800;
 		color: var(--accent-strong);
 		text-align: center;
+	}
+	/* extra time on the last dilator: the clock counts up in the soft pink, with a plus in front */
+	.clock.extra {
+		color: var(--accent-strong);
 	}
 	/* the start screen's clock: big, but in the soft grey of secondary text so Go! is what stands out;
 	   fainter still while paused */

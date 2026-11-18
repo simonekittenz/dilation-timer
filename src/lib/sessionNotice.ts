@@ -98,7 +98,20 @@ function plan(s: ActiveSession | null, now: number): SessionNotice | null {
 	}
 
 	const end = plannedEnd(s);
-	if (end <= now) return null; // the app is about to move on by itself
+	if (end <= now) {
+		if (!next && s.keepGoing) {
+			// the planned time is up, and the clock runs on as extra time until you press Finish
+			return {
+				title: `${who(current)} · extra time`,
+				text: 'Press Finish when you are done',
+				clock: 'up',
+				at: end,
+				expiresInMs: NOTICE_LINGER_MS,
+				mood: 'happy'
+			};
+		}
+		return null; // the app is about to move on by itself
+	}
 	return {
 		title: `${who(current)} · ${place}`,
 		text: next ? `Then ${who(next)}` : 'The last one',
@@ -107,11 +120,15 @@ function plan(s: ActiveSession | null, now: number): SessionNotice | null {
 		from: end - stepDurationMs(s),
 		// when the timer ends the alert for it takes over, so this one goes
 		expiresInMs: end - now + PAST_END_MS,
-		afterTitle: next ? 'Time to switch ♡' : 'All done! 🎉',
-		afterText: next ? `Swap to ${who(next)}` : 'Take the last one out',
+		afterTitle: next ? 'Time to switch ♡' : s.keepGoing ? 'Planned time is up ♡' : 'All done! 🎉',
+		afterText: next
+			? `Swap to ${who(next)}`
+			: s.keepGoing
+				? 'Finish whenever you are ready'
+				: 'Take the last one out',
 		mood: 'happy',
 		// the friend perks up when it is time to switch, and celebrates at the very end
-		afterMood: next ? 'alert' : 'done'
+		afterMood: next ? 'alert' : s.keepGoing ? 'happy' : 'done'
 	};
 }
 

@@ -141,6 +141,7 @@ export function defaultSettings(today = new Date()): Settings {
 		celebrations: true,
 		streak: true,
 		lockScreenTimer: true,
+		keepGoingOnLast: false,
 		smartTimer: true,
 		swapOverrides: {},
 		startScreen: true,

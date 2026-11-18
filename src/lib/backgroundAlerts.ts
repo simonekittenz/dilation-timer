@@ -62,6 +62,18 @@ export function planBackgroundAlerts(
 	if (s.phase === 'running') {
 		const end = plannedEnd(s);
 		if (end <= now) return []; // the app itself is about to move on
+		if (!next && s.keepGoing) {
+			// the planned time is up, but the session goes on until you press Finish: say so, gently, once
+			return [
+				{
+					id: ALERT_ID,
+					at: end,
+					kind: 'switch',
+					title: 'Planned time is up ♡',
+					body: 'Take your time. Open the app and press “Finish” when you are done.'
+				}
+			];
+		}
 		if (!next) {
 			return [
 				{

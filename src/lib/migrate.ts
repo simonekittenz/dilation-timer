@@ -91,6 +91,7 @@ export function migrateSettings(saved: Partial<Settings> | undefined): Settings 
 		celebrations,
 		streak: saved.streak !== false,
 		lockScreenTimer: saved.lockScreenTimer !== false,
+		keepGoingOnLast: saved.keepGoingOnLast === true,
 		smartTimer: saved.smartTimer !== false,
 		swapOverrides: cleanOverrides(saved.swapOverrides),
 		startScreen: saved.startScreen !== false,

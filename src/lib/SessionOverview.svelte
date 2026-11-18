@@ -53,7 +53,7 @@
 						<span class="when">
 							{range(row.startAt, row.endAt, row.estimated)}
 							{#if row.status === 'now' && s.phase === 'running'}
-								· {formatClock(left)} left{/if}
+								· {left > 0 ? `${formatClock(left)} left` : `+${formatClock(-left)} extra`}{/if}
 						</span>
 						{#if row.readySeconds !== undefined}
 							<span class="extra" data-testid="ready-time">

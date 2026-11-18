@@ -54,10 +54,19 @@ export function newSession(
 	date: string,
 	now: number,
 	withStartScreen: boolean,
-	id?: string
+	id?: string,
+	keepGoing = false
 ): ActiveSession {
-	const s = startSession(steps, slot, date, now, id);
+	const s = {
+		...startSession(steps, slot, date, now, id),
+		...(keepGoing ? { keepGoing: true } : {})
+	};
 	return withStartScreen ? getReady(s) : s;
+}
+
+/** The last dilator's planned time is up, and (the setting) the clock runs on as extra time until Finish. */
+export function isOverrun(s: ActiveSession, now: number): boolean {
+	return s.phase === 'running' && !!s.keepGoing && isLastStep(s) && remainingMs(s, now) <= 0;
 }
 
 /**
@@ -213,6 +222,8 @@ export function tick(s: ActiveSession, now: number): ActiveSession {
 	if (s.phase !== 'running' || s.pausedAt != null) return s;
 	const left = remainingMs(s, now);
 	if (left <= 0) {
+		// with "keep going", the last timer does not end the session: it runs on until Finish
+		if (isLastStep(s) && s.keepGoing) return s.overrun ? s : { ...s, overrun: true };
 		return { ...s, phase: isLastStep(s) ? 'finished' : 'switch', alertSince: plannedEnd(s) };
 	}
 	if (left <= WARN_MS && !s.warned) return { ...s, warned: true };
@@ -244,7 +255,7 @@ export function resume(s: ActiveSession, now: number): ActiveSession {
 
 /** Adds or removes time on the current step. Refuses to cut it down to nothing. */
 export function adjust(s: ActiveSession, deltaMs: number, now: number): ActiveSession {
-	if (s.phase !== 'running') return s;
+	if (s.phase !== 'running' || isOverrun(s, now)) return s;
 	if (remainingMs(s, now) + deltaMs < 1000) return s;
 	const next = { ...s, adjustMs: (s.adjustMs ?? 0) + deltaMs };
 	return { ...next, warned: remainingMs(next, now) <= WARN_MS ? s.warned : false };
@@ -257,7 +268,8 @@ export function skipStep(s: ActiveSession, now: number): ActiveSession {
 		...s,
 		pausedAt: null,
 		phase: isLastStep(s) ? 'finished' : 'switch',
-		alertSince: now
+		// finishing while paused ends it where it was paused: the pause is not part of the time
+		alertSince: s.pausedAt ?? now
 	};
 }
 

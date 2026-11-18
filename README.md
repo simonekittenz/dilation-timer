@@ -35,6 +35,9 @@ to switch to the next one.
   shows what it is doing for each dilator and why, lets you set your own swap time for one (it starts
   from that, ignores the history before the day you set it, and learns from the swaps after), and has a
   switch to turn it off.
+- **Stay longer on the last one.** A switch in Settings → Sessions & alerts, **Keep timing the last
+  dilator**: when the last timer reaches zero, the clock does not stop, it counts up as extra time (with a
+  soft ping and a gentle notice) until you press **Finish**. The extra time is part of the logged session.
 - **The last dilator needs no nagging.** A fanfare plays and the "all done" screen stays up until you tap
   it away. It shows the session in numbers (time with the dilators, how long you took to be Ready, each
   swap) and kind notes when you were quicker than usual. **More statistics** (also at the top of History)

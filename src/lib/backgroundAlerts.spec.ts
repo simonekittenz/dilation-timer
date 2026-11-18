@@ -5,6 +5,7 @@ import {
 	chillOut,
 	confirmSwitch,
 	extendSwitchWindow,
+	newSession,
 	pause,
 	skipStep,
 	startSession,
@@ -107,5 +108,16 @@ describe('planBackgroundAlerts', () => {
 		const plan = planBackgroundAlerts(s, now + 1000, W);
 		expect(plan[0].at).toBe(now + W);
 		expect(plan).toHaveLength(MAX_NUDGES);
+	});
+});
+
+describe('planBackgroundAlerts with keep timing the last dilator', () => {
+	it('says the planned time is up, gently, and does not say all done', () => {
+		const one = [{ label: 'Dilator 1', minutes: 5, color: '#fff' }];
+		const s = newSession(one, null, '2026-01-01', 0, false, 'x', true);
+		const plan = planBackgroundAlerts(s, MIN, W);
+		expect(plan).toHaveLength(1);
+		expect(plan[0]).toMatchObject({ kind: 'switch', at: 5 * MIN, title: 'Planned time is up ♡' });
+		expect(plan[0].body).toContain('Finish');
 	});
 });

@@ -54,6 +54,7 @@ export function buildSettings(draft: Settings, text: MessageText): Settings | nu
 		celebrations: draft.celebrations !== false,
 		streak: draft.streak !== false,
 		lockScreenTimer: draft.lockScreenTimer !== false,
+		keepGoingOnLast: draft.keepGoingOnLast === true,
 		smartTimer: draft.smartTimer !== false,
 		swapOverrides: cleanOverrides(draft.swapOverrides),
 		startScreen: draft.startScreen !== false,

@@ -53,6 +53,21 @@ describe('what the lock screen timer says', () => {
 		expect(planSessionNotice(s, 0)!.at).toBe(13 * MIN);
 	});
 
+	it('with keep timing the last dilator: says the planned time is up, then shows extra time until Finish', () => {
+		const last = { ...startSession([steps[0]], 'morning', '2026-01-01', 0), keepGoing: true };
+		expect(planSessionNotice(last, MIN)).toMatchObject({
+			afterTitle: 'Planned time is up ♡',
+			afterText: 'Finish whenever you are ready'
+		});
+		const over = tick(last, 11 * MIN);
+		expect(planSessionNotice(over, 12 * MIN)).toMatchObject({
+			title: '#2 · extra time',
+			text: 'Press Finish when you are done',
+			clock: 'up',
+			at: 10 * MIN
+		});
+	});
+
 	it('names the last one as the last one', () => {
 		let s = begin();
 		s = confirmSwitch(tick(s, 10 * MIN), 10 * MIN);
