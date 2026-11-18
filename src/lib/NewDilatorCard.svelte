@@ -180,7 +180,6 @@
 	@keyframes twinkle {
 		50% {
 			opacity: 0.12;
-			transform: scale(0.8);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {

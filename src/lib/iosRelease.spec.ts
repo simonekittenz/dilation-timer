@@ -212,9 +212,8 @@ describe('the alarm stays out of the way of a tap on "I switched"', () => {
 		expect(plugin).toContain('guard asked == self.currentEpoch() else { return timer.cancel() }');
 	});
 
-	it('only animates opacity and transform while the alarm is on, so it does not repaint the page every frame', () => {
+	it('only fades overlays while the alarm is on, so it does not repaint the page every frame', () => {
 		for (const [name, source] of [
-			['blink', timer],
 			['blinkring', timer],
 			['glow', timer],
 			['flash', layout]
@@ -224,6 +223,29 @@ describe('the alarm stays out of the way of a tap on "I switched"', () => {
 			expect(frames, name).toMatch(/opacity|transform/);
 			expect(frames, name).not.toMatch(/box-shadow|filter|background/);
 		}
+	});
+
+	it('has no animation that goes on for ever and moves things (an animating page loses taps on Android)', () => {
+		const mascot = read('src/lib/Mascot.svelte');
+		for (const source of [
+			timer,
+			mascot,
+			read('src/lib/NewDilatorCard.svelte'),
+			read('src/lib/MilestoneCard.svelte')
+		]) {
+			for (const [, name] of source.matchAll(/animation: (\w+) [^;]*infinite/g)) {
+				// what may repeat for ever only changes opacity
+				const body = source.slice(source.indexOf(`@keyframes ${name} {`));
+				const frames = body.slice(0, body.indexOf('\n\t}\n') + 4);
+				expect(frames, name).not.toMatch(/transform|rotate|scale|translate/);
+			}
+		}
+		// the movers (sway, wiggle, hop, breathe) repeat a few times, then rest
+		expect(mascot).toMatch(/animation: sway 4s ease-in-out 2;/);
+		expect(timer).toMatch(/animation: breathe 3.5s ease-in-out 2;/);
+		// the pop after +1 min / -1 min changes colour and glow only
+		const lit = timer.slice(timer.indexOf('@keyframes clocklit {'));
+		expect(lit.slice(0, lit.indexOf('\n\t}\n') + 4)).not.toContain('transform');
 	});
 
 	it('has overlays that never catch a tap', () => {

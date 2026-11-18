@@ -731,18 +731,11 @@
 		animation: sparkle 0.9s ease-out forwards;
 	}
 	@keyframes clocklit {
-		0% {
-			transform: scale(1);
-		}
 		25% {
-			transform: scale(1.12);
 			color: var(--accent);
 			text-shadow:
 				0 0 14px color-mix(in srgb, var(--accent) 80%, transparent),
 				0 0 34px color-mix(in srgb, var(--accent) 60%, transparent);
-		}
-		100% {
-			transform: scale(1);
 		}
 	}
 	.label {
@@ -1029,15 +1022,12 @@
 	@keyframes sparkle {
 		0% {
 			opacity: 0;
-			transform: translateY(0) scale(0.4);
 		}
 		30% {
 			opacity: 1;
-			transform: translateY(-0.4rem) scale(1.2);
 		}
 		100% {
 			opacity: 0;
-			transform: translateY(-1.2rem) scale(0.8);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -1082,11 +1072,10 @@
 		}
 	}
 	.breathe {
-		animation: breathe 3.5s ease-in-out infinite;
+		animation: breathe 3.5s ease-in-out 2;
 	}
 	.blink {
 		position: relative;
-		animation: blink 0.7s ease-in-out infinite;
 	}
 	.blink::after {
 		content: '';
@@ -1101,11 +1090,6 @@
 	@keyframes breathe {
 		50% {
 			transform: scale(1.02);
-		}
-	}
-	@keyframes blink {
-		50% {
-			transform: scale(1.04);
 		}
 	}
 	@keyframes blinkring {

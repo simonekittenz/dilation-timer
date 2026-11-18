@@ -227,6 +227,23 @@ things that could cost taps while the alarm rings in overtime, and what was done
 
 If it still happens, ask for the app version (bottom of Settings), the iPhone model, and whether music was playing.
 
+### "I have to press +1 min twice" (Android, reported by a tester)
+
+Reproduced on the Android emulator with real touches (`adb shell input tap`, 40 taps in a row on the switch
+screen): about 1 tap in 4 got its touch events (down and up reached the page) but **no click**. Nothing was
+wrong in the app's logic or its DOM. What mattered was **animation**: with every animation and transition off,
+0 to 1 taps in 40 were lost, and even a plain page with one looping animation lost a few. Looping animations
+(the mascot's sway, the "I switched" button breathing, the alarm button scaling) and the 0.9 second pop after
+each tap (the clock scaling and the sparkle) kept the page producing frames, and a tap that lands in the middle
+of that can lose its click.
+
+What was done: the movers (mascot sway, wiggle and hop, the button's breathing) now repeat a few times and then
+**rest**; what repeats for ever only changes opacity (a test checks this: `iosRelease.spec.ts`); the alarm
+button no longer scales (its ring still pulses); the pop after a tap changes colour and glow only. Result in the
+same test: 1 to 3 lost taps in 40 instead of 5 to 11, and the rest is noise on the emulator, which draws
+everything in software. A real phone should do better. If a tester still loses taps, ask for the phone model and
+Android version, and look for new looping animations before anything else.
+
 ## Signing
 
 Android only lets an update replace an installed app if both were signed with the same key. The app is

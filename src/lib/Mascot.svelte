@@ -115,15 +115,16 @@
 		fill: #ff4f9a;
 		font-size: 20px;
 	}
+	/* The friend moves for a few seconds, then rests. A phone that is always animating can lose taps. */
 	.ears {
 		transform-origin: 60px 70px;
-		animation: sway 4s ease-in-out infinite;
+		animation: sway 4s ease-in-out 2;
 	}
 	.alert .ears {
-		animation: wiggle 0.5s ease-in-out infinite;
+		animation: wiggle 0.5s ease-in-out 6;
 	}
 	.done {
-		animation: hop 1.2s ease-in-out infinite;
+		animation: hop 1.2s ease-in-out 3;
 	}
 	@keyframes sway {
 		50% {
