@@ -254,3 +254,16 @@ describe('the alarm stays out of the way of a tap on "I switched"', () => {
 		expect(layout).toMatch(/\.alerting::before \{[^}]*pointer-events: none/);
 	});
 });
+
+describe('the extra time screen', () => {
+	const timer = read('src/lib/Timer.svelte');
+
+	it('still shows the dilator, and says what time was planned', () => {
+		const ring = timer.slice(
+			timer.indexOf('class:extra={overrun}'),
+			timer.indexOf('data-testid="extra-note"')
+		);
+		expect(ring).toContain('<DilatorName label={current.label} nickname={current.nickname} />');
+		expect(timer).toContain('Extra time ♡ · planned {formatClock(stepDurationMs(s))}');
+	});
+});

@@ -178,10 +178,15 @@
 						</p>
 					{/key}
 					<p class="label">
-						{#if paused}Paused{:else if overrun}Extra time ♡{:else}
+						{#if paused}Paused{:else}
 							<DilatorName label={current.label} nickname={current.nickname} />
 						{/if}
 					</p>
+					{#if overrun}
+						<p class="extranote" data-testid="extra-note">
+							Extra time ♡ · planned {formatClock(stepDurationMs(s))}
+						</p>
+					{/if}
 				</div>
 			</div>
 			{#if bubble && !paused}<p class="bubble">{bubble}</p>{/if}
@@ -978,6 +983,12 @@
 	/* extra time on the last dilator: the clock counts up in the soft pink, with a plus in front */
 	.clock.extra {
 		color: var(--accent-strong);
+	}
+	.extranote {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.9rem;
+		font-weight: 700;
 	}
 	/* the start screen's clock: big, but in the soft grey of secondary text so Go! is what stands out;
 	   fainter still while paused */
