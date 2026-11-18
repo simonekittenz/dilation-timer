@@ -271,6 +271,11 @@ describe('the extra time screen', () => {
 		);
 	});
 
+	it('sizes the extra time by the ring, so the plus does not push it out on a small phone', () => {
+		expect(timer).toMatch(/\.ring \{\s*container-type: inline-size;/);
+		expect(timer).toMatch(/\.clock\.extra \{[^}]*font-size: min\(4\.2rem, 16cqw\)/);
+	});
+
 	it('has just the Finish button: no pause, no cancel, no minute buttons', () => {
 		expect(timer).toContain('{#if !overrun}\n\t\t\t\t<div class="row second">');
 		const finishAt = timer.indexOf('data-testid="finish-extra"');

@@ -662,6 +662,7 @@
 		color: var(--ink);
 	}
 	.ring {
+		container-type: inline-size;
 		position: relative;
 		width: min(82vw, 44dvh, 350px);
 		aspect-ratio: 1;
@@ -960,6 +961,8 @@
 	/* extra time on the last dilator: the clock counts up in the soft pink, with a plus in front */
 	.clock.extra {
 		color: var(--accent-strong);
+		/* the plus makes it wider: size it by the ring, so even 100+ minutes stay inside it on small phones */
+		font-size: min(4.2rem, 16cqw);
 	}
 	/* the time that was planned, kept above the extra time that counts up from it */
 	.planned {
