@@ -5,6 +5,8 @@
 // The website's download link (/downloads/Dilation-timer.apk) redirects to the newest release, and the
 // installed apps ask GitHub for the newest release (apps before 1.9 ask the website's /release.json, which
 // is appRelease.json published with the site).
+// The release notes come from docs/release-notes/<version>.md if it exists (the same text is a good start for
+// the App Store's "What's new"), otherwise from the commit subjects since the last release.
 // Needs the GitHub CLI (`gh`), logged in.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -48,17 +50,16 @@ if (!gradle.includes(`versionName "${android.version}"`))
 if (run('gh', ['release', 'view', tag]).status === 0)
 	fail(`${tag} already exists on GitHub. Build a new version with \`npm run apk -- --bump\`.`);
 
-// release notes: what changed since the previous release
+// release notes: docs/release-notes/<version>.md when there is one (written for people, what really mattered
+// in this release), otherwise what changed since the previous release, one line per commit
+const notesPath = join(root, 'docs/release-notes', `${android.version}.md`);
 const previous = out('git', ['describe', '--tags', '--abbrev=0', '--match', 'v*']);
-const changes = out('git', [
-	'log',
-	'--no-merges',
-	'--pretty=- %s',
-	previous ? `${previous}..${head}` : head
-])
-	.split('\n')
-	.filter((line) => line && !/^- Release \d/.test(line))
-	.join('\n');
+const changes = existsSync(notesPath)
+	? readFileSync(notesPath, 'utf8').trim()
+	: out('git', ['log', '--no-merges', '--pretty=- %s', previous ? `${previous}..${head}` : head])
+			.split('\n')
+			.filter((line) => line && !/^- Release \d/.test(line))
+			.join('\n');
 const notes = [
 	`Android app, version ${android.version}. Installs over the previous version and keeps your data.`,
 	'',

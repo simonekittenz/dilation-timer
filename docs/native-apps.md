@@ -302,7 +302,10 @@ npm run apk:publish  # creates the GitHub release (tag v1.9) with the app file a
 The app file is **never committed**: it lives only as an asset of the release, so the repository stays
 small. `npm run apk:publish` refuses to run unless the built file is exactly the one `appRelease.json`
 describes, the commit is already pushed (the tag goes on it), and that version has no release yet. The
-release notes are the commit titles since the previous release, so write them for users.
+release notes come from `docs/release-notes/<version>.md` (write it before `npm run apk`: a short list of what
+really mattered in this release, grouped by what a person would notice, not one line per commit, and the same
+text is a good start for the App Store's "What's new"). Without that file they are the commit titles since the
+previous release.
 
 The website links to the newest release: `/downloads/Dilation-timer.apk` forwards (see `vercel.json`) to
 `https://github.com/simonekittenz/dilation-timer/releases/latest/download/Dilation-timer.apk`. That
