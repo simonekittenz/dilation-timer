@@ -266,4 +266,12 @@ describe('the extra time screen', () => {
 		expect(ring).toContain('<DilatorName label={current.label} nickname={current.nickname} />');
 		expect(timer).toContain('Extra time ♡ · planned {formatClock(stepDurationMs(s))}');
 	});
+
+	it('has just the Finish button: no pause, no cancel, no minute buttons', () => {
+		expect(timer).toContain('{#if !overrun}\n\t\t\t\t<div class="row second">');
+		const finishAt = timer.indexOf('data-testid="finish-extra"');
+		expect(finishAt).toBeGreaterThan(0);
+		// the minute buttons come after it, in the part that is for the normal timer
+		expect(timer.slice(finishAt, timer.indexOf('{:else}', finishAt))).not.toContain('store.pause');
+	});
 });

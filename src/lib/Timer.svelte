@@ -269,31 +269,8 @@
 					</button>
 				</div>
 			{/if}
-			<div class="row second">
-				{#if overrun}
-					<button class="round small" onclick={() => (paused ? store.resume() : store.pause())}>
-						<span class="disc">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								{#if paused}
-									<path
-										class="fill"
-										d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"
-									/>
-								{:else}
-									<rect class="fill" x="6" y="5" width="4" height="14" rx="1.5" /><rect
-										class="fill"
-										x="14"
-										y="5"
-										width="4"
-										height="14"
-										rx="1.5"
-									/>
-								{/if}
-							</svg>
-						</span>
-						<span class="cap">{paused ? 'Continue' : 'Pause'}</span>
-					</button>
-				{:else}
+			{#if !overrun}
+				<div class="row second">
 					<button class="round small" onclick={() => store.skipStep()}>
 						<span class="disc">
 							<svg viewBox="0 0 24 24" aria-hidden="true"
@@ -305,26 +282,26 @@
 						</span>
 						<span class="cap">{next ? 'Next dilator' : 'Finish now'}</span>
 					</button>
-				{/if}
-				<button
-					class="round small quiet"
-					onclick={async () =>
-						(await ask({
-							title: 'Stop this session?',
-							message: "It won't be logged, and the timer will be gone.",
-							confirmLabel: 'Yes, stop it',
-							cancelLabel: 'Keep going',
-							danger: true
-						})) && store.cancel()}
-				>
-					<span class="disc">
-						<svg viewBox="0 0 24 24" aria-hidden="true"
-							><path class="line" d="M7 7l10 10M17 7L7 17" /></svg
-						>
-					</span>
-					<span class="cap">Cancel</span>
-				</button>
-			</div>
+					<button
+						class="round small quiet"
+						onclick={async () =>
+							(await ask({
+								title: 'Stop this session?',
+								message: "It won't be logged, and the timer will be gone.",
+								confirmLabel: 'Yes, stop it',
+								cancelLabel: 'Keep going',
+								danger: true
+							})) && store.cancel()}
+					>
+						<span class="disc">
+							<svg viewBox="0 0 24 24" aria-hidden="true"
+								><path class="line" d="M7 7l10 10M17 7L7 17" /></svg
+							>
+						</span>
+						<span class="cap">Cancel</span>
+					</button>
+				</div>
+			{/if}
 		</div>
 	{:else if s.phase === 'start'}
 		{@const first = s.steps[s.stepIndex]}
