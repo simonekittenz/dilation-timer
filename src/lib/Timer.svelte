@@ -172,6 +172,11 @@
 				</svg>
 				<div class="inside">
 					<div class="pet"><Mascot size={64} /></div>
+					{#if overrun}
+						<p class="planned" data-testid="planned-time" aria-label="Planned time">
+							{formatClock(stepDurationMs(s))}
+						</p>
+					{/if}
 					{#key clockLit}
 						<p class="clock" class:lit={clockLit > 0} class:extra={overrun}>
 							{overrun ? '+' : ''}{formatClock(overrun ? -left : left)}
@@ -182,11 +187,6 @@
 							<DilatorName label={current.label} nickname={current.nickname} />
 						{/if}
 					</p>
-					{#if overrun}
-						<p class="extranote" data-testid="extra-note">
-							Extra time ♡ · planned {formatClock(stepDurationMs(s))}
-						</p>
-					{/if}
 				</div>
 			</div>
 			{#if bubble && !paused}<p class="bubble">{bubble}</p>{/if}
@@ -961,11 +961,14 @@
 	.clock.extra {
 		color: var(--accent-strong);
 	}
-	.extranote {
+	/* the time that was planned, kept above the extra time that counts up from it */
+	.planned {
 		margin: 0;
 		color: var(--muted);
-		font-size: 0.9rem;
-		font-weight: 700;
+		font-size: clamp(1.3rem, 7vw, 1.8rem);
+		font-weight: 900;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
 	}
 	/* the start screen's clock: big, but in the soft grey of secondary text so Go! is what stands out;
 	   fainter still while paused */
