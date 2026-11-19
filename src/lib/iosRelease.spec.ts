@@ -134,18 +134,19 @@ describe('the Live Activity on the lock screen', () => {
 		// no pink or dark writing on the card itself (that was hard to read)
 		expect(lock).not.toContain('foregroundStyle(pink)');
 		expect(lock).not.toMatch(/\bink\b/);
-		// the card as it was in 1.16: your friend, the words, and the clock on the right in a frame of its own
-		// (1.17's roomier card, with a system progress bar, showed up empty on a real iPhone and the Dynamic
-		// Island went black after unlocking: do not bring those back without seeing them on a device)
+		// the small card from 1.16 (1.17's roomier card, with a system progress bar, showed up empty on a real
+		// iPhone and the Dynamic Island went black after unlocking: do not bring those back without seeing them
+		// on a device)
 		expect(lock).toContain('SessionMascot(kind: shown.mascot, mood: shown.mood, size: 46)');
 		expect(lock).not.toContain('ProgressView');
 		expect(lock).not.toContain('ViewThatFits');
 		expect(lock).not.toContain('.fixedSize');
-		expect(lock).toContain('.layoutPriority(1)');
 		expect(lock).toContain('.lineLimit(2)');
-		expect(lock).toContain('.minimumScaleFactor(');
-		// a count-up clock would stretch across the row and squeeze the words: it keeps to its own width
-		expect(lock).toContain('.frame(maxWidth: 104, alignment: .trailing)');
+		// the clock has a box of its own with a set width, so long names (iPhone 12) can never push it out; the
+		// words give way, and nothing makes the words more important than the clock
+		expect(lock).toContain('.frame(width: 92, alignment: .trailing)');
+		expect(lock).not.toContain('.layoutPriority(1)');
+		expect(lock).toContain('if shown.hasClock');
 	});
 
 	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {

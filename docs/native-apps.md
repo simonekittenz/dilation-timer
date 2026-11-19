@@ -176,8 +176,10 @@ Activity left on the lock screen by an older build still opens after an update.
 
 The card is a deep rose with plain white writing (about 6:1), so it is readable over any wallpaper, light or
 dark. The first version had pink on pale pink and the clock nearly vanished (feedback from a tester), and the
-count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock keeps its own width (a frame with a maximum width) and the words give way, because on a narrower phone such
-as an iPhone 12, long dilator names used to squeeze the clock out completely (feedback from a tester).
+count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock has a box of its own with a set width (92 points) and the words give way (they wrap onto a second line,
+then shorten), because on a narrower phone such as an iPhone 12, long dilator names used to squeeze the clock out
+completely (feedback from a tester; in 1.16 the words had layout priority and the clock a maximum width, which
+still lost). Checked on the Mac with "Mister Fluffy Pants" names at 390, 375 and 340 points wide.
 
 **Keep this card as it is.** 1.17 tried a roomier card (your friend and the words on top, a big clock under them
 with `fixedSize`, and a system progress bar, `ProgressView(timerInterval:)`). On a real iPhone that card was

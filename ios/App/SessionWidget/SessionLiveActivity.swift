@@ -57,10 +57,13 @@ private struct Shown {
     let clockOver: Bool
     let mascot: String
     let mood: String
+    /// There is a clock to show (not when it is paused, or once a countdown has run out).
+    let hasClock: Bool
 
     init(state: SessionActivityAttributes.ContentState, isStale: Bool) {
         let over = state.clock == "down" && (isStale || state.at <= Date())
         clockOver = over
+        hasClock = (state.clock == "down" || state.clock == "up") && !over
         mascot = state.mascot ?? "bunny"
         if over && !state.afterTitle.isEmpty {
             title = state.afterTitle
@@ -88,17 +91,18 @@ private struct LockScreenView: View {
                     .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.85)
                 Text(shown.text)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(2)
             }
-            .layoutPriority(1)
-            Spacer(minLength: 8)
-            // a count-up clock would stretch across the whole row and squeeze the words: keep it to its own width
-            ClockText(state: state, isStale: isStale, font: .title2, color: .white)
-                .frame(maxWidth: 104, alignment: .trailing)
+            Spacer(minLength: 0)
+            // The clock has a box of its own with a set width, so long names can never push it out of the card:
+            // it is the words that give way (they wrap onto a second line, shrink a little, then shorten).
+            if shown.hasClock {
+                ClockText(state: state, isStale: isStale, font: .title2, color: .white)
+                    .frame(width: 92, alignment: .trailing)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
