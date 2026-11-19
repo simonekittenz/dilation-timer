@@ -57,13 +57,10 @@ private struct Shown {
     let clockOver: Bool
     let mascot: String
     let mood: String
-    /// There is a clock to show (not when it is paused, or once a countdown has run out).
-    let hasClock: Bool
 
     init(state: SessionActivityAttributes.ContentState, isStale: Bool) {
         let over = state.clock == "down" && (isStale || state.at <= Date())
         clockOver = over
-        hasClock = (state.clock == "down" || state.clock == "up") && !over
         mascot = state.mascot ?? "bunny"
         if over && !state.afterTitle.isEmpty {
             title = state.afterTitle
@@ -84,34 +81,24 @@ private struct LockScreenView: View {
 
     var body: some View {
         let shown = Shown(state: state, isStale: isStale)
-        // A Live Activity on the lock screen may be about 160 points tall, so there is room to make it clear:
-        // your friend with the words on top, and under them a big clock.
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
-                SessionMascot(kind: shown.mascot, mood: shown.mood, size: 52)
-                VStack(alignment: .leading, spacing: 2) {
-                    // a long name wraps onto a second line; it is the subtitle that shrinks if it must
-                    Text(shown.title)
-                        .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                    Text(shown.text)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.white.opacity(0.92))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                }
-                // take the height the words need at this width, so a long title wraps instead of being cut off
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .center, spacing: 12) {
+            SessionMascot(kind: shown.mascot, mood: shown.mood, size: 46)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(shown.title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                Text(shown.text)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineLimit(2)
             }
-            if shown.hasClock {
-                HStack(alignment: .center, spacing: 14) {
-                    ClockText(state: state, isStale: isStale, font: .system(size: 38), color: .white)
-                        .fixedSize(horizontal: true, vertical: false)
-                    Spacer(minLength: 0)
-                }
-            }
+            .layoutPriority(1)
+            Spacer(minLength: 8)
+            // a count-up clock would stretch across the whole row and squeeze the words: keep it to its own width
+            ClockText(state: state, isStale: isStale, font: .title2, color: .white)
+                .frame(maxWidth: 104, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

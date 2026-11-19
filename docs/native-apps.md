@@ -176,17 +176,16 @@ Activity left on the lock screen by an older build still opens after an update.
 
 The card is a deep rose with plain white writing (about 6:1), so it is readable over any wallpaper, light or
 dark. The first version had pink on pale pink and the clock nearly vanished (feedback from a tester), and the
-count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock keeps its own width and the words give way (they wrap,
-shrink a little, then shorten), because on a narrower phone such as an iPhone 12, long dilator names used to
-squeeze the clock out completely (feedback from a tester); the layout was checked with names as long as "Mister
-Fluffy Pants" on cards 390 and 340 points wide. A Live Activity may be about 160 points tall (a plain one row card is about 70), so the card uses the room: your
-friend and the words on top (a long name wraps onto a second line instead of being cut off), and under them a big
-clock. (1.17 also had a progress bar, `ProgressView(timerInterval:)`; on a real iPhone the whole card showed up
-empty, so it was taken out. The Mac preview cannot draw that view, so it was never seen before shipping. Do not
-bring it back without seeing it on a device or a lock screen in the simulator. The data still carries `from`, when
-the countdown began.) While paused, or once a countdown has run
-out, there is no clock row. Checked on the Mac with names as long as "Mister Fluffy Pants" at 390 and 340 points
-wide, where the tallest card is about 118 points.
+count-up clock stretched across the row and cut the title short. The Dynamic Island keeps the pink on black. The clock keeps its own width (a frame with a maximum width) and the words give way, because on a narrower phone such
+as an iPhone 12, long dilator names used to squeeze the clock out completely (feedback from a tester).
+
+**Keep this card as it is.** 1.17 tried a roomier card (your friend and the words on top, a big clock under them
+with `fixedSize`, and a system progress bar, `ProgressView(timerInterval:)`). On a real iPhone that card was
+empty on the lock screen, and the Dynamic Island went black after unlocking (the widget most likely crashed while
+drawing the card, which takes the island down with it). It could not be reproduced: the Mac preview cannot draw
+`ProgressView`, and the simulator's lock screen cannot be driven from a script. So 1.18 went back to the card from
+1.16. Do not change the lock screen card again without seeing it on a real iPhone first (TestFlight). The data
+still carries `from`, when the countdown began, unused.
 
 The extension needs its own App ID and profile. They are made on the first signed export by
 `-allowProvisioningUpdates`, like the app's own. The Settings switch "Timer on the lock screen" turns it off,

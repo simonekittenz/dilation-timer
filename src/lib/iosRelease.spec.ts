@@ -134,21 +134,18 @@ describe('the Live Activity on the lock screen', () => {
 		// no pink or dark writing on the card itself (that was hard to read)
 		expect(lock).not.toContain('foregroundStyle(pink)');
 		expect(lock).not.toMatch(/\bink\b/);
-		// a Live Activity may be about 160 points tall, so the card is roomy: your friend and the words on top,
-		// and a big clock under them
-		expect(lock).toContain('SessionMascot(kind: shown.mascot, mood: shown.mood, size: 52)');
-		// no system progress bar: the first version with one showed an empty card on a real iPhone
+		// the card as it was in 1.16: your friend, the words, and the clock on the right in a frame of its own
+		// (1.17's roomier card, with a system progress bar, showed up empty on a real iPhone and the Dynamic
+		// Island went black after unlocking: do not bring those back without seeing them on a device)
+		expect(lock).toContain('SessionMascot(kind: shown.mascot, mood: shown.mood, size: 46)');
 		expect(lock).not.toContain('ProgressView');
-		expect(lock).toContain('font: .system(size: 38)'); // the big clock
 		expect(lock).not.toContain('ViewThatFits');
-		// the clock keeps its own width, and a long name wraps (not cut off) because the words take the height they need
-		expect(lock).toContain('.fixedSize(horizontal: true, vertical: false)');
-		expect(lock).toContain('.fixedSize(horizontal: false, vertical: true)');
+		expect(lock).not.toContain('.fixedSize');
+		expect(lock).toContain('.layoutPriority(1)');
 		expect(lock).toContain('.lineLimit(2)');
 		expect(lock).toContain('.minimumScaleFactor(');
-		// no clock row at all while paused or once a countdown has run out
-		expect(lock).toContain('if shown.hasClock');
-		expect(read('ios/App/Shared/SessionActivityAttributes.swift')).toContain('var from: Date?');
+		// a count-up clock would stretch across the row and squeeze the words: it keeps to its own width
+		expect(lock).toContain('.frame(maxWidth: 104, alignment: .trailing)');
 	});
 
 	it('shows the bunny or kitty you picked, drawn natively, with optional fields so older activities still open', () => {
