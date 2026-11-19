@@ -59,14 +59,11 @@ private struct Shown {
     let mood: String
     /// There is a clock to show (not when it is paused, or once a countdown has run out).
     let hasClock: Bool
-    /// A countdown that is still running, with a known start, gets a progress bar.
-    let hasBar: Bool
 
     init(state: SessionActivityAttributes.ContentState, isStale: Bool) {
         let over = state.clock == "down" && (isStale || state.at <= Date())
         clockOver = over
         hasClock = (state.clock == "down" || state.clock == "up") && !over
-        hasBar = state.clock == "down" && !over && state.from != nil
         mascot = state.mascot ?? "bunny"
         if over && !state.afterTitle.isEmpty {
             title = state.afterTitle
@@ -88,7 +85,7 @@ private struct LockScreenView: View {
     var body: some View {
         let shown = Shown(state: state, isStale: isStale)
         // A Live Activity on the lock screen may be about 160 points tall, so there is room to make it clear:
-        // your friend with the words on top, and under them a big clock with a bar that fills as the timer runs.
+        // your friend with the words on top, and under them a big clock.
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
                 SessionMascot(kind: shown.mascot, mood: shown.mood, size: 52)
@@ -112,18 +109,7 @@ private struct LockScreenView: View {
                 HStack(alignment: .center, spacing: 14) {
                     ClockText(state: state, isStale: isStale, font: .system(size: 38), color: .white)
                         .fixedSize(horizontal: true, vertical: false)
-                    if shown.hasBar, let from = state.from {
-                        ProgressView(
-                            timerInterval: min(from, state.at)...state.at,
-                            countsDown: false,
-                            label: { EmptyView() },
-                            currentValueLabel: { EmptyView() }
-                        )
-                        .progressViewStyle(.linear)
-                        .tint(.white)
-                    } else {
-                        Spacer(minLength: 0)
-                    }
+                    Spacer(minLength: 0)
                 }
             }
         }
@@ -143,10 +129,12 @@ private struct ClockText: View {
     var body: some View {
         switch state.clock {
         case "down":
-            if isStale || state.at <= Date() {
+            // one reading of the time: a range whose start is after its end would crash the widget
+            let now = Date()
+            if isStale || state.at <= now {
                 EmptyView()
             } else {
-                Text(timerInterval: Date()...state.at, countsDown: true, showsHours: false)
+                Text(timerInterval: now...state.at, countsDown: true, showsHours: false)
                     .font(font.weight(.heavy))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)

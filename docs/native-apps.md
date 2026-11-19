@@ -181,8 +181,10 @@ shrink a little, then shorten), because on a narrower phone such as an iPhone 12
 squeeze the clock out completely (feedback from a tester); the layout was checked with names as long as "Mister
 Fluffy Pants" on cards 390 and 340 points wide. A Live Activity may be about 160 points tall (a plain one row card is about 70), so the card uses the room: your
 friend and the words on top (a long name wraps onto a second line instead of being cut off), and under them a big
-clock with a progress bar that fills as the countdown runs (`ProgressView(timerInterval:)`, which the phone draws
-and ticks by itself; `from` in the data says when the countdown began). While paused, or once a countdown has run
+clock. (1.17 also had a progress bar, `ProgressView(timerInterval:)`; on a real iPhone the whole card showed up
+empty, so it was taken out. The Mac preview cannot draw that view, so it was never seen before shipping. Do not
+bring it back without seeing it on a device or a lock screen in the simulator. The data still carries `from`, when
+the countdown began.) While paused, or once a countdown has run
 out, there is no clock row. Checked on the Mac with names as long as "Mister Fluffy Pants" at 390 and 340 points
 wide, where the tallest card is about 118 points.
 

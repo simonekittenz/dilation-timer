@@ -135,11 +135,10 @@ describe('the Live Activity on the lock screen', () => {
 		expect(lock).not.toContain('foregroundStyle(pink)');
 		expect(lock).not.toMatch(/\bink\b/);
 		// a Live Activity may be about 160 points tall, so the card is roomy: your friend and the words on top,
-		// a big clock under them, and a bar that fills as the countdown runs (the phone draws and ticks it)
+		// and a big clock under them
 		expect(lock).toContain('SessionMascot(kind: shown.mascot, mood: shown.mood, size: 52)');
-		expect(lock).toContain('ProgressView(');
-		expect(lock).toContain('timerInterval:');
-		expect(lock).toContain('countsDown: false');
+		// no system progress bar: the first version with one showed an empty card on a real iPhone
+		expect(lock).not.toContain('ProgressView');
 		expect(lock).toContain('font: .system(size: 38)'); // the big clock
 		expect(lock).not.toContain('ViewThatFits');
 		// the clock keeps its own width, and a long name wraps (not cut off) because the words take the height they need
